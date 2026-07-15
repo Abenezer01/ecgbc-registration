@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Create Frontend Auth Service",
+  "description": "Create frontend auth service",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": ""
+  }
+}

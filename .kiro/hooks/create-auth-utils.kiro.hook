@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Create Auth Utils",
+  "description": "Create auth utility functions",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": ""
+  }
+}

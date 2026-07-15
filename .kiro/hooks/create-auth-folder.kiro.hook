@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Create Auth Service Folder",
+  "description": "Create auth service folder",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": ""
+  }
+}

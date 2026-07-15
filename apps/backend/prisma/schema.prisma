@@ -1,0 +1,366 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model DataLookup {
+  id                  String              @id @default(uuid())
+  index               Int
+  type                String
+  category            String
+  description         String
+  isDefault           Boolean
+  value               String              @unique
+  note                String              @db.Text
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  regions             CouncilFellowship[] @relation("RegionLookup")
+  memberPreviousTypes Member[]            @relation("MemberPreviousType")
+  memberRegions       Member[]            @relation("MemberRegion")
+  memberStates        Member[]            @relation("MemberState")
+  memberTypes         Member[]            @relation("MemberType")
+  memberCategories    Member[]            @relation("MemberCategoryLookup")
+  reports             Report[]            @relation("ReportStatusLookup")
+  roleStates          Role[]              @relation("RoleStateLookup")
+  roleTypes           Role[]              @relation("RoleTypeLookup")
+  states              Staff[]             @relation("StateLookup")
+  categoryFeeRates    CategoryFeeRate[]   @relation("CategoryFeeRateLookup")
+  feeRuleMemberTypes      FeeRule[]       @relation("FeeRuleMemberType")
+  feeRuleMemberCategories FeeRule[]       @relation("FeeRuleMemberCategory")
+  reportingFeePaymentMethods ReportingFee[] @relation("FeePaymentMethod")
+  paymentMethodConfigs    PaymentMethodConfig[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  codeName    String   @unique
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  roles       Role[]   @relation("PermissionToRole")
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String       @db.Text
+  typeId      String
+  stateId     String
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  state       DataLookup   @relation("RoleStateLookup", fields: [stateId], references: [id])
+  type        DataLookup   @relation("RoleTypeLookup", fields: [typeId], references: [id])
+  staffs      Staff[]
+  permissions Permission[] @relation("PermissionToRole")
+
+  @@index([stateId], map: "Role_stateId_fkey")
+  @@index([typeId], map: "Role_typeId_fkey")
+}
+
+model Member {
+  id                    String            @id @default(uuid())
+  name                  String            @unique
+  certificateNo         String            @unique
+  certificateIssuedDate DateTime
+  isInEthiopia          Boolean
+  country               String
+  city                  String?
+  subcity               String?
+  zone                  String?
+  district              String?
+  houseNumber           String?
+  phoneNumber           String?
+  poBoxNumber           String?
+  email                 String?
+  councilFellowshipId   String
+  typeId                String
+  stateId               String
+  regionId              String?
+  reasonForInactive     String?           @db.Text
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  previousTypeId        String?
+  typeChangedAt         DateTime?
+  isActive              Boolean           @default(true)
+  boardMembers          BoardMember[]
+  memberFiles           File[]            @relation("MemberFiles")
+  councilFellowship     CouncilFellowship @relation(fields: [councilFellowshipId], references: [id])
+  previousType          DataLookup?       @relation("MemberPreviousType", fields: [previousTypeId], references: [id])
+  region                DataLookup?       @relation("MemberRegion", fields: [regionId], references: [id])
+  state                 DataLookup        @relation("MemberState", fields: [stateId], references: [id])
+  type                  DataLookup        @relation("MemberType", fields: [typeId], references: [id])
+  reports               Report[]
+  reportingFees         ReportingFee[]
+  memberCategoryId      String?
+  memberCategory        DataLookup?       @relation("MemberCategoryLookup", fields: [memberCategoryId], references: [id])
+  churchUsers           ChurchUser[]
+
+  @@index([city])
+  @@index([councilFellowshipId])
+  @@index([previousTypeId], map: "Member_previousTypeId_fkey")
+  @@index([regionId])
+  @@index([stateId])
+  @@index([typeChangedAt])
+  @@index([typeId])
+  @@index([memberCategoryId])
+}
+
+model BoardMember {
+  id                  String             @id @default(uuid())
+  memberId            String?
+  councilFellowshipId String?
+  fullName            String
+  phoneNumber         String
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
+  member              Member?            @relation(fields: [memberId], references: [id])
+
+  @@index([councilFellowshipId], map: "BoardMember_councilFellowshipId_fkey")
+  @@index([memberId], map: "BoardMember_memberId_fkey")
+}
+
+model Report {
+  id                  String             @id @default(uuid())
+  year                Int
+  reportedAt          DateTime           @default(now())
+  bankReference       String?            // Bank transaction ref provided by the church
+  crv                 String?            // CRV receipt number assigned by finance
+  file                String?
+  remark              String?
+  statusId            String
+  memberId            String?
+  councilFellowshipId String?
+  reportRequestId     String?
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
+  member              Member?            @relation(fields: [memberId], references: [id])
+  status              DataLookup         @relation("ReportStatusLookup", fields: [statusId], references: [id])
+  reportingFee        ReportingFee?
+  reportRequest       ReportRequest?     @relation(fields: [reportRequestId], references: [id])
+
+  @@unique([memberId, year])
+  @@index([statusId], map: "Report_statusId_fkey")
+  @@index([reportRequestId])
+}
+
+model File {
+  id                  String             @id @default(uuid())
+  fileName            String?
+  file                String?
+  memberId            String?
+  councilFellowshipId String?
+  isFromSelamMinster  Boolean?           @default(false)
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
+  member              Member?            @relation("MemberFiles", fields: [memberId], references: [id])
+
+  @@index([councilFellowshipId], map: "File_councilFellowshipId_fkey")
+  @@index([memberId], map: "File_memberId_fkey")
+}
+
+model Staff {
+  id                     String     @id @default(uuid())
+  email                  String     @unique
+  fullName               String?
+  firstName              String
+  lastName               String
+  phoneNumber            String?
+  password               String
+  avatar                 String?
+  passwordResetToken     String?
+  passwordResetExpiresIn DateTime?
+  roleId                 String
+  stateId                String
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
+  role                   Role       @relation(fields: [roleId], references: [id])
+  state                  DataLookup @relation("StateLookup", fields: [stateId], references: [id])
+  fellowships            StaffFellowship[]
+
+  @@index([roleId], map: "Staff_roleId_fkey")
+  @@index([stateId], map: "Staff_stateId_fkey")
+}
+
+model CouncilFellowship {
+  id                    String        @id @default(uuid())
+  name                  String        @unique
+  certificateNo         String        @unique
+  certificateIssuedDate DateTime
+  description           String?
+  isInEthiopia          Boolean
+  isActive              Boolean       @default(true)
+  country               String?
+  city                  String?
+  subcity               String?
+  zone                  String?
+  district              String?
+  houseNumber           String?
+  phoneNumber           String?
+  poBoxNumber           String?
+  email                 String?
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+  regionId              String?
+  boardMembers          BoardMember[]
+  region                DataLookup?   @relation("RegionLookup", fields: [regionId], references: [id])
+  files                 File[]
+  members               Member[]
+  reports               Report[]
+  staffLinks            StaffFellowship[]
+  feeRules              FeeRule[]
+
+  @@index([regionId], map: "CouncilFellowship_regionId_fkey")
+}
+
+model StaffFellowship {
+  id            String           @id @default(uuid())
+  staffId       String
+  fellowshipId  String
+  staff         Staff            @relation(fields: [staffId], references: [id])
+  fellowship    CouncilFellowship @relation(fields: [fellowshipId], references: [id])
+
+  @@unique([staffId, fellowshipId])
+}
+
+model ChurchUser {
+  id                  String  @id @default(uuid())
+  firstName           String
+  lastName            String
+  email               String  @unique
+  phone               String?
+  password            String
+  role                String  @default("VIEWER")
+  isActive            Boolean @default(true)
+  memberId            String
+  lastLoginAt         DateTime?
+  passwordResetToken  String?
+  passwordResetExpires DateTime?
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  member              Member  @relation(fields: [memberId], references: [id])
+
+  @@index([memberId])
+  @@index([email])
+  @@index([isActive])
+}
+
+model CategoryFeeRate {
+  id          String     @id @default(uuid())
+  categoryId  String     @unique
+  amount      Decimal    @db.Decimal(10, 2)
+  currency    String     @default("ETB")
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  category    DataLookup @relation("CategoryFeeRateLookup", fields: [categoryId], references: [id])
+}
+
+model ReportingFee {
+  id           String    @id @default(uuid())
+  reportId     String    @unique
+  memberId     String
+  amount       Decimal   @db.Decimal(10, 2)
+  baseAmount   Decimal?  @db.Decimal(10, 2)
+  currency     String    @default("ETB")
+  status       String    @default("PENDING")
+  isLate       Boolean   @default(false)
+  isOverridden Boolean   @default(false)
+  feeRuleId    String?
+  paymentMethodId String?
+  note         String?   @db.Text
+  crv          String?              // Cash Receipt Voucher number — assigned by finance
+  sentAt       DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  report       Report    @relation(fields: [reportId], references: [id])
+  member       Member    @relation(fields: [memberId], references: [id])
+  feeRule      FeeRule?  @relation(fields: [feeRuleId], references: [id])
+  paymentMethod DataLookup? @relation("FeePaymentMethod", fields: [paymentMethodId], references: [id])
+
+  @@index([memberId])
+  @@index([status])
+  @@index([feeRuleId])
+  @@index([paymentMethodId])
+}
+
+model ReportRequest {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  year        Int
+  dueDate     DateTime
+  feeMode     String   @default("AUTO")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  reports     Report[]
+  feeRules    FeeRule[]
+}
+
+model FeeRule {
+  id                String             @id @default(uuid())
+  name              String
+  memberTypeId      String?
+  memberCategoryId  String?
+  reportRequestId   String?
+  currency          String             @default("ETB")
+  amount            Decimal            @db.Decimal(10, 2)
+  lateFeeMultiplier Decimal?           @db.Decimal(4, 2)
+  priority          Int                @default(0)
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  memberType        DataLookup?        @relation("FeeRuleMemberType", fields: [memberTypeId], references: [id])
+  memberCategory    DataLookup?        @relation("FeeRuleMemberCategory", fields: [memberCategoryId], references: [id])
+  fellowships       CouncilFellowship[]
+  reportRequest     ReportRequest?     @relation(fields: [reportRequestId], references: [id])
+  reportingFees     ReportingFee[]
+
+  @@index([reportRequestId])
+  @@index([memberTypeId])
+  @@index([memberCategoryId])
+
+}
+
+model PaymentMethodConfig {
+  id            String   @id @default(uuid())
+  methodId      String   @unique    // FK to DataLookup.id (PAYMENT_METHOD type)
+  isEnabled     Boolean  @default(true)
+  accountName   String?
+  accountNumber String?
+  bankName      String?
+  phoneNumber   String?
+  instructions  String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  method        DataLookup @relation(fields: [methodId], references: [id])
+
+  @@index([methodId])
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entity      String   // MEMBER, REPORT, DATA_LOOKUP, CHURCH_USER, etc.
+  entityId    String?
+  description String?  @db.Text
+  metadata    String?  @db.Text // JSON string for additional context
+  performedBy String?  // Staff ID or ChurchUser ID
+  performedByType String? // STAFF or CHURCH_USER
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entity])
+  @@index([entityId])
+  @@index([performedBy])
+  @@index([createdAt])
+}

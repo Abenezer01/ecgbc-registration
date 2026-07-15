@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Create Auth Service",
+  "description": "Create centralized auth service structure",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": ""
+  }
+}

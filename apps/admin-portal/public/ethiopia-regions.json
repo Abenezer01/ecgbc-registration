@@ -1,0 +1,117 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Tigray", "region": "Tigray" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[39.0, 14.5], [39.5, 14.0], [40.0, 13.5], [39.0, 13.0], [38.0, 13.5], [37.5, 14.0], [38.0, 14.5], [39.0, 14.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Afar", "region": "Afar" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[40.0, 13.5], [42.0, 12.5], [42.5, 11.0], [41.5, 10.0], [40.5, 11.0], [40.0, 12.0], [40.0, 13.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Amhara", "region": "Amhara" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.0, 13.5], [39.0, 13.0], [40.0, 13.5], [40.0, 12.0], [39.5, 11.0], [38.5, 10.5], [37.0, 11.0], [36.5, 12.0], [37.5, 13.0], [38.0, 13.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Benishangul Gumuz", "region": "Benishangul-Gumuz" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.0, 11.5], [37.0, 11.0], [37.5, 10.0], [36.5, 9.5], [35.5, 10.0], [35.0, 11.0], [36.0, 11.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Addis Ababa", "region": "Addis Ababa" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.7, 9.1], [38.9, 9.0], [38.9, 8.9], [38.7, 8.8], [38.6, 8.9], [38.6, 9.0], [38.7, 9.1]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Dire Dawa", "region": "Dire Dawa" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[41.8, 9.7], [42.0, 9.5], [42.0, 9.3], [41.8, 9.2], [41.6, 9.3], [41.6, 9.5], [41.8, 9.7]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Harari", "region": "Harari" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[42.1, 9.4], [42.3, 9.3], [42.3, 9.1], [42.1, 9.0], [42.0, 9.1], [42.0, 9.3], [42.1, 9.4]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Oromia", "region": "Oromia" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[37.0, 11.0], [38.5, 10.5], [39.5, 11.0], [40.5, 11.0], [41.5, 10.0], [42.0, 9.0], [41.5, 7.5], [40.5, 6.5], [39.0, 5.5], [38.0, 5.0], [37.0, 5.5], [36.0, 6.5], [35.5, 8.0], [36.0, 9.5], [37.0, 11.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Somali", "region": "Somali" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[41.5, 10.0], [42.5, 11.0], [43.5, 10.5], [45.0, 9.5], [47.0, 8.0], [47.5, 6.5], [46.5, 5.0], [44.0, 4.5], [42.5, 5.5], [41.5, 7.5], [42.0, 9.0], [41.5, 10.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Gambela", "region": "Gambela" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[34.0, 8.5], [35.0, 8.5], [35.5, 8.0], [35.0, 7.0], [34.5, 6.5], [33.5, 7.0], [33.5, 8.0], [34.0, 8.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Southern Nations", "region": "Southern Nations, Nationalities, and Peoples" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.0, 6.5], [37.0, 5.5], [38.0, 5.0], [38.5, 4.5], [37.5, 4.0], [36.5, 4.5], [35.5, 5.0], [35.0, 6.0], [36.0, 6.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sidama", "region": "Sidama" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.0, 7.0], [38.7, 6.5], [38.7, 5.8], [38.0, 5.5], [37.5, 6.0], [37.5, 6.7], [38.0, 7.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "South West Ethiopia", "region": "South West Ethiopia Peoples" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[35.5, 7.5], [36.5, 7.0], [37.0, 6.0], [36.0, 5.5], [35.0, 6.0], [34.5, 6.5], [35.0, 7.0], [35.5, 7.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Central Ethiopia", "region": "Central Ethiopia" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[38.0, 9.5], [39.0, 9.0], [39.5, 8.0], [39.0, 7.5], [38.0, 7.5], [37.5, 8.5], [38.0, 9.5]]]
+      }
+    }
+  ]
+}
