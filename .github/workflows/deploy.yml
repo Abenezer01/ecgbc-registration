@@ -66,4 +66,4 @@ jobs:
             # Start up the containers via Docker Compose
             # (Assuming you run from the apps/backend directory or root depending on your setup)
             cd apps/backend
-            docker-compose up -d --build
+            docker compose up -d --build
