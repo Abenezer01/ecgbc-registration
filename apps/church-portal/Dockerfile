@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install --frozen-lockfile 2>/dev/null || npm install
+RUN npm install --legacy-peer-deps
 
 # ---- Builder ----
 FROM base AS builder
