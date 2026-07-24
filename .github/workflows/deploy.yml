@@ -18,9 +18,16 @@ jobs:
           script: |
             PROJECT_PATH="${{ secrets.VPS_PROJECT_PATH }}"
             if [ -z "$PROJECT_PATH" ]; then
-              PROJECT_PATH="~/ecgbc-registration"
+              PROJECT_PATH="$HOME/ecgbc-registration"
             fi
-            
+            # Expand tilde if present
+            PROJECT_PATH="${PROJECT_PATH/#\~/$HOME}"
+
+            # Clone repo if it doesn't exist yet
+            if [ ! -d "$PROJECT_PATH" ]; then
+              git clone https://github.com/Abenezer01/ecgbc-registration.git "$PROJECT_PATH"
+            fi
+
             # Navigate to project path or exit
             cd "$PROJECT_PATH" || exit 1
             
