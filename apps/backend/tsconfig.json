@@ -11,6 +11,7 @@
     "outDir": "./dist",
     "strict": true,
     "noImplicitAny": false,
+    "strictNullChecks": false,
     "jsx": "react",
     "resolveJsonModule": true,
     "esModuleInterop": true,

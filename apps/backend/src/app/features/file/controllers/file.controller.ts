@@ -210,7 +210,7 @@ export const bulkUploadMemberFiles = catchAsync(
       return next(new AppError(`Member with ID ${member} not found`, 404));
     }
 
-    const createdFileRecords = [];
+    const createdFileRecords: any[] = [];
 
     for (const file of memberFiles) {
    const newFileRecord =   await prisma.file.create({
@@ -250,7 +250,7 @@ export const bulkUploadFellowshipFiles = catchAsync(
       return next(new AppError(`Fellowship with ID ${fellowship} not found`, 404));
     }
 
-    const createdFileRecords = [];
+    const createdFileRecords: any[] = [];
 
     for (const file of fellowshipFiles) {
       const newFileRecord = await prisma.file.create({
