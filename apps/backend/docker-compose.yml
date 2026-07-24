@@ -54,9 +54,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    container_name: ecgbc-admin-portal
+    image: ecgbc-registration-admin
+    container_name: ecgbc-registration-admin
     ports:
-      - "3001:3001"
+      - "3003:3003"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     depends_on:
@@ -69,9 +70,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    container_name: ecgbc-church-portal
+    image: ecgbc-registration-church
+    container_name: ecgbc-registration-church
     ports:
-      - "3000:3000"
+      - "3002:3002"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     depends_on:
