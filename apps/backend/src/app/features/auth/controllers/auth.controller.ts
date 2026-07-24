@@ -159,12 +159,14 @@ export const loginStaff = catchAsync(
       payload,
       //@ts-ignore
       env.JWT_ACCESS_SECRET_KEY,
+      //@ts-ignore
       { expiresIn: env.JWT_ACCESS_EXPIRES_IN }
     );
     const refreshToken = await promisify(jwt.sign)(
       payload,
       //@ts-ignore
       env.JWT_REFRESH_SECRET_KEY,
+      //@ts-ignore
       {
         expiresIn: env.JWT_REFRESH_EXPIRES_IN,
       }
