@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, RefreshCw, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -32,49 +33,52 @@ interface Fellowship {
 
 const PAGE_SIZE = 20;
 
-const COLUMNS: Column<Fellowship>[] = [
-  {
-    key: "name",
-    header: "Fellowship Name",
-    sortable: true,
-    cell: (row) => (
-      <span className="font-medium text-zinc-900 dark:text-white">{row.name}</span>
-    ),
-  },
-  {
-    key: "region",
-    header: "Region",
-    sortable: true,
-    cell: (row) => (
-      <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-        <MapPin className="h-3.5 w-3.5 shrink-0" />
-        {row.region?.name ?? <span className="text-zinc-400">—</span>}
-      </div>
-    ),
-  },
-  {
-    key: "members",
-    header: "Members",
-    sortable: true,
-    cell: (row) => (
-      <span className="tabular-nums font-medium">
-        {row._count?.members ?? 0}
-      </span>
-    ),
-  },
-  {
-    key: "status",
-    header: "Status",
-    cell: (row) => (
-      <Badge variant={row.isActive ? "success" : "danger"}>
-        {row.isActive ? "Active" : "Inactive"}
-      </Badge>
-    ),
-  },
-];
-
 export default function FellowshipsPage() {
+  const router = useRouter();
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const COLUMNS: Column<Fellowship>[] = [
+    {
+      key: "name",
+      header: "Fellowship Name",
+      cell: (row) => (
+        <button 
+          onClick={() => router.push(`/fellowships/${row.id}`)}
+          className="font-medium text-zinc-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors text-left"
+        >
+          {row.name}
+        </button>
+      ),
+    },
+    {
+      key: "region",
+      header: "Region",
+      cell: (row) => (
+        <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          {row.region?.name ?? <span className="text-zinc-400">—</span>}
+        </div>
+      ),
+    },
+    {
+      key: "members",
+      header: "Members",
+      cell: (row) => (
+        <span className="tabular-nums font-medium">
+          {row._count?.members ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => (
+        <Badge variant={row.isActive ? "success" : "danger"}>
+          {row.isActive ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+  ];
   
   const [filters, setFilters] = useState<FellowshipsFilters>({
     page: 1,
@@ -102,15 +106,6 @@ export default function FellowshipsPage() {
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleSort = (column: Column<Fellowship>) => {
-    if (!column.sortable) return;
-    setFilters((prev) => ({
-      ...prev,
-      sortBy: column.key as string,
-      sortDirection: prev.sortBy === column.key && prev.sortDirection === "asc" ? "desc" : "asc",
-    }));
   };
 
   const { data, isLoading, refetch, isFetching } = useFellowships({
@@ -172,9 +167,6 @@ export default function FellowshipsPage() {
         rowKey={(row) => row.id}
         emptyTitle="No fellowships found"
         emptyDescription="Try adjusting your search criteria."
-        onSort={handleSort}
-        sortBy={filters.sortBy}
-        sortDirection={filters.sortDirection as "asc" | "desc"}
       />
 
       {total > PAGE_SIZE && (

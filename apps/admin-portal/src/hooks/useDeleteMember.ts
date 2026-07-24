@@ -14,7 +14,7 @@ export function useDeleteMember() {
     },
     onError: (error: any) => {
       const msg = error.response?.data?.message ?? "Failed to delete member";
-      addToast({ variant: "destructive", title: "Error", description: msg });
+      addToast({ variant: "error", title: "Error", description: msg });
     },
   });
 }

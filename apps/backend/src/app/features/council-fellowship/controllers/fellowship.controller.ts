@@ -39,7 +39,14 @@ export const getFellowship = catchAsync(
       );
     }
 
-    sendSuccessResponse(res, { fellowship });
+    const normalizedFellowship = {
+      ...fellowship,
+      isActive: Buffer.isBuffer((fellowship as any).isActive)
+        ? (fellowship as any).isActive[0] === 1
+        : ((fellowship as any).isActive === 1 || (fellowship as any).isActive === true || (fellowship as any).isActive === "1"),
+    };
+
+    sendSuccessResponse(res, { fellowship: normalizedFellowship });
   }
 );
 

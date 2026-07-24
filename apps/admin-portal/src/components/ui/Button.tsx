@@ -2,13 +2,14 @@
 
 import React from "react";
 import { cn } from "../../lib/utils";
-import { motion, HTMLMotionProps } from "framer-motion";
 
-export interface ButtonProps extends HTMLMotionProps<"button"> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: any;
   variant?: "default" | "primary" | "destructive" | "danger" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   /** When true, renders children directly (e.g. wrapping a Next.js <Link>) */
   asChild?: boolean;
+  loading?: boolean;
 }
 
 const variantStyles: Record<string, string> = {
@@ -33,8 +34,9 @@ const BASE =
   "inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "default", asChild = false, children, ...props }, ref) => {
+  ({ className, variant = "default", size = "default", asChild = false, children, loading = false, disabled, ...props }, ref) => {
     const classes = cn(BASE, variantStyles[variant], sizeStyles[size], className);
+    const isDisabled = disabled || loading;
 
     // When asChild, clone the single child element and merge classes
     if (asChild && React.isValidElement(children)) {
@@ -44,15 +46,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     return (
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+      <button
         className={classes}
         ref={ref}
+        disabled={isDisabled}
+        aria-busy={loading}
         {...props}
       >
+        {loading ? <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" /> : null}
         {children}
-      </motion.button>
+      </button>
     );
   }
 );

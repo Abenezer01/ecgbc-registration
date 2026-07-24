@@ -1,4 +1,4 @@
-const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'https://api.registration.ecgbc.org';
 
 export const fileUrl = (type: "report" | "file", url: string) => {
   if (!url) return "";

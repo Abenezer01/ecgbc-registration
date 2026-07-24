@@ -333,7 +333,7 @@ function EditStaffModal({ open, staff, onClose }: { open: boolean; staff: Staff;
   });
   
   const [selectedFellowships, setSelectedFellowships] = useState<string[]>(
-    staff.fellowships?.map((f) => f.fellowship.id) ?? []
+    staff.fellowships?.map((f) => f.fellowship?.id).filter((id): id is string => Boolean(id)) ?? []
   );
   
   const [errors, setErrors] = useState<Partial<typeof form>>({});

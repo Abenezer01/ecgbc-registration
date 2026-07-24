@@ -9,7 +9,6 @@ A clean pnpm monorepo containing all ECGBC registration system apps.
 | `@ecgbc/backend` | `apps/backend` | 5000 | Express + Prisma REST API |
 | `@ecgbc/admin-portal` | `apps/admin-portal` | 3000 | Next.js Admin Enterprise Portal |
 | `@ecgbc/church-portal` | `apps/church-portal` | 3001 | Next.js Member Church Portal |
-| `@ecgbc/admin-frontend` | `apps/admin-frontend` | 5173 | Legacy Vite Admin Frontend |
 
 ## Prerequisites
 

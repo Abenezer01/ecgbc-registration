@@ -37,50 +37,100 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex w-full bg-white dark:bg-zinc-950">
       <Toaster position="top-center" />
       
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-neutral-100">
-        <div className="p-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-              <Church className="w-6 h-6" />
-            </div>
+      {/* Left Side: Brand & Visual (Hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between overflow-hidden p-12 text-white">
+        {/* Background Image & Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://res.cloudinary.com/duijvdn0m/image/upload/v1766689173/hero-bg_kjbgea.jpg" 
+            alt="ECGBC Background" 
+            className="w-full h-full object-cover"
+          />
+          {/* Slightly different tint for church portal: deeper slate/blue mix */}
+          <div className="absolute inset-0 bg-slate-900/80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent" />
+        </div>
+
+        {/* Logo Section */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white shadow-xl shadow-black/20">
+            <img 
+              src="https://res.cloudinary.com/duijvdn0m/image/upload/v1766689161/logo_wzaui5.png" 
+              alt="ECGBC Logo" 
+              className="w-8 h-8 object-contain"
+            />
           </div>
-          
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">
-              Church Portal
-            </h1>
-            <p className="text-neutral-500 mt-2 text-sm">
-              Sign in to manage your church's account and reports.
+          <div className="flex flex-col">
+            <span className="font-bold text-[10px] leading-tight tracking-[0.1em] uppercase text-white/80">Ethiopian Council of</span>
+            <span className="font-black text-lg leading-none tracking-tight uppercase text-white">Gospel Believers' Churches</span>
+          </div>
+        </div>
+
+        {/* Hero Text */}
+        <div className="relative z-10 max-w-md mt-auto pb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-xs font-semibold uppercase tracking-wider text-white">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            Official Church Portal
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+            Manage your <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-amber-300">Church Profile.</span>
+          </h1>
+          <p className="text-lg text-white/80 leading-relaxed">
+            Access your dashboard to manage annual reports, update contact information, and track compliance status seamlessly.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side: Login Form */}
+      <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-1/2 lg:px-20 xl:px-24">
+        <div className="mx-auto w-full max-w-sm">
+          {/* Mobile Logo Header */}
+          <div className="lg:hidden flex flex-col items-center mb-10 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-slate-900 shadow-xl mb-4">
+              <img 
+                src="https://res.cloudinary.com/duijvdn0m/image/upload/v1766689161/logo_wzaui5.png" 
+                alt="ECGBC Logo" 
+                className="w-10 h-10 object-contain brightness-0 invert"
+              />
+            </div>
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-white uppercase tracking-tight">ECGBC Church Portal</h1>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">Sign In</h2>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              Enter your credentials to access your church's account.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Email Address
               </label>
               <input
                 type="email"
                 required
-                className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                placeholder="Enter your email"
+                className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:border-slate-900 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-900 dark:focus:ring-slate-500 outline-none transition-all"
+                placeholder="church@ecgbc.org"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Password
               </label>
               <input
                 type="password"
                 required
-                className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                placeholder="Enter your password"
+                className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:border-slate-900 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-900 dark:focus:ring-slate-500 outline-none transition-all"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
@@ -90,8 +140,8 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               className={cn(
-                "w-full py-2.5 px-4 rounded-lg font-medium text-white transition-all",
-                "bg-primary hover:bg-primary/90 focus:ring-4 focus:ring-primary/20",
+                "w-full h-11 rounded-lg font-medium text-white transition-all shadow-lg shadow-slate-900/20 mt-2",
+                "bg-slate-900 hover:bg-slate-800 focus:ring-4 focus:ring-slate-900/20",
                 "flex items-center justify-center",
                 isLoading && "opacity-70 cursor-not-allowed"
               )}
@@ -106,15 +156,12 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-        </div>
-        
-        <div className="bg-neutral-50 px-8 py-4 border-t border-neutral-100 text-center">
-          <p className="text-sm text-neutral-500">
-            Having trouble logging in?{" "}
-            <a href="#" className="text-primary hover:underline font-medium">
-              Contact ECGBC Support
-            </a>
-          </p>
+
+          <div className="mt-8 text-center">
+            <p className="text-xs text-neutral-400">
+              © {new Date().getFullYear()} Ethiopian Council of Gospel Believers' Churches. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -15,10 +15,12 @@ import {
   useVerifyPayment,
 } from "@/hooks/usePortalReports";
 import { useChurchProfile } from "@/hooks/useChurchProfile";
-import { generateInvoicePDF, generateReceiptPDF } from "@/lib/pdf-generator";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { Landmark, Smartphone } from "lucide-react";
+import { InvoicePreviewModal } from "@/components/modals/InvoicePreviewModal";
+import { ReceiptPreviewModal } from "@/components/modals/ReceiptPreviewModal";
+import { formatDate, formatCurrency } from "@/lib/formatters";
 
 export default function ReportsPage() {
   const [addOpen, setAddOpen] = useState(false);
@@ -33,6 +35,11 @@ export default function ReportsPage() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [viewerName, setViewerName] = useState<string | null>(null);
+
+  // Invoice/Receipt Preview states
+  const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
+  const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   const { data: reports = [], isLoading: reportsLoading } = usePortalReports();
   const { data: reportRequests = [], isLoading: requestsLoading } = usePortalReportRequests();
@@ -179,7 +186,7 @@ export default function ReportsPage() {
       header: "Submitted",
       cell: (row: Report) => (
         <span className="text-neutral-500 text-xs">
-          {row.reportedAt ? new Date(row.reportedAt).toLocaleDateString() : "—"}
+          {row.reportedAt ? formatDate(row.reportedAt, "short") : "—"}
         </span>
       ),
     },
@@ -191,8 +198,7 @@ export default function ReportsPage() {
         return (
           <div className="space-y-1">
             <p className="font-semibold text-zinc-900 text-sm">
-              {row.reportingFee.currency}{" "}
-              {Number(row.reportingFee.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatCurrency(row.reportingFee.amount, row.reportingFee.currency)}
             </p>
             {feeStatusBadge(row.reportingFee)}
             {row.reportingFee.status !== "PAID" && (
@@ -218,7 +224,7 @@ export default function ReportsPage() {
                 onClick={() => handleDownload(`${row.year}-report`, row.file!)}
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1"
+                className="!h-8 !text-xs !gap-1 !text-neutral-700 !border-neutral-300 hover:!bg-neutral-50"
               >
                 <FileDown className="h-3.5 w-3.5" /> Download
               </Button>
@@ -226,7 +232,7 @@ export default function ReportsPage() {
                 onClick={() => triggerViewer(row.file!, `${row.year}-report.pdf`)}
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1 text-blue-600 border-blue-100 hover:bg-blue-50"
+                className="!h-8 !text-xs !gap-1 !text-blue-600 !border-blue-200 hover:!bg-blue-50"
               >
                 <Eye className="h-3.5 w-3.5" /> View
               </Button>
@@ -235,22 +241,28 @@ export default function ReportsPage() {
           {!row.file && (
             <span className="text-xs text-neutral-400 font-medium">No File</span>
           )}
-          {row.reportingFee && row.reportingFee.status !== "PAID" && (
+          {row.reportingFee && (
             <Button
-              onClick={() => generateInvoicePDF(row, churchProfile)}
+              onClick={() => {
+                setSelectedReport(row);
+                setInvoicePreviewOpen(true);
+              }}
               variant="outline"
               size="sm"
-              className="h-8 text-xs gap-1 text-emerald-600 border-emerald-100 hover:bg-emerald-50"
+              className="!h-8 !text-xs !gap-1 !text-emerald-600 !border-emerald-200 hover:!bg-emerald-50"
             >
               <FileDown className="h-3.5 w-3.5" /> Invoice
             </Button>
           )}
           {row.reportingFee && row.reportingFee.status === "PAID" && (
             <Button
-              onClick={() => generateReceiptPDF(row, churchProfile)}
+              onClick={() => {
+                setSelectedReport(row);
+                setReceiptPreviewOpen(true);
+              }}
               variant="outline"
               size="sm"
-              className="h-8 text-xs gap-1 text-blue-600 border-blue-100 hover:bg-blue-50"
+              className="!h-8 !text-xs !gap-1 !text-blue-600 !border-blue-200 hover:!bg-blue-50"
             >
               <FileDown className="h-3.5 w-3.5" /> Receipt
             </Button>
@@ -522,6 +534,20 @@ export default function ReportsPage() {
         onClose={() => setViewerOpen(false)}
         fileUrl={viewerUrl}
         fileName={viewerName}
+      />
+
+      <InvoicePreviewModal
+        open={invoicePreviewOpen}
+        onClose={() => setInvoicePreviewOpen(false)}
+        report={selectedReport}
+        churchProfile={churchProfile}
+      />
+
+      <ReceiptPreviewModal
+        open={receiptPreviewOpen}
+        onClose={() => setReceiptPreviewOpen(false)}
+        report={selectedReport}
+        churchProfile={churchProfile}
       />
     </div>
   );

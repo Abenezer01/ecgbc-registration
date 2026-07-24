@@ -1,6 +1,6 @@
 import { showToast } from "@/components/ui/Toast";
-import api, { AxiosInstance } from "./api";
-import { AxiosError } from "axios";
+import api from "./api";
+import type { AxiosError } from "axios";
 
 interface ApiOptions {
   /** If true, errors will not trigger a toast notification */
@@ -13,26 +13,35 @@ interface ApiOptions {
  */
 export function useApi() {
   const request = async <T>(
-    method: keyof AxiosInstance,
+    method: "get" | "post" | "put" | "patch" | "delete",
     url: string,
     config: any = {},
     opts: ApiOptions = {}
   ): Promise<any> => {
     try {
-      const response = await api[method]<T>(url, config);
+      const methodMap = {
+        get: api.get.bind(api),
+        post: api.post.bind(api),
+        put: api.put.bind(api),
+        patch: api.patch.bind(api),
+        delete: api.delete.bind(api),
+      } as const;
+
+      const response = await methodMap[method]<T>(url, config);
       // Return the full AxiosResponse so callers can use extractData/etc.
       return response;
     } catch (err) {
-      const axiosError = err as AxiosError;
+      const axiosError = err as AxiosError<{ message?: string; error?: string }>;
+      const responseData = axiosError.response?.data as { message?: string; error?: string } | undefined;
       const message =
-        axiosError.response?.data?.message ||
-        axiosError.response?.data?.error ||
+        responseData?.message ||
+        responseData?.error ||
         axiosError.message ||
         "An unknown error occurred";
 
       if (!opts.suppressErrorToast) {
         showToast({
-          variant: "destructive",
+          variant: "error",
           title: "Error",
           description: message,
         });

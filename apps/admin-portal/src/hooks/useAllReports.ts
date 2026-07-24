@@ -24,6 +24,7 @@ export interface GlobalReport {
     amount: string;
     currency: string;
     status: string;
+    crv?: string;
   };
 }
 
@@ -38,7 +39,7 @@ export function useAllReports(page = 1, limit = 50) {
         },
       });
       const { data, meta } = extractPaginatedData(res);
-      return { reports: (data as any).reports || [], total: meta.total };
+      return { reports: (data as any).reports || [], total: meta?.total ?? 0 };
     },
   });
 }

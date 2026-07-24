@@ -69,7 +69,9 @@ export function useCreateMemberReport() {
       if (bankReference) formData.append("bankReference", bankReference);
       if (report) formData.append("report", report);
 
-      const res = await api.post(`/reports/member`, formData);
+      const res = await api.post(`/reports/member`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const data = extractData(res);
       return (data as any).report;
     },
@@ -114,7 +116,9 @@ export function useUpdateMemberReport() {
       if (bankReference) formData.append("bankReference", bankReference);
       if (report) formData.append("report", report);
 
-      const res = await api.patch(`/reports/member`, formData);
+      const res = await api.patch(`/reports/member`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const data = extractData(res);
       return (data as any).report;
     },

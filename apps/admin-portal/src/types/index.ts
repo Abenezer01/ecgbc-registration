@@ -35,6 +35,67 @@ export interface Report {
   file?: string;
 }
 
+export interface Permission {
+  id?: string;
+  codeName?: string;
+  name?: string;
+}
+
+export interface AuthData {
+  accessToken: string;
+  refreshToken?: string;
+  staff: Staff;
+  rbac: RBACScope | null;
+}
+
+export interface RBACScope {
+  allowedFellowshipIds?: string[];
+  permissions?: string[];
+  role?: {
+    id?: string;
+    name?: string;
+    type?: {
+      value?: string;
+      description?: string;
+    };
+  };
+}
+
+export interface Staff {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string;
+  phoneNumber?: string;
+  role?: {
+    id?: string;
+    name?: string;
+    roleId?: string;
+    permissions?: Permission[];
+    type?: {
+      value?: string;
+      description?: string;
+    };
+  };
+  roleId?: string;
+  state?: {
+    value?: string;
+    description?: string;
+  };
+  fellowships?: Array<{
+    id?: string;
+    name?: string;
+    fellowship?: {
+      id?: string;
+      name?: string;
+    };
+  }>;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Member {
   id: string;
   firstName: string;
@@ -55,9 +116,5 @@ export interface Member {
   createdAt: string;
   updatedAt: string;
   reports?: Report[];
-
-  // Computed properties
-  get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
+  fullName?: string;
 }

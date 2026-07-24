@@ -18,6 +18,7 @@ export interface MembersFilters {
   pageSize?: number;
   search?: string;
   fellowshipId?: string;
+  councilFellowshipId?: string;
   typeId?: string;
   stateId?: string;
   regionId?: string;
@@ -40,7 +41,9 @@ export function useMembers(filters: MembersFilters = {}) {
         limit: filters.pageSize,
         search: filters.search,
         filters: {
-          councilFellowshipId: filters.fellowshipId !== 'all' ? filters.fellowshipId : undefined,
+          councilFellowshipId: (filters.councilFellowshipId || filters.fellowshipId) !== 'all'
+            ? (filters.councilFellowshipId || filters.fellowshipId)
+            : undefined,
           typeId: filters.typeId !== 'all' ? filters.typeId : undefined,
           stateId: filters.stateId !== 'all' ? filters.stateId : undefined,
           regionId: filters.regionId !== 'all' ? filters.regionId : undefined,

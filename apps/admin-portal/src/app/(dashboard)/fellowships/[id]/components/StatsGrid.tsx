@@ -1,51 +1,47 @@
 "use client";
 
 import React from "react";
-import { FileText, Users, UserCheck, Calendar, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Users, UserCheck, FileText, Calendar, MapPin } from "lucide-react";
 
 interface StatsGridProps {
-  member: any;
-  documentCompleteness?: any;
+  fellowship: any;
 }
 
-export function StatsGrid({ member, documentCompleteness }: StatsGridProps) {
-  const m = member as any;
-  const lastReport = m.reports?.sort((a: any, b: any) => b.year - a.year)[0];
-  const lastReportYear = lastReport?.year ? `${lastReport.year} E.C` : "—";
-  const isCompliant = lastReport?.status?.value === "submitted";
+export function StatsGrid({ fellowship }: StatsGridProps) {
+  const f = fellowship as any;
   
   const stats = [
     {
-      label: "Congregation Size",
-      value: m.congregationSize || "—",
+      label: "Total Members",
+      value: f._count?.members || 0,
       icon: <Users className="h-5 w-5" />,
       color: "blue",
-      description: "Total members"
+      description: "Registered members"
     },
     {
-      label: "Branches",
-      value: m.branchesCount || "—",
+      label: "Active Members",
+      value: f.activeMembersCount || 0,
       icon: <UserCheck className="h-5 w-5" />,
-      color: "purple",
-      description: "Local branches"
+      color: "green",
+      description: "Currently active"
     },
     {
-      label: "Last Report",
-      value: lastReportYear,
+      label: "Reports",
+      value: f.reports?.length || 0,
       icon: <FileText className="h-5 w-5" />,
+      color: "purple",
+      description: "Submitted reports"
+    },
+    {
+      label: "Board Members",
+      value: f.boardMembers?.length || 0,
+      icon: <UserCheck className="h-5 w-5" />,
       color: "indigo",
-      description: "Latest submission"
+      description: "Leadership team"
     },
     {
-      label: "Compliance Status",
-      value: isCompliant ? "Compliant" : (lastReport ? "Pending" : "No Reports"),
-      icon: isCompliant ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />,
-      color: isCompliant ? "green" : "amber",
-      description: "Annual reporting"
-    },
-    {
-      label: "Member Since",
-      value: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "—",
+      label: "Established",
+      value: f.createdAt ? new Date(f.createdAt).toLocaleDateString() : "—",
       icon: <Calendar className="h-5 w-5" />,
       color: "zinc",
       description: "Registration date"
@@ -55,7 +51,6 @@ export function StatsGrid({ member, documentCompleteness }: StatsGridProps) {
   const colorClasses = {
     blue: "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/50",
     green: "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900/50",
-    amber: "bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50",
     purple: "bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/50",
     indigo: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50",
     zinc: "bg-zinc-50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"

@@ -9,7 +9,7 @@ RUN npm install -g tsx
 COPY package.json pnpm-lock.yaml* .npmrc* ./
 COPY prisma ./prisma/ 
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile --config.blockExoticSubdeps=false --config.dangerouslyAllowAllBuilds=true
 RUN pnpm exec prisma generate
 
 # Stage 2: Builder
@@ -36,7 +36,7 @@ RUN ls -la /usr/src/app/
 FROM node:22 AS runner
 WORKDIR /usr/src/app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 # Install OpenSSL 1.1 for Prisma
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN npm install -g tsx

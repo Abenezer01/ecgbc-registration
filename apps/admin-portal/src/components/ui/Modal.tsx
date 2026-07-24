@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, type HTMLAttributes } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -10,7 +10,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   description?: string;
-  children: React.ReactNode;
+  children: JSX.Element | JSX.Element[] | string | number | boolean | null;
   className?: string;
   /** Max width of the modal panel. Defaults to "max-w-lg" */
   size?: "sm" | "md" | "lg" | "xl";
@@ -25,7 +25,7 @@ const sizeMap = {
 
 export function Modal({ open, onClose, title, description, children, className, size = "md" }: ModalProps) {
   // Close on Escape key
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     if (open) document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -82,7 +82,7 @@ export function Modal({ open, onClose, title, description, children, className, 
 }
 
 /** Convenience footer row inside a Modal */
-export function ModalFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export function ModalFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cn("mt-6 flex items-center justify-end gap-3", className)} {...props} />
   );

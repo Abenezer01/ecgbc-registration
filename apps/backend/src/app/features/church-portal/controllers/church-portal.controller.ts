@@ -84,6 +84,16 @@ export const createChurchPortalReport = catchAsync(
     const { year, bankReference, reportedAt, remark, reportRequestId } = req.body;
     const reportFile = req.file;
 
+    // Enforce bank reference uniqueness
+    if (bankReference) {
+      const existing = await prisma.report.findFirst({
+        where: { bankReference },
+      });
+      if (existing) {
+        return next(new AppError(`Bank reference "${bankReference}" has already been used. Please provide a unique bank reference number.`, 409));
+      }
+    }
+
     // Get the default REPORTED status from DataLookup
     const reportedStatus = await prisma.dataLookup.findFirst({
       where: { value: "reported", type: "report_state" },
@@ -271,6 +281,14 @@ export const submitReportPayment = catchAsync(
 
     if (!bankReference) {
       return next(new AppError("Bank Reference number is required", 400));
+    }
+
+    // Enforce bank reference uniqueness (exclude the current report from the check)
+    const duplicateRef = await prisma.report.findFirst({
+      where: { bankReference, NOT: { id } },
+    });
+    if (duplicateRef) {
+      return next(new AppError(`Bank reference "${bankReference}" has already been used. Please provide a unique bank reference number.`, 409));
     }
 
     const report = await prisma.report.findFirst({

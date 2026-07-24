@@ -52,16 +52,16 @@ export function DataTable<T>({
   onRowClick,
 }: DataTableProps<T>) {
   return (
-    <div className={cn("overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800", className)}>
+    <div className={cn("overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm", className)}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+            <tr className="border-b border-neutral-200 bg-neutral-50">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap",
+                    "px-4 py-3 text-left font-semibold text-neutral-600 whitespace-nowrap",
                     col.className
                   )}
                 >
@@ -70,7 +70,7 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-[#0f0f11]">
+          <tbody className="divide-y divide-neutral-100 bg-white">
             {isLoading ? (
               Array.from({ length: skeletonRows }).map((_, i) => (
                 <TableRowSkeleton key={i} cols={columns.length} />
@@ -91,14 +91,14 @@ export function DataTable<T>({
                   key={rowKey(row)}
                   onClick={() => onRowClick?.(row)}
                   className={cn(
-                    "transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/40",
+                    "transition-colors hover:bg-neutral-50",
                     onRowClick && "cursor-pointer"
                   )}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={cn("px-4 py-3 text-zinc-700 dark:text-zinc-300", col.className)}
+                      className={cn("px-4 py-3 text-neutral-700", col.className)}
                     >
                       {col.cell(row, i)}
                     </td>

@@ -58,7 +58,9 @@ export const loginChurchUser = catchAsync(
         email: churchUser.email,
       },
       jwtSecret,
-      { expiresIn: jwtExpiresIn as string }
+      {
+        expiresIn: jwtExpiresIn as jwt.SignOptions["expiresIn"],
+      }
     );
 
     // Log activity

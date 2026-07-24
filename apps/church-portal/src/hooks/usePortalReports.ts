@@ -5,6 +5,7 @@ export interface Report {
   id: string;
   year: number;
   crv?: string;
+  bankReference?: string;
   remark?: string;
   file?: string;
   reportedAt: string;
@@ -70,6 +71,7 @@ export function useCreatePortalReport() {
     mutationFn: async ({
       year,
       crv,
+      bankReference,
       reportedAt,
       remark,
       report,
@@ -77,6 +79,7 @@ export function useCreatePortalReport() {
     }: {
       year: number;
       crv?: string;
+      bankReference?: string;
       reportedAt?: string;
       remark?: string;
       report?: File;
@@ -93,11 +96,14 @@ export function useCreatePortalReport() {
       formData.append("reportedAt", formattedDate);
 
       if (crv) formData.append("crv", crv);
+      if (bankReference) formData.append("bankReference", bankReference);
       if (remark) formData.append("remark", remark);
       if (report) formData.append("report", report);
       if (reportRequestId) formData.append("reportRequestId", reportRequestId);
 
-      const res = await api.post(`/church-portal/reports`, formData);
+      const res = await api.post(`/church-portal/reports`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return res.data.data.report;
     },
     onSuccess: () => {

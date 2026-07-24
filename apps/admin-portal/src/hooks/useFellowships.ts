@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
 import { buildQueryString } from "../lib/query-builder";
-import { extractPaginatedData } from "../lib/response-parser";
+import { extractPaginatedData, extractData } from "../lib/response-parser";
 
 export interface Fellowship {
   id: string;
@@ -18,6 +18,7 @@ export interface Fellowship {
 export interface FellowshipsFilters {
   page?: number;
   pageSize?: number;
+  limit?: number;
   search?: string;
   regionId?: string;
   isActive?: string;
@@ -28,7 +29,7 @@ export interface FellowshipsFilters {
 export function useFellowships(params: FellowshipsFilters = {}) {
   const queryString = buildQueryString({
     page: params.page,
-    limit: params.pageSize || 20,
+    limit: params.pageSize ?? params.limit ?? 20,
     search: params.search,
     filters: {
       regionId: params.regionId !== "all" ? params.regionId : undefined,
@@ -48,5 +49,17 @@ export function useFellowships(params: FellowshipsFilters = {}) {
         total: meta?.total || 0,
       };
     },
+  });
+}
+
+export function useFellowship(id: string) {
+  return useQuery<Fellowship>({
+    queryKey: ["fellowship", id],
+    queryFn: async () => {
+      const res = await api.get(`/council-fellowship/${id}`);
+      const data = extractData(res);
+      return (data as any).fellowship as Fellowship;
+    },
+    enabled: !!id,
   });
 }

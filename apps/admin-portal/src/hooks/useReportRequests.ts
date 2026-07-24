@@ -24,7 +24,7 @@ export function useReportRequests(page = 1, limit = 20) {
         params: { _page: page, _limit: limit },
       });
       const { data, meta } = extractPaginatedData(res);
-      return { requests: (data as any).requests || [], total: meta.total };
+      return { requests: (data as any).requests || [], total: meta?.total ?? 0 };
     },
   });
 }

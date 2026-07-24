@@ -68,7 +68,6 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^9.0.3",
     "npx": "^10.2.2",
-    "push": "^0.1.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

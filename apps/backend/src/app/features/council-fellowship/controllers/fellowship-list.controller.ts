@@ -83,7 +83,7 @@ export const getFellowshipList = catchAsync(
     // Add isActive field to each fellowship (default to true until migration is run)
     const fellowshipsWithStatus = fellowships.map((f: any) => ({
       ...f,
-      isActive: f.isActive ?? true,
+      isActive: Buffer.isBuffer(f.isActive) ? f.isActive[0] === 1 : (f.isActive === 1 || f.isActive === true || f.isActive === "1" || f.isActive == null),
     }));
 
     sendPaginatedResponse(
