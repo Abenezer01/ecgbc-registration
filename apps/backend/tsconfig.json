@@ -10,11 +10,12 @@
     ],
     "outDir": "./dist",
     "strict": true,
+    "noImplicitAny": false,
     "jsx": "react",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "src/scripts", "src/seeders"]
 }
