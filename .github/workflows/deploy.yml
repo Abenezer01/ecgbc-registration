@@ -51,6 +51,7 @@ jobs:
             SUPER_ADMIN_EMAIL="${{ secrets.SUPER_ADMIN_EMAIL }}"
             SUPER_ADMIN_PASSWORD="${{ secrets.SUPER_ADMIN_PASSWORD }}"
             PAYMENT_VERIFY_API_KEY="${{ secrets.PAYMENT_VERIFY_API_KEY }}"
+            NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
             EOF
             
             # Generate the church portal .env.local file

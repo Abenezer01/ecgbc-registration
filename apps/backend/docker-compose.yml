@@ -48,5 +48,35 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  admin-portal:
+    build:
+      context: ../../apps/admin-portal
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: ecgbc-admin-portal
+    ports:
+      - "3001:3001"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  church-portal:
+    build:
+      context: ../../apps/church-portal
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: ecgbc-church-portal
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    depends_on:
+      - app
+    restart: unless-stopped
+
 volumes:
   mysql_data:
