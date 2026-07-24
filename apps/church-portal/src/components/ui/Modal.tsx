@@ -10,7 +10,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   description?: string;
-  children: JSX.Element | JSX.Element[] | string | number | boolean | null;
+  children: React.ReactNode;
   className?: string;
   /** Max width of the modal panel. Defaults to "max-w-lg" */
   size?: "sm" | "md" | "lg" | "xl";
