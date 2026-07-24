@@ -16,7 +16,13 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /path/to/your/project/on/vps || exit 1
+            PROJECT_PATH="${{ secrets.VPS_PROJECT_PATH }}"
+            if [ -z "$PROJECT_PATH" ]; then
+              PROJECT_PATH="~/ecgbc-registration"
+            fi
+            
+            # Navigate to project path or exit
+            cd "$PROJECT_PATH" || exit 1
             
             # Pull the latest changes
             git pull origin main
