@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, RefreshCw, Download } from "lucide-react";
 import { useMembers, MembersFilters } from "@/hooks/useMembers";
+import { useMemberStats } from "@/hooks/useMemberStats";
 import { useFellowships } from "@/hooks/useFellowships";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,10 +22,26 @@ import { saveAs } from "file-saver";
 
 import { columns } from "./components/Columns";
 import { MembersFilterRibbon } from "./components/MembersFilterRibbon";
+import { MembersStatCards } from "./components/MembersStatCards";
 import { AddMemberModal } from "./components/AddMemberModal";
 import { formatEthiopianDate, getCurrentEthYear } from "@/lib/dateUtils";
 
 const PAGE_SIZE = 20;
+
+const DEFAULT_FILTERS: MembersFilters = {
+  page: 1,
+  pageSize: PAGE_SIZE,
+  search: "",
+  fellowshipId: "all",
+  typeId: "all",
+  stateId: "all",
+  regionId: "all",
+  isInEthiopia: "all",
+  memberTypeChanged: "all",
+  filterByReport: false,
+  reportStatus: "all",
+  reportYear: new Date().getFullYear() - 8,
+};
 
 export default function MembersPage() {
   const router = useRouter();
@@ -38,23 +55,13 @@ export default function MembersPage() {
 
   const deleteMemberMutation = useDeleteMember();
 
-  const [filters, setFilters] = useState<MembersFilters>({
-    page: 1,
-    pageSize: PAGE_SIZE,
-    search: "",
-    fellowshipId: "all",
-    typeId: "all",
-    stateId: "all",
-    regionId: "all",
-    isInEthiopia: "all",
-    memberTypeChanged: "all",
-    filterByReport: false,
-    reportStatus: "all",
-    reportYear: new Date().getFullYear() - 8,
-  });
+  const [filters, setFilters] = useState<MembersFilters>(DEFAULT_FILTERS);
+
+  const handleResetFilters = () => setFilters(DEFAULT_FILTERS);
 
   const { data: lookups } = useDataLookups();
   const { data: fellowshipsData } = useFellowships({ limit: 100 });
+  const { data: stats, isLoading: statsLoading } = useMemberStats(filters);
 
   const memberTypeOptions = lookups?.filter((l) => l.type === "member_type") || [];
   const regionOptions = lookups?.filter((l) => l.type === "region") || [];
@@ -308,6 +315,13 @@ export default function MembersPage() {
         </>
       )}
 
+      <MembersStatCards
+        filters={filters}
+        stats={stats}
+        isLoading={statsLoading}
+        onFilterChange={(next) => setFilters({ ...next, page: 1 })}
+      />
+
       <MembersFilterRibbon
         filters={filters}
         updateFilter={updateFilter}
@@ -318,6 +332,7 @@ export default function MembersPage() {
         regionOptions={regionOptions}
         reportStatusOptions={reportStatusOptions}
         staffIsOwner={staffIsOwner}
+        onReset={handleResetFilters}
       />
 
       <DataTable<any>
