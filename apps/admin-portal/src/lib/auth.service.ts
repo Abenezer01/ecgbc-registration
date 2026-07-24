@@ -60,7 +60,7 @@ export const clearTokens = (): void => {
 };
 
 /**
- * Login user with credentials
+ * Login user with credentialss
  */
 export const login = async (
   email: string,
