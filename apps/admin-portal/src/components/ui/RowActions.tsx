@@ -330,7 +330,7 @@ function MenuActions({ actions }: { actions: Action[] }) {
 
 export function RowActions({
   actions,
-  mode = "bar",
+  mode = "menu",
   showLabels = false,
   className,
 }: RowActionsProps) {
