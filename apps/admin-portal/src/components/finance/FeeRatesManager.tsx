@@ -3,6 +3,7 @@ import { DataTable, Button, Modal, ModalFooter, FormField, Input } from "@/compo
 import { useCategoryFeeRates, useUpsertFeeRate, CategoryFeeRate } from "../../hooks/useFinance";
 import { useDataLookups } from "../../hooks/useDataLookups";
 import { Edit2 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 export function FeeRatesManager() {
   const { data: rates = [], isLoading: loadingRates } = useCategoryFeeRates();
@@ -83,7 +84,7 @@ export function FeeRatesManager() {
       header: "Current Fee",
       cell: (row: any) => (
         <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-          {row.rate ? `${row.rate.currency || 'ETB'} ${Number(row.rate.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "Not Set"}
+          {row.rate ? formatCurrency(row.rate.amount, row.rate.currency || 'ETB', 2) : "Not Set"}
         </span>
       ),
     },

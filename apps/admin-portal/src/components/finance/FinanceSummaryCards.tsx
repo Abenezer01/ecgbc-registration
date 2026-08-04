@@ -1,6 +1,7 @@
 import React from "react";
 import { DollarSign, Clock, TrendingUp } from "lucide-react";
 import { FinanceSummary } from "../../hooks/useFinance";
+import { formatCurrency } from "@/lib/utils";
 
 interface FinanceSummaryCardsProps {
   summary: FinanceSummary;
@@ -58,7 +59,7 @@ export function FinanceSummaryCards({
               <div className="h-7 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mt-1" />
             ) : (
               <p className="text-2xl font-bold text-zinc-900 dark:text-white truncate mt-0.5">
-                {summary?.currency || 'ETB'} {card.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatCurrency(card.value, summary?.currency || 'ETB', 2)}
               </p>
             )}
             <p className="text-xs text-zinc-400 mt-1">

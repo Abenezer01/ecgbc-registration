@@ -4,6 +4,7 @@ import React from "react";
 import { Users, Globe, MapPin, Clock, Building2 } from "lucide-react";
 import type { MembersFilters } from "@/hooks/useMembers";
 import type { MemberStats } from "@/hooks/useMemberStats";
+import { formatNumber } from "@/lib/utils";
 
 interface MembersStatCardsProps {
   filters: MembersFilters;
@@ -261,7 +262,7 @@ function StatCard({
               compact ? "text-xl" : "text-2xl",
             ].join(" ")}
           >
-            {value.toLocaleString()}
+            {formatNumber(value)}
           </p>
         )}
 

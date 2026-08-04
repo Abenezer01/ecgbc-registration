@@ -1,38 +1,44 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Plus, UploadCloud, FileText, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Drawer, Button, Input, FormField, Select, Label, RowActions, presets,
 } from "@/components/ui";
-import { useCreateMember } from "@/hooks/useMembers";
+import { useUpdateMember } from "@/hooks/useMembers";
 import { useFellowships } from "@/hooks/useFellowships";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useAuth } from "@/hooks/useAuth";
 import { countries } from "@/lib/countries";
 import { formatEthiopianDate } from "@/lib/dateUtils";
-import api from "@/lib/api";
 
-interface AddMemberModalProps {
+interface EditMemberModalProps {
   open: boolean;
   onClose: () => void;
+  member: any; // The full member object to pre-populate
 }
 
-const MAX_FILES = 5;
-const MAX_TOTAL_SIZE_MB = 50;
-const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
-const ACCEPTED_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg";
-
-export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
-  const router = useRouter();
+export function EditMemberModal({ open, onClose, member }: EditMemberModalProps) {
   const { staff, rbac } = useAuth();
   const staffIsOwner = staff?.role?.type?.value === "role_type_owner";
 
   const { data: fellowshipsData } = useFellowships({ limit: 100 });
   const { data: lookups = [] } = useDataLookups();
-  const { mutateAsync: createMember, isPending: submitting } = useCreateMember();
+  const { mutateAsync: updateMember, isPending: submitting } = useUpdateMember();
 
+  const memberTypeOptions = lookups.filter((l) => l.type === "member_type");
+  const regionOptions = lookups.filter((l) => l.type === "region");
+  const stateOptions = lookups.filter((l) => l.type === "object_state" && l.value !== "object_state_deleted");
+  const boardTitleOptions = lookups.filter((l) => l.type === "board_title");
+
+  const fellowshipOptions = useMemo(() => {
+    const list = fellowshipsData?.fellowships || [];
+    if (staffIsOwner) return list;
+    const allowed = rbac?.allowedFellowshipIds || [];
+    return list.filter((f) => allowed.includes(f.id));
+  }, [fellowshipsData, staffIsOwner, rbac]);
+
+  // ─── Form state ─────────────────────────────────────────────────────────────
   const [form, setForm] = useState({
     name: "",
     nameEn: "",
@@ -45,55 +51,88 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
     country: "",
     regionId: "",
     city: "",
+    subcity: "",
+    zone: "",
+    district: "",
+    houseNumber: "",
+    poBoxNumber: "",
     phoneNumber: "",
     email: "",
-    isActive: true,
-    boardMembers: [] as { id: string; fullName: string; fullNameEn: string; phoneNumber: string; titleId: string }[],
+    boardMembers: [] as {
+      id: string;
+      fullName: string;
+      fullNameEn: string;
+      phoneNumber: string;
+      titleId: string;
+    }[],
   });
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileCategories, setFileCategories] = useState<Record<number, string>>({});
-  const [fileError, setFileError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Board Member fields
+  // Board member input fields
   const [boardName, setBoardName] = useState("");
   const [boardNameEn, setBoardNameEn] = useState("");
   const [boardPhone, setBoardPhone] = useState("");
   const [boardTitleId, setBoardTitleId] = useState("");
   const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
 
-  const memberTypeOptions = lookups.filter((l) => l.type === "member_type");
-  const regionOptions = lookups.filter((l) => l.type === "region");
-  const stateOptions = lookups.filter((l) => l.type === "object_state" && l.value !== "object_state_deleted");
-  const boardTitleOptions = lookups.filter((l) => l.type === "board_title");
-  const fileCategoryOptions = lookups.filter((l) => l.type === "file_category");
-
-  // Filter fellowships based on role permissions
-  const fellowshipOptions = useMemo(() => {
-    const list = fellowshipsData?.fellowships || [];
-    if (staffIsOwner) return list;
-    const allowed = rbac?.allowedFellowshipIds || [];
-    return list.filter((f) => allowed.includes(f.id));
-  }, [fellowshipsData, staffIsOwner, rbac]);
-
-  // Set defaults when lookups load
+  // ─── Pre-populate when modal opens / member changes ─────────────────────────
   useEffect(() => {
-    if (lookups.length > 0 && !form.stateId) {
-      const draftState = lookups.find((l) => l.value === "object_state_draft");
-      if (draftState) {
-        setForm((prev) => ({ ...prev, stateId: draftState.id }));
+    if (!member || !open) return;
+
+    // Normalize certificateIssuedDate to yyyy-MM-dd for the date input
+    let issuedDate = "";
+    if (member.certificateIssuedDate) {
+      try {
+        const d = new Date(member.certificateIssuedDate);
+        const y = d.getFullYear();
+        const mo = (d.getMonth() + 1).toString().padStart(2, "0");
+        const da = d.getDate().toString().padStart(2, "0");
+        issuedDate = `${y}-${mo}-${da}`;
+      } catch {
+        issuedDate = "";
       }
     }
-  }, [lookups, form.stateId]);
 
-  // Select the single fellowship if user only has access to one
-  useEffect(() => {
-    if (fellowshipOptions.length === 1 && !form.councilFellowshipId) {
-      setForm((prev) => ({ ...prev, councilFellowshipId: fellowshipOptions[0].id }));
-    }
-  }, [fellowshipOptions, form.councilFellowshipId]);
+    const normalizedBoardMembers = (member.boardMembers || []).map((bm: any) => ({
+      id: bm.id,
+      fullName: bm.fullName || "",
+      fullNameEn: bm.fullNameEn || "",
+      phoneNumber: bm.phoneNumber || "",
+      titleId: bm.titleId || bm.title?.id || "",
+    }));
 
+    setForm({
+      name: member.name || "",
+      nameEn: member.nameEn || "",
+      certificateNo: member.certificateNo || "",
+      councilFellowshipId: member.councilFellowshipId || member.councilFellowship?.id || "",
+      typeId: member.typeId || member.type?.id || "",
+      stateId: member.stateId || member.state?.id || "",
+      isInEthiopia: member.isInEthiopia !== undefined ? Boolean(member.isInEthiopia) : true,
+      certificateIssuedDate: issuedDate,
+      country: member.country || "",
+      regionId: member.regionId || member.region?.id || "",
+      city: member.city || "",
+      subcity: member.subcity || "",
+      zone: member.zone || "",
+      district: member.district || "",
+      houseNumber: member.houseNumber || "",
+      poBoxNumber: member.poBoxNumber || "",
+      phoneNumber: member.phoneNumber || "",
+      email: member.email || "",
+      boardMembers: normalizedBoardMembers,
+    });
+
+    setErrors({});
+    setBoardName("");
+    setBoardNameEn("");
+    setBoardPhone("");
+    setBoardTitleId("");
+    setEditingBoardId(null);
+  }, [member, open]);
+
+  // ─── Validation ─────────────────────────────────────────────────────────────
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.councilFellowshipId) e.councilFellowshipId = "Council Fellowship is required";
@@ -106,61 +145,14 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
     if (!form.isInEthiopia && !form.country) e.country = "Country is required";
     if (!form.city.trim()) e.city = "City is required";
     if (form.email && !/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email format";
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleBlurCertificate = async () => {
-    const certNo = form.certificateNo.trim();
-    if (!certNo || !/^\d+$/.test(certNo)) return;
-
-    try {
-      const res = await api.get(`/members/check-certificate/${certNo}`);
-      if (res.data.data.exists) {
-        setErrors((prev) => ({
-          ...prev,
-          certificateNo: `Certificate number ${certNo} already exists`,
-        }));
-      } else {
-        setErrors((prev) => {
-          const copy = { ...prev };
-          delete copy.certificateNo;
-          return copy;
-        });
-      }
-    } catch {}
-  };
-
-  // Files Handler
-  const validateAndMergeFiles = useCallback((incoming: File[]) => {
-    setFileError(null);
-    const merged = [...files];
-    for (const f of incoming) {
-      const exists = merged.some((m) => m.name === f.name && m.size === f.size);
-      if (!exists) merged.push(f);
-    }
-    if (merged.length > MAX_FILES) {
-      setFileError(`Maximum of ${MAX_FILES} files allowed.`);
-      return;
-    }
-    const total = merged.reduce((acc, f) => acc + f.size, 0);
-    if (total > MAX_TOTAL_SIZE_BYTES) {
-      setFileError(`Total file size cannot exceed ${MAX_TOTAL_SIZE_MB}MB.`);
-      return;
-    }
-    setFiles(merged);
-  }, [files]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      validateAndMergeFiles(Array.from(e.target.files));
-    }
-  };
-
-  // Add / Edit Board Member
+  // ─── Board members ──────────────────────────────────────────────────────────
   const handleAddBoardMember = () => {
     if (!boardName.trim() || !boardPhone.trim() || !boardTitleId) return;
+
     const newBm = {
       id: editingBoardId || Math.random().toString(36).substr(2, 9),
       fullName: boardName,
@@ -176,10 +168,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
       }));
       setEditingBoardId(null);
     } else {
-      setForm((p) => ({
-        ...p,
-        boardMembers: [...p.boardMembers, newBm],
-      }));
+      setForm((p) => ({ ...p, boardMembers: [...p.boardMembers, newBm] }));
     }
     setBoardName("");
     setBoardNameEn("");
@@ -202,17 +191,13 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
     }));
   };
 
+  // ─── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (files.length === 0) {
-      setFileError("At least one document attachment is required.");
-      return;
-    }
 
     try {
-      const created = await createMember({ newMember: form, files, fileCategories });
-      router.push(`/members/${created.id}`);
+      await updateMember({ id: member.id, data: form });
       onClose();
     } catch (err: any) {
       if (err.response?.data?.errors) {
@@ -229,22 +214,23 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
     <Drawer
       open={open}
       onClose={onClose}
-      title="New Member Registration Form"
-      description="Register a new church or ministry institution into the portal."
+      title="Edit Member"
+      description="Update the member's registration details."
       size="2xl"
       footer={
         <>
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" form="add-member-form" disabled={submitting}>
-            {submitting ? "Registering..." : "Register Member"}
+          <Button type="submit" form="edit-member-form" disabled={submitting}>
+            {submitting ? "Saving..." : "Save Changes"}
           </Button>
         </>
       }
     >
-      <form id="add-member-form" onSubmit={handleSubmit} className="space-y-6" noValidate>
-        {/* Section: Fellowship & Type */}
+      <form id="edit-member-form" onSubmit={handleSubmit} className="space-y-6" noValidate>
+
+        {/* ── Fellowship & Type ──────────────────────────────────────────────── */}
         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
           <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
             Fellowship & Type
@@ -269,7 +255,9 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
                   type="checkbox"
                   id="isInEthiopia"
                   checked={!form.isInEthiopia}
-                  onChange={(e) => setForm((p) => ({ ...p, isInEthiopia: !e.target.checked, regionId: "", country: "" }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, isInEthiopia: !e.target.checked, regionId: "", country: "" }))
+                  }
                   className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500"
                 />
                 <Label htmlFor="isInEthiopia" className="cursor-pointer">
@@ -293,7 +281,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
           </div>
         </div>
 
-        {/* Section: Organization Details */}
+        {/* ── Organization Details ───────────────────────────────────────────── */}
         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
           <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
             Organization Details
@@ -324,7 +312,6 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
                 id="cert-no"
                 value={form.certificateNo}
                 onChange={(e) => setForm((p) => ({ ...p, certificateNo: e.target.value }))}
-                onBlur={handleBlurCertificate}
                 placeholder="e.g. 01410"
                 maxLength={12}
               />
@@ -349,7 +336,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
           </div>
         </div>
 
-        {/* Section: Board Members */}
+        {/* ── Board Members ──────────────────────────────────────────────────── */}
         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
           <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
             የቦርድ አባላት (Board Members)
@@ -358,13 +345,19 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
           {form.boardMembers.length > 0 && (
             <div className="space-y-2">
               {form.boardMembers.map((bm) => (
-                <div key={bm.id} className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                <div
+                  key={bm.id}
+                  className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
+                >
                   <div className="flex gap-4 text-sm font-medium items-center">
                     <span className="text-zinc-950 dark:text-white">{bm.fullName}</span>
+                    {bm.fullNameEn && (
+                      <span className="text-zinc-400 text-xs">{bm.fullNameEn}</span>
+                    )}
                     {bm.titleId && (
                       <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs border border-zinc-200 dark:border-zinc-700">
                         {(() => {
-                          const t = boardTitleOptions.find(t => t.id === bm.titleId);
+                          const t = boardTitleOptions.find((t) => t.id === bm.titleId);
                           return t ? (t.note ? `${t.description} (${t.note})` : t.description) : "Unknown Title";
                         })()}
                       </span>
@@ -384,11 +377,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
             <FormField id="bm-title" label="የቦርድ ኃላፊነት (Title)">
-              <Select
-                id="bm-title"
-                value={boardTitleId}
-                onChange={(e) => setBoardTitleId(e.target.value)}
-              >
+              <Select id="bm-title" value={boardTitleId} onChange={(e) => setBoardTitleId(e.target.value)}>
                 <option value="">Select Title...</option>
                 {boardTitleOptions.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -428,12 +417,12 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
               disabled={!boardName.trim() || !boardPhone.trim() || !boardTitleId}
               className="w-full"
             >
-              {editingBoardId ? "Update" : "Add"}
+              {editingBoardId ? "Update" : <><Plus className="h-4 w-4 mr-1" />Add</>}
             </Button>
           </div>
         </div>
 
-        {/* Section: Address & Contact */}
+        {/* ── Address & Contact ──────────────────────────────────────────────── */}
         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
           <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
             አድራሻ & ኮንታክት (Address & Contact)
@@ -501,89 +490,57 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
                 value={form.stateId}
                 onChange={(e) => setForm((p) => ({ ...p, stateId: e.target.value }))}
               >
+                <option value="">Select State...</option>
                 {stateOptions.map((s) => (
                   <option key={s.id} value={s.id}>{s.description}</option>
                 ))}
               </Select>
             </FormField>
           </div>
-        </div>
 
-        {/* Section: Attachments */}
-        <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
-          <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
-            ተያያዥ ፋይሎች (Member Files)
-          </h4>
-
-          {fileError && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
-              {fileError}
-            </div>
-          )}
-
-          <div className="border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-white dark:bg-zinc-950 hover:bg-zinc-50/50 transition-colors relative">
-            <input
-              type="file"
-              multiple
-              accept={ACCEPTED_TYPES}
-              onChange={handleFileChange}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-            <UploadCloud className="h-10 w-10 text-zinc-400 mb-3" />
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Click or drag & drop files here to upload
-            </p>
-            <p className="text-xs text-zinc-500 mt-1">
-              Supports: PDF, DOCX, XLSX, PNG, JPG (Max {MAX_FILES} files, {MAX_TOTAL_SIZE_MB}MB total)
-            </p>
+          {/* Extended address fields */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField id="subcity" label="ክፍለ ከተማ (Subcity)">
+              <Input
+                id="subcity"
+                value={form.subcity}
+                onChange={(e) => setForm((p) => ({ ...p, subcity: e.target.value }))}
+                placeholder="Subcity"
+              />
+            </FormField>
+            <FormField id="zone" label="ዞን (Zone)">
+              <Input
+                id="zone"
+                value={form.zone}
+                onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
+                placeholder="Zone"
+              />
+            </FormField>
+            <FormField id="district" label="ወረዳ (District)">
+              <Input
+                id="district"
+                value={form.district}
+                onChange={(e) => setForm((p) => ({ ...p, district: e.target.value }))}
+                placeholder="District / Woreda"
+              />
+            </FormField>
+            <FormField id="houseNumber" label="የቤት ቁጥር (House No)">
+              <Input
+                id="houseNumber"
+                value={form.houseNumber}
+                onChange={(e) => setForm((p) => ({ ...p, houseNumber: e.target.value }))}
+                placeholder="House number"
+              />
+            </FormField>
+            <FormField id="poBoxNumber" label="ፖ.ሳ.ቁ (P.O. Box)">
+              <Input
+                id="poBoxNumber"
+                value={form.poBoxNumber}
+                onChange={(e) => setForm((p) => ({ ...p, poBoxNumber: e.target.value }))}
+                placeholder="P.O. Box"
+              />
+            </FormField>
           </div>
-
-          {files.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs font-semibold text-zinc-500">
-                <span>Selected Files ({files.length})</span>
-                <button type="button" onClick={() => setFiles([])} className="hover:text-red-500">Clear All</button>
-              </div>
-              <div className="space-y-2">
-                {files.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm">
-                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-zinc-950 dark:text-white font-medium">{file.name}</p>
-                      <p className="text-xs text-zinc-400">{(file.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                    {fileCategoryOptions.length > 0 && (
-                      <Select
-                        id={`file-cat-${idx}`}
-                        value={fileCategories[idx] || ""}
-                        onChange={(e) => setFileCategories((prev) => ({ ...prev, [idx]: e.target.value }))}
-                        className="w-44 text-xs"
-                      >
-                        <option value="">Select Category...</option>
-                        {fileCategoryOptions.map((c) => (
-                          <option key={c.id} value={c.id}>{c.description}</option>
-                        ))}
-                      </Select>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFiles((prev) => prev.filter((_, i) => i !== idx));
-                        setFileCategories((prev) => {
-                          const next = { ...prev };
-                          delete next[idx];
-                          return next;
-                        });
-                      }}
-                      className="text-zinc-400 hover:text-red-500 p-0.5 shrink-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
       </form>

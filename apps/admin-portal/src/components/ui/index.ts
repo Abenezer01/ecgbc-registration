@@ -35,6 +35,9 @@ export { Skeleton, StatCardSkeleton, TableRowSkeleton } from "./Skeleton";
 export { Modal, ModalFooter } from "./Modal";
 export type { ModalProps } from "./Modal";
 
+export { Drawer, DrawerFooter } from "./Drawer";
+export type { DrawerProps } from "./Drawer";
+
 export { ToastProvider, useToast } from "./Toast";
 export type { Toast, ToastVariant } from "./Toast";
 
@@ -62,3 +65,9 @@ export type { PaginationProps } from "./Pagination";
 
 export { Switch } from "./Switch";
 export type { SwitchProps } from "./Switch";
+
+export { RowActions, presets } from "./RowActions";
+export type { RowActionsProps, Action, ActionVariant } from "./RowActions";
+
+export { PhoneInput } from "./PhoneInput";
+export type { PhoneInputProps, CountryCode } from "./PhoneInput";

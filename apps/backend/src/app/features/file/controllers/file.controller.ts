@@ -97,10 +97,15 @@ export const uploadMemberFiles = {
   pre: uploadWithUploadedFilename.array("memberFiles", 5), // Allows up to 5 files with field name 'memberFiles'
   post: (req: Request, res: Response, next: NextFunction) => {
     if (req.files && Array.isArray(req.files)) {
-      req.body.memberFiles = req.files.map((file) => ({
+      let categoryIds: string[] = [];
+      try {
+        categoryIds = JSON.parse(req.body.fileCategoryIds || "[]");
+      } catch (_) {}
+      req.body.memberFiles = req.files.map((file, idx) => ({
         fileName: file.originalname,
         file: file.filename,
-      })); 
+        ...(categoryIds[idx] ? { categoryId: categoryIds[idx] } : {}),
+      }));
     }
     next();
   },
@@ -130,7 +135,7 @@ export const getFiles = catchAsync(
     const [files, total] = await Promise.all([
       prisma.file.findMany({
         where: whereFilters,
-        include: { member: true, councilFellowship: true },
+        include: { member: true, councilFellowship: true, category: true },
         orderBy: {
           createdAt: "desc",
         },
@@ -286,6 +291,50 @@ export const createFellowshipFile = catchAsync(
     });
 
     sendSuccessResponse(res, { file: newFile });
+  }
+);
+
+export const updateFile = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const existing = await prisma.file.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      return next(new AppError(`File with ID ${req.params.id} does not exist`, 400));
+    }
+
+    // RBAC
+    if (existing.memberId) {
+      await assertAccessToMemberId(req, existing.memberId);
+    } else if (existing.councilFellowshipId) {
+      await assertAccessToFellowshipId(req, existing.councilFellowshipId);
+    }
+
+    const { fileName, categoryId } = req.body;
+
+    // If a new file was uploaded, delete the old one from disk first
+    if (req.body.file && existing.file) {
+      const oldPath = path.join(__dirname, "../../" + DESTINANTIONS.FILE.FILE, existing.file);
+      try {
+        if (fs.existsSync(oldPath)) await fs.promises.unlink(oldPath);
+      } catch (e) {
+        console.error("Failed to delete old file during update:", e);
+      }
+    }
+
+    const updated = await prisma.file.update({
+      where: { id: req.params.id },
+      data: {
+        ...(fileName    !== undefined ? { fileName }                  : {}),
+        ...(categoryId  !== undefined ? { categoryId: categoryId || null } : {}),
+        ...(req.body.file             ? { file: req.body.file }       : {}),
+      },
+      include: {
+        member: true,
+        councilFellowship: true,
+        category: true,
+      },
+    });
+
+    sendSuccessResponse(res, { file: updated });
   }
 );
 

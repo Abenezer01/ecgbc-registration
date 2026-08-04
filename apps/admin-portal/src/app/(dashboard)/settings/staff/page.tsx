@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { UserCog, Search, RefreshCw, Plus, Trash2, Pencil, Shield, Building2 } from "lucide-react";
+import { UserCog, Search, RefreshCw, Plus, Shield, Building2 } from "lucide-react";
 import {
   PageHeader, Button, Input, Badge, Avatar, DataTable,
   Pagination, Modal, ModalFooter, FormField, Select, MultiSelect,
+  RowActions, presets,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useStaffList, useCreateStaff, useDeleteStaff, useUpdateStaff, useUpdateFellowships } from "@/hooks/useStaff";
@@ -116,23 +117,21 @@ export default function StaffPage() {
       key: "actions",
       header: "",
       cell: (row: Staff) => (
-        <div className="flex items-center gap-2 justify-end">
-          {canEdit && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); setEditTarget(row); }}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-          )}
-          {canDelete && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          )}
+        <div className="flex justify-end">
+          <RowActions
+            mode="menu"
+            actions={[
+              presets.edit({
+                onClick: () => setEditTarget(row),
+                allowed: canEdit,
+              }),
+              presets.delete({
+                onClick: () => setDeleteTarget(row),
+                allowed: canDelete,
+                confirm: `Delete staff member "${row.firstName} ${row.lastName}"?`,
+              }),
+            ]}
+          />
         </div>
       ),
     }] : []),

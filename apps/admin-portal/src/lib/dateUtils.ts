@@ -1,38 +1,78 @@
 /**
  * Date utilities for converting between Gregorian and Ethiopian calendars.
- * This implementation uses an approximation; for production consider using a
- * dedicated library like 'ethiopic-date' or 'ethiopic-calendar'.
  */
 
+// ── Ethiopian month names (Ge'ez / Amharic) ──────────────────────────────────
+const ETH_MONTHS = [
+  "መስከረም", // 1
+  "ጥቅምት",   // 2
+  "ህዳር",    // 3
+  "ታህሳስ",   // 4
+  "ጥር",     // 5
+  "የካቲት",   // 6
+  "መጋቢት",   // 7
+  "ሚያዚያ",   // 8
+  "ግንቦት",   // 9
+  "ሰኔ",     // 10
+  "ሐምሌ",    // 11
+  "ነሐሴ",    // 12
+  "ጳጉሜ",   // 13 (intercalary month)
+];
+
 /**
- * Convert a Gregorian date string (ISO) to an approximate Ethiopian date string.
- * Returns format "yyyy-MM-dd" (Ethiopian calendar).
- * @param isoDateString ISO 8601 date string (e.g., "2025-06-15T10:30:00Z")
- * @returns Ethiopian date string in "yyyy-MM-dd" format
+ * Convert a Gregorian date to Ethiopian calendar components.
+ * Uses the standard JDN-based algorithm.
+ */
+function toEthiopian(gYear: number, gMonth: number, gDay: number): { year: number; month: number; day: number } {
+  const jd = gregorianToJDN(gYear, gMonth, gDay);
+  const ETHIOPIAN_EPOCH = 1724220;
+  const r = (jd - ETHIOPIAN_EPOCH) % 1461;
+  const n = r % 365 + 365 * Math.floor(r / 1460);
+
+  const year = 4 * Math.floor((jd - ETHIOPIAN_EPOCH) / 1461) + Math.floor(r / 365) - Math.floor(r / 1460);
+  const month = Math.floor(n / 30) + 1;
+  const day = (n % 30) + 1;
+
+  return { year, month, day };
+}
+
+function gregorianToJDN(year: number, month: number, day: number): number {
+  const a = Math.floor((14 - month) / 12);
+  const y = year + 4800 - a;
+  const m = month + 12 * a - 3;
+  return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+}
+
+/**
+ * Convert a Gregorian date string (ISO) to an Ethiopian date formatted as
+ * "MMM DD, YYYY" where MMM is the Amharic month name.
+ *
+ * @example
+ *   formatEthiopianDate("2025-09-11") → "ጳጉሜ 06, 2017"
+ *   formatEthiopianDate("2024-01-07") → "ታህሳስ 28, 2016"
  */
 export function formatEthiopianDate(isoDateString: string): string {
   if (!isoDateString) return "";
-  const date = new Date(isoDateString);
-  // Ethiopian year is roughly Gregorian year minus 8 (if before Sept) or 7 (after)
-  // Ethiopian months start on September 11/12 (Gregorian). We'll use a simple offset.
-  const gregorianYear = date.getFullYear();
-  const gregorianMonth = date.getMonth(); // 0 = Jan
-  const ethiopianYear = gregorianMonth < 8 // before August (Sep) => subtract 8 else subtract 7
-    ? gregorianYear - 8
-    : gregorianYear - 7;
-  // For simplicity, we keep the same month/day; this is not accurate.
-  // A proper conversion would require more complex math.
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${ethiopianYear}-${month}-${day}`;
+  try {
+    // Parse as local date to avoid timezone shifting the day
+    const [yearStr, monthStr, dayStr] = isoDateString.split("T")[0].split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return "";
+
+    const eth = toEthiopian(year, month, day);
+    const monthName = ETH_MONTHS[eth.month - 1] ?? `M${eth.month}`;
+    const dayPadded = String(eth.day).padStart(2, "0");
+    return `${monthName} ${dayPadded}, ${eth.year}`;
+  } catch {
+    return "";
+  }
 }
 
 /**
  * Format a Gregorian date string to a short locale-specific string.
- * Defaults to 'MM/dd/yyyy' (en-US) if no options provided.
- * @param isoDateString ISO 8601 date string
- * @param options Intl.DateTimeFormatOptions (optional)
- * @returns Formatted date string
  */
 export function formatGregorianDate(
   isoDateString: string,
@@ -43,33 +83,24 @@ export function formatGregorianDate(
 }
 
 /**
- * Get the current Ethiopian year (approximate).
- * Uses the same logic as the original getCurrentEthYear function.
+ * Get the current Ethiopian year.
  */
 export function getCurrentEthYear(): number {
-  const date = new Date();
-  return date.getFullYear() - (date.getMonth() < 8 ? 8 : 7);
+  const d = new Date();
+  const eth = toEthiopian(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  return eth.year;
 }
 
 /**
  * Convert an Ethiopian year range to a list of Gregorian years for labeling.
- * This mimics the original loop that creates columns for each year from 2013 to current Ethiopian year.
- * @param startGregorianYear The Gregorian year to start from (inclusive)
- * @param endEthiopianYear The Ethiopian year to end at (inclusive)
- * @returns Array of Gregorian years corresponding to the Ethiopian years in the range
  */
 export function getEthiopianYearRange(
   startGregorianYear: number,
   endEthiopianYear: number
 ): number[] {
-  // Ethiopian year E ≈ Gregorian year G - 8 (before Sep) or -7 (after Sep)
-  // For simplicity, we'll map Ethiopian year to Gregorian year by adding 7 (midpoint)
-  // This is just to generate a list of years for column headers; exact conversion not needed.
   const years: number[] = [];
   for (let ethYear = 1900; ethYear <= endEthiopianYear; ethYear++) {
-    // Approximate Gregorian year = ethYear + 7
     years.push(ethYear + 7);
   }
-  // Filter to start from startGregorianYear
   return years.filter((y) => y >= startGregorianYear);
 }

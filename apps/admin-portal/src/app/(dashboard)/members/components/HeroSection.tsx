@@ -40,6 +40,9 @@ export function HeroSection({ member, canEdit, canDeactivate, onEdit, onDeactiva
               {m.isActive ? "Active" : "Inactive"}
             </Badge>
           </div>
+          {m.nameEn && (
+            <p className="text-white/70 text-base mb-2 tracking-wide">{m.nameEn}</p>
+          )}
           
           <div className="flex flex-wrap items-center gap-4 text-white/80 text-sm">
             <span className="font-mono bg-white/10 px-2 py-1 rounded">

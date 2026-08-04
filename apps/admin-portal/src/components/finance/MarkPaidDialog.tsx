@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Modal, ModalFooter, Button, FormField, Input } from "@/components/ui";
 import { ReportingFee } from "../../hooks/useFinance";
 import { CheckCircle2 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface MarkPaidDialogProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function MarkPaidDialog({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-emerald-900 truncate">{fee.member?.name}</p>
             <p className="text-xl font-bold text-emerald-700 mt-0.5">
-              {fee.currency} {Number(fee.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {formatCurrency(fee.amount, fee.currency, 2)}
             </p>
             {fee.report?.year && (
               <p className="text-xs text-emerald-600 mt-0.5">Annual Report — {fee.report.year}</p>

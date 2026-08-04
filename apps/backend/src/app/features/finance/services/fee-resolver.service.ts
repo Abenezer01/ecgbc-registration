@@ -102,6 +102,32 @@ export async function previewFee(
  * Resolves the best matching FeeRule for a given member + report request
  * and creates a ReportingFee record.
  */
+export function calculateExpectedFeeForMember(member: any, rules: any[], reportRequestId: string | null): any | null {
+  const scored = rules
+    .map((rule: any) => {
+      let score = rule.priority * 100;
+      const typeMatch = rule.memberTypeId === null || rule.memberTypeId === member.typeId;
+      const categoryMatch = rule.memberCategoryId === null || rule.memberCategoryId === member.memberCategoryId;
+      const ruleFellowshipIds = rule.fellowships ? rule.fellowships.map((f: any) => f.id) : [];
+      const fellowshipMatch = ruleFellowshipIds.length === 0 || ruleFellowshipIds.includes(member.councilFellowshipId);
+      const requestMatch = rule.reportRequestId === null || rule.reportRequestId === reportRequestId;
+
+      if (!typeMatch || !categoryMatch || !fellowshipMatch || !requestMatch) return null;
+
+      if (ruleFellowshipIds.length > 0) score += 40;
+      if (rule.memberTypeId) score += 20;
+      if (rule.memberCategoryId) score += 10;
+      if (rule.reportRequestId) score += 30;
+
+      return { rule, score };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.score - a.score);
+
+  if (scored.length === 0) return null;
+  return scored[0].rule;
+}
+
 export async function resolveFeeAndCreate(
   reportId: string,
   memberId: string,
@@ -175,30 +201,9 @@ export async function resolveFeeAndCreate(
 
   if (!rules || rules.length === 0) return;
 
-  const scored = rules
-    .map((rule: any) => {
-      let score = rule.priority * 100;
-      const typeMatch = rule.memberTypeId === null || rule.memberTypeId === member.typeId;
-      const categoryMatch = rule.memberCategoryId === null || rule.memberCategoryId === member.memberCategoryId;
-      const ruleFellowshipIds = rule.fellowships.map((f: any) => f.id);
-      const fellowshipMatch = ruleFellowshipIds.length === 0 || ruleFellowshipIds.includes(member.councilFellowshipId);
-      const requestMatch = rule.reportRequestId === null || rule.reportRequestId === reportRequestId;
+  const bestRule = calculateExpectedFeeForMember(member, rules, reportRequestId ?? null);
 
-      if (!typeMatch || !categoryMatch || !fellowshipMatch || !requestMatch) return null;
-
-      if (ruleFellowshipIds.length > 0) score += 40;
-      if (rule.memberTypeId) score += 20;
-      if (rule.memberCategoryId) score += 10;
-      if (rule.reportRequestId) score += 30;
-
-      return { rule, score };
-    })
-    .filter(Boolean)
-    .sort((a: any, b: any) => b.score - a.score);
-
-  if (scored.length === 0) return;
-
-  const bestRule = scored[0].rule;
+  if (!bestRule) return;
 
   const isLate = dueDate ? new Date() > new Date(dueDate) : false;
   const baseAmount = new Decimal(bestRule.amount);

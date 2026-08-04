@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, ModalFooter, Button } from "@/components/ui";
 import { CheckCircle } from "lucide-react";
 import { ReportingFee } from "../../hooks/useFinance";
+import { formatCurrency } from "@/lib/utils";
 
 interface VerifyPaymentDialogProps {
   open: boolean;
@@ -39,7 +40,7 @@ export function VerifyPaymentDialog({
           <div className="flex justify-between text-sm">
             <span className="text-zinc-500">Expected Amount:</span>
             <span className="font-medium text-zinc-900 dark:text-white">
-              {fee.currency || "ETB"} {Number(fee.amount).toLocaleString()}
+              {formatCurrency(fee.amount, fee.currency || "ETB")}
             </span>
           </div>
         </div>
@@ -52,7 +53,7 @@ export function VerifyPaymentDialog({
                 <p className="font-semibold text-emerald-900 dark:text-emerald-400">Payment Verified</p>
                 <div className="flex justify-between">
                   <span className="text-emerald-700 dark:text-emerald-500/80">Settled Amount:</span>
-                  <span className="font-medium text-emerald-900 dark:text-emerald-400">ETB {Number(verificationResult.amount).toLocaleString()}</span>
+                  <span className="font-medium text-emerald-900 dark:text-emerald-400">{formatCurrency(verificationResult.amount, "ETB")}</span>
                 </div>
                 {verificationResult.payerName && (
                   <div className="flex justify-between">

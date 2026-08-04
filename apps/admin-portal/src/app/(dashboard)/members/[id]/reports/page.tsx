@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, Plus, Eye, Download, Trash2, Calendar, FileDown, User, FolderOpen, Users, ShieldAlert } from "lucide-react";
-import { Badge, DataTable, Button, Modal, ModalFooter, FormField, Input } from "@/components/ui";
+import { FileText, Plus, Eye, Download, Calendar, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign } from "lucide-react";
+import { Badge, DataTable, Button, Modal, ModalFooter, FormField, Input, RowActions, presets } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
 import { useAuth } from "@/hooks/useAuth";
 import { fileUrl } from "@/lib/file-url";
@@ -12,7 +12,6 @@ import { useMember } from "@/hooks/useMembers";
 import { useGenerateFee } from "@/hooks/useFinance";
 import { GenerateFeeDialog } from "@/components/finance/GenerateFeeDialog";
 import { FeeStatusBadge } from "@/components/finance/FeeStatusBadge";
-import { DollarSign } from "lucide-react";
 
 export default function ReportsPage() {
   const { id } = useParams() as { id: string };
@@ -264,26 +263,16 @@ export default function ReportsPage() {
               <DollarSign className="h-3.5 w-3.5" />
             </Button>
           )}
-          {canEdit && (
-            <Button
-              onClick={() => openEditFlow(row)}
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-            >
-              Edit
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              onClick={() => handleDelete(row.id)}
-              variant="danger"
-              size="sm"
-              className="h-8 text-xs px-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+          <RowActions
+            actions={[
+              presets.edit({ onClick: () => openEditFlow(row), allowed: canEdit }),
+              presets.delete({
+                onClick: () => handleDelete(row.id),
+                allowed: canDelete,
+                confirm: "Delete this report? This cannot be undone.",
+              }),
+            ]}
+          />
         </div>
       ),
     }] : []),

@@ -27,6 +27,9 @@ export const columns: Column<any>[] = [
             <p className="font-medium text-zinc-900 dark:text-white">
               {nameStr}
             </p>
+            {row.kind === "member" && row.nameEn && (
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">{row.nameEn}</p>
+            )}
             {row.kind === "member" && row.email && (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{row.email}</p>
             )}

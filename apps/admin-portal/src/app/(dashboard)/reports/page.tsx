@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Eye, FileDown, Plus, Pencil, Trash2 } from "lucide-react";
-import { DataTable, Button, Pagination } from "@/components/ui";
+import { FileText, Eye, FileDown, Plus } from "lucide-react";
+import { DataTable, Button, Pagination, RowActions, presets } from "@/components/ui";
 import { useAllReports, GlobalReport } from "@/hooks/useAllReports";
 import { useReportRequests, useCreateReportRequest, useUpdateReportRequest, useDeleteReportRequest, ReportRequestData } from "@/hooks/useReportRequests";
 import { useGenerateMissingFees } from "@/hooks/useFeeRules";
@@ -228,7 +228,12 @@ export default function ReportsPage() {
       header: "Title",
       cell: (row: ReportRequestData) => (
         <div>
-          <p className="font-medium text-zinc-900">{row.title}</p>
+          <p
+            className="font-medium text-zinc-900 cursor-pointer hover:underline"
+            onClick={() => router.push(`/reports/${row.id}`)}
+          >
+            {row.title}
+          </p>
           <p className="text-xs text-zinc-500">{row.description}</p>
         </div>
       ),
@@ -269,16 +274,27 @@ export default function ReportsPage() {
       cell: (row: ReportRequestData) => (
         <div className="flex items-center gap-2 justify-end">
           {row.feeMode === "AUTO" && (
-            <Button variant="outline" size="sm" onClick={() => handleGenerateFees(row.id)} className="h-8 text-xs bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100" disabled={generateFeesMutation.isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleGenerateFees(row.id)}
+              className="h-8 text-xs bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+              disabled={generateFeesMutation.isPending}
+            >
               Generate Fees
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => openEditModal(row)} className="h-8 w-8 p-0">
-            <Pencil className="h-4 w-4 text-zinc-500" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDeleteRequest(row.id)} className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600">
-            <Trash2 className="h-4 w-4 text-zinc-500" />
-          </Button>
+          <RowActions
+            mode="menu"
+            actions={[
+              presets.edit({ onClick: () => openEditModal(row), allowed: true }),
+              presets.delete({
+                onClick: () => handleDeleteRequest(row.id),
+                allowed: true,
+                confirm: `Delete report request "${row.title}"?`,
+              }),
+            ]}
+          />
         </div>
       ),
     },

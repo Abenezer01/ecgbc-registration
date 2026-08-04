@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, ModalFooter, Button } from "@/components/ui";
 import { ReportingFee } from "../../hooks/useFinance";
+import { formatCurrency } from "@/lib/utils";
 
 interface SendFeeDialogProps {
   open: boolean;
@@ -33,7 +34,7 @@ export function SendFeeDialog({
           <div className="flex justify-between text-sm mb-2">
             <span className="text-zinc-500">Amount:</span>
             <span className="font-semibold text-zinc-900 dark:text-white">
-              {fee.currency || 'ETB'} {Number(fee.amount).toLocaleString()}
+              {formatCurrency(fee.amount, fee.currency || 'ETB')}
             </span>
           </div>
           {fee.member?.email && (

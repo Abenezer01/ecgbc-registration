@@ -33,6 +33,8 @@ model DataLookup {
   feeRuleMemberCategories FeeRule[]       @relation("FeeRuleMemberCategory")
   reportingFeePaymentMethods ReportingFee[] @relation("FeePaymentMethod")
   paymentMethodConfigs    PaymentMethodConfig[]
+  boardMembers            BoardMember[]       @relation("BoardMemberTitle")
+  files                   File[]              @relation("FileCategoryLookup")
 }
 
 model Permission {
@@ -64,6 +66,7 @@ model Role {
 model Member {
   id                    String            @id @default(uuid())
   name                  String            @unique
+  nameEn                String?
   certificateNo         String            @unique
   certificateIssuedDate DateTime
   isInEthiopia          Boolean
@@ -113,15 +116,19 @@ model BoardMember {
   id                  String             @id @default(uuid())
   memberId            String?
   councilFellowshipId String?
+  titleId             String?
   fullName            String
+  fullNameEn          String?
   phoneNumber         String
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
   councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
   member              Member?            @relation(fields: [memberId], references: [id])
+  title               DataLookup?        @relation("BoardMemberTitle", fields: [titleId], references: [id])
 
   @@index([councilFellowshipId], map: "BoardMember_councilFellowshipId_fkey")
   @@index([memberId], map: "BoardMember_memberId_fkey")
+  @@index([titleId], map: "BoardMember_titleId_fkey")
 }
 
 model Report {
@@ -155,13 +162,16 @@ model File {
   file                String?
   memberId            String?
   councilFellowshipId String?
+  categoryId          String?
   isFromSelamMinster  Boolean?           @default(false)
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
   councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
   member              Member?            @relation("MemberFiles", fields: [memberId], references: [id])
+  category            DataLookup?        @relation("FileCategoryLookup", fields: [categoryId], references: [id])
 
   @@index([councilFellowshipId], map: "File_councilFellowshipId_fkey")
+  @@index([categoryId], map: "File_categoryId_fkey")
   @@index([memberId], map: "File_memberId_fkey")
 }
 

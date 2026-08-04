@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Plus, Eye, Download, Trash2, Calendar, FileDown, MoreVertical } from "lucide-react";
-import { Badge, DataTable, Button, Modal, ModalFooter, FormField, Input } from "@/components/ui";
+import { FileText, Plus, Eye, Download, Calendar, FileDown, MoreVertical } from "lucide-react";
+import { Badge, DataTable, Button, Modal, ModalFooter, FormField, Input, RowActions, presets } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
 import { useAuth } from "@/hooks/useAuth";
 import { fileUrl } from "@/lib/file-url";
@@ -202,27 +202,17 @@ export function ReportsTab({ member }: ReportsTabProps) {
       header: "",
       className: "text-right w-24",
       cell: (row: any) => (
-        <div className="flex justify-end gap-2">
-          {canEdit && (
-            <Button
-              onClick={() => openEditFlow(row)}
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-            >
-              Edit
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              onClick={() => handleDelete(row.id)}
-              variant="danger"
-              size="sm"
-              className="h-8 text-xs px-2"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="flex justify-end">
+          <RowActions
+            actions={[
+              presets.edit({ onClick: () => openEditFlow(row), allowed: canEdit }),
+              presets.delete({
+                onClick: () => handleDelete(row.id),
+                allowed: canDelete,
+                confirm: "Delete this report? This cannot be undone.",
+              }),
+            ]}
+          />
         </div>
       ),
     }] : []),

@@ -100,7 +100,7 @@ export const getAllInactiveMembers = catchAsync(async (req: Request, res: Respon
     where,
     include: {
       type: true,
-      boardMembers: true,
+      boardMembers: { include: { title: true } },
       previousType: true,
       state: true,
       region: true,
@@ -175,7 +175,7 @@ export const softDeleteMember = catchAsync(async (req: Request, res: Response, n
       reasonForInactive: req.body.reason || "Marked inactive by admin",
     },
     include: {
-      boardMembers: true,
+      boardMembers: { include: { title: true } },
       type: true,
       previousType: true,
       state: true,
@@ -213,7 +213,7 @@ export const restoreMember = catchAsync(async (req: Request, res: Response, next
       reasonForInactive: null,
     },
     include: {
-      boardMembers: true,
+      boardMembers: { include: { title: true } },
       type: true,
       previousType: true,
       state: true,
@@ -272,7 +272,7 @@ export const getInactiveMembers = catchAsync(async (req: Request, res: Response,
     take: Number(limit),
     include: {
       type: true,
-      boardMembers: true,
+      boardMembers: { include: { title: true } },
       previousType: true,
       state: true,
       region: true,
@@ -318,7 +318,7 @@ export const getMembers = catchAsync(
       prisma.member.findMany({
         where: filters,
         include: {
-          boardMembers: true,
+          boardMembers: { include: { title: true } },
           type: true,
           previousType: true,
           state: true,
@@ -349,7 +349,7 @@ export const getMember = catchAsync(
     const member = await prisma.member.findUnique({
       where: { id: req.params.id },
       include: {
-        boardMembers: true,
+        boardMembers: { include: { title: true } },
         type: true,
         previousType: true,
         state: true,
@@ -375,6 +375,7 @@ export const createMember = catchAsync(
     const reqAny = req as any;
     let {
       name,
+      nameEn,
       country,
       regionId,
       city,
@@ -420,6 +421,7 @@ export const createMember = catchAsync(
     const member = await prisma.member.create({
       data: {
         name,
+        ...(nameEn ? { nameEn } : {}),
         councilFellowshipId,
         certificateNo,
         certificateIssuedDate: new Date(certificateIssuedDate),
@@ -442,7 +444,7 @@ export const createMember = catchAsync(
         },
       },
       include: {
-        boardMembers: true,
+        boardMembers: { include: { title: true } },
         type: true,
         previousType: true,
         state: true,
@@ -457,6 +459,7 @@ export const createMember = catchAsync(
           memberId: member.id,
           fileName: file.fileName,
           file: file?.file || "",
+          ...(file.categoryId ? { categoryId: file.categoryId } : {}),
         },
         include: { member: true, councilFellowship: true },
       });
@@ -481,6 +484,7 @@ export const updateMember = catchAsync(
     await assertAccessToMember(req, req.params.id);
     const {
       name,
+      nameEn,
       certificateNo,
       certificateIssuedDate,
       isInEthiopia,
@@ -534,6 +538,7 @@ export const updateMember = catchAsync(
     if (regionId) updatedData.regionId = regionId;
     if (stateId) updatedData.stateId = stateId;
     if (name) updatedData.name = name;
+    if (nameEn !== undefined) updatedData.nameEn = nameEn;
     updatedData.email = email;
     updatedData.phoneNumber = phoneNumber;
     updatedData.city = city;
@@ -580,19 +585,25 @@ export const updateMember = catchAsync(
           async (boardMember: {
             id: string;
             fullName: string;
+            fullNameEn?: string;
             phoneNumber: string;
+            titleId?: string;
           }) => {
             await prisma.boardMember.upsert({
               where: { id: boardMember.id },
               update: {
                 fullName: boardMember.fullName,
+                ...(boardMember.fullNameEn ? { fullNameEn: boardMember.fullNameEn } : {}),
                 phoneNumber: boardMember.phoneNumber,
+                ...(boardMember.titleId ? { titleId: boardMember.titleId } : {}),
               },
               create: {
                 councilFellowshipId: currentMember.councilFellowshipId,
                 memberId: currentMember?.id,
                 fullName: boardMember.fullName,
+                ...(boardMember.fullNameEn ? { fullNameEn: boardMember.fullNameEn } : {}),
                 phoneNumber: boardMember.phoneNumber,
+                ...(boardMember.titleId ? { titleId: boardMember.titleId } : {}),
               },
             });
           }
@@ -603,7 +614,7 @@ export const updateMember = catchAsync(
       where: { id: req.params.id },
       data: { ...updatedData },
       include: {
-        boardMembers: true,
+        boardMembers: { include: { title: true } },
         type: true,
         previousType: true,
         state: true,
@@ -650,7 +661,7 @@ export const activeMember = catchAsync(
         reasonForInactive: null,
       },
       include: {
-        boardMembers: true,
+        boardMembers: { include: { title: true } },
         type: true,
         previousType: true,
         state: true,
@@ -698,7 +709,7 @@ export const inactiveMember = catchAsync(
         reasonForInactive: reason,
       },
       include: {
-        boardMembers: true,
+        boardMembers: { include: { title: true } },
         type: true,
         previousType: true,
         state: true,
@@ -796,7 +807,7 @@ export const permanentlyDeleteMember = catchAsync(async (req: Request, res: Resp
       reasonForInactive,
     },
     include: {
-      boardMembers: true,
+      boardMembers: { include: { title: true } },
       type: true,
       previousType: true,
       state: true,
@@ -844,7 +855,7 @@ export const getDeletedMembers = catchAsync(async (req: Request, res: Response, 
     take: Number(limit),
     include: {
       type: true,
-      boardMembers: true,
+      boardMembers: { include: { title: true } },
       previousType: true,
       state: true,
       region: true,

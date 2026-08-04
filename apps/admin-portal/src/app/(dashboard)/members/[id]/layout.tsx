@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui";
@@ -10,6 +10,7 @@ import { useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
 import { HeroSection } from "../components/HeroSection";
 import { StatsGrid } from "../components/StatsGrid";
 import { QuickInfoRow } from "../components/QuickInfoRow";
+import { EditMemberModal } from "../components/EditMemberModal";
 
 interface MemberDetailLayoutProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ export default function MemberDetailLayout({ children }: MemberDetailLayoutProps
   const { data: member, isLoading } = useMember(id);
   const { data: documentCompleteness } = useDocumentCompleteness(id);
   const { hasPermission } = useAuth();
+  const [editOpen, setEditOpen] = useState(false);
 
   const canEdit = hasPermission("member_change") || hasPermission("member_edit");
   const canDeactivate = hasPermission("member_deactivate") || hasPermission("member_delete");
@@ -44,31 +46,42 @@ export default function MemberDetailLayout({ children }: MemberDetailLayoutProps
   const m = member as any;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Back Button */}
-        <Button variant="ghost" size="sm" onClick={() => router.push(`/members`)} className="mb-2">
-          ← Back to Members
-        </Button>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Back Button */}
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/members`)} className="mb-2">
+            ← Back to Members
+          </Button>
 
-        {/* Hero Section */}
-        <HeroSection 
-          member={m} 
-          canEdit={canEdit} 
-          canDeactivate={canDeactivate}
-          onEdit={() => {}}
-          onDeactivate={() => router.push(`/members/${id}/settings`)}
-        />
+          {/* Hero Section */}
+          <HeroSection 
+            member={m} 
+            canEdit={canEdit} 
+            canDeactivate={canDeactivate}
+            onEdit={() => setEditOpen(true)}
+            onDeactivate={() => router.push(`/members/${id}/settings`)}
+          />
 
-        {/* Stats Grid */}
-        <StatsGrid member={m} documentCompleteness={documentCompleteness} />
+          {/* Stats Grid */}
+          <StatsGrid member={m} documentCompleteness={documentCompleteness} />
 
-        {/* Quick Info Row */}
-        <QuickInfoRow member={m} />
+          {/* Quick Info Row */}
+          <QuickInfoRow member={m} />
 
-        {/* Page Content */}
-        {children}
+          {/* Page Content */}
+          {children}
+        </div>
       </div>
-    </div>
+
+      {/* Edit Modal */}
+      {editOpen && (
+        <EditMemberModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          member={m}
+        />
+      )}
+    </>
   );
 }

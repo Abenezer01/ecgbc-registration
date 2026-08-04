@@ -8,6 +8,7 @@ export interface DataLookup {
   category?: string;
   value: string;
   description: string;
+  note?: string;
   documentRequirement?: {
     id: string;
     fileTypeId: string;

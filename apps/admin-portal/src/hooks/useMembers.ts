@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/useApi";
 import type { Member } from "../types";
 import { buildQueryString } from "../lib/query-builder";
@@ -87,7 +87,7 @@ export function useCreateMember() {
   const { post } = useApi();
 
   return useMutation({
-    mutationFn: async ({ newMember, files }: { newMember: any; files: File[] }) => {
+    mutationFn: async ({ newMember, files, fileCategories }: { newMember: any; files: File[]; fileCategories?: Record<number, string> }) => {
       const formData = new FormData();
       Object.keys(newMember).forEach((key) => {
         const formValue = newMember[key];
@@ -105,6 +105,12 @@ export function useCreateMember() {
         }
       });
 
+      // Append file category IDs as a JSON array matching the order of memberFiles
+      if (fileCategories) {
+        const categoryIds = files.map((_, idx) => fileCategories[idx] || "");
+        formData.append('fileCategoryIds', JSON.stringify(categoryIds));
+      }
+
       files.forEach((file) => {
         formData.append('memberFiles', file);
       });
@@ -112,6 +118,36 @@ export function useCreateMember() {
       const res = await post(`/members`, formData);
       const data = extractData(res);
       return (data as any).member;
+    },
+  });
+}
+
+export function useUpdateMember() {
+  const { patch } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const body: any = { ...data };
+      // Stringify boardMembers for the backend
+      if (Array.isArray(body.boardMembers)) {
+        body.boardMembers = body.boardMembers;
+      }
+      // Format date the same way as create
+      if (body.certificateIssuedDate) {
+        const d = new Date(body.certificateIssuedDate);
+        const year = d.getFullYear();
+        const month = (d.getMonth() + 1).toString().padStart(2, "0");
+        const day = d.getDate().toString().padStart(2, "0");
+        body.certificateIssuedDate = `${year}-${month}-${day}`;
+      }
+      const res = await patch(`/members/${id}`, body);
+      const extracted = extractData(res);
+      return (extracted as any).member;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["member", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
     },
   });
 }

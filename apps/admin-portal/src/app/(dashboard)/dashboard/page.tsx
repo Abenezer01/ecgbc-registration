@@ -17,6 +17,7 @@ import {
 } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EthiopiaMap } from "@/components/ui/EthiopiaMap";
+import { formatNumber, formatCurrency, formatPercentage } from "@/lib/utils";
 
 const CHART_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#10b981", "#f59e0b"];
 
@@ -55,31 +56,31 @@ export default function DashboardPage() {
           <>
             <StatCard
               title="Total Members"
-              value={analytics?.totalMembers ?? "—"}
+              value={formatNumber(analytics?.totalMembers)}
               icon={<Users className="h-5 w-5" />}
               description="Active registered members"
             />
             <StatCard
               title="Active Fellowships"
-              value={analytics?.activeFellowships ?? "—"}
+              value={formatNumber(analytics?.activeFellowships)}
               icon={<Building2 className="h-5 w-5" />}
               description="Fellowships in the system"
             />
             <StatCard
               title="Collected Revenue"
-              value={`${analytics?.financials?.collectedRevenue?.toLocaleString() ?? "0"} ETB`}
+              value={formatCurrency(analytics?.financials?.collectedRevenue)}
               icon={<Wallet className="h-5 w-5 text-emerald-500" />}
               description="Total reported fees paid"
             />
             <StatCard
               title="Compliance Rate"
-              value={`${analytics?.compliance?.rate ?? "0"}%`}
+              value={formatPercentage(analytics?.compliance?.rate / 100)}
               icon={<CheckCircle2 className="h-5 w-5 text-blue-500" />}
-              trend={{ value: `${analytics?.compliance?.pendingReview ?? 0} pending review`, positive: true }}
+              trend={{ value: `${formatNumber(analytics?.compliance?.pendingReview)} pending review`, positive: true }}
             />
             <StatCard
               title="Diaspora Members"
-              value={analytics?.diasporaMembers ?? "—"}
+              value={formatNumber(analytics?.diasporaMembers)}
               icon={<Globe className="h-5 w-5 text-purple-500" />}
               description="Members outside Ethiopia"
             />
@@ -241,28 +242,28 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
                     <div>
                       <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Total Expected</p>
-                      <p className="text-xl font-bold">{analytics?.financials?.expectedRevenue?.toLocaleString() ?? "0"} ETB</p>
+                      <p className="text-xl font-bold">{formatCurrency(analytics?.financials?.expectedRevenue)}</p>
                     </div>
                     <DollarSign className="h-8 w-8 text-zinc-300" />
                   </div>
                   <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 flex justify-between items-center">
                     <div>
                       <p className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-semibold">Collected</p>
-                      <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{analytics?.financials?.collectedRevenue?.toLocaleString() ?? "0"} ETB</p>
+                      <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(analytics?.financials?.collectedRevenue)}</p>
                     </div>
                     <CheckCircle2 className="h-8 w-8 text-emerald-300 dark:text-emerald-700" />
                   </div>
                   <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 flex justify-between items-center">
                     <div>
                       <p className="text-xs text-amber-600 dark:text-amber-400 uppercase tracking-wider font-semibold">Pending Review</p>
-                      <p className="text-xl font-bold text-amber-700 dark:text-amber-300">{analytics?.financials?.inReviewRevenue?.toLocaleString() ?? "0"} ETB</p>
+                      <p className="text-xl font-bold text-amber-700 dark:text-amber-300">{formatCurrency(analytics?.financials?.inReviewRevenue)}</p>
                     </div>
                     <Clock className="h-8 w-8 text-amber-300 dark:text-amber-700" />
                   </div>
                   <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/50 flex justify-between items-center">
                     <div>
                       <p className="text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wider font-semibold">Pending / Outstanding</p>
-                      <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{analytics?.financials?.pendingRevenue?.toLocaleString() ?? "0"} ETB</p>
+                      <p className="text-xl font-bold text-orange-700 dark:text-orange-300">{formatCurrency(analytics?.financials?.pendingRevenue)}</p>
                     </div>
                     <AlertTriangle className="h-8 w-8 text-orange-300 dark:text-orange-700" />
                   </div>

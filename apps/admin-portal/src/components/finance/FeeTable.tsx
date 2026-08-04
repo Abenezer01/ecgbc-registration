@@ -3,6 +3,7 @@ import { DataTable, Button, Badge } from "@/components/ui";
 import { ReportingFee } from "../../hooks/useFinance";
 import { FeeStatusBadge } from "./FeeStatusBadge";
 import { Send, CheckCircle } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface FeeTableProps {
   fees: ReportingFee[];
@@ -54,7 +55,7 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
       header: "Amount",
       cell: (row: ReportingFee) => (
         <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-          {row.currency || 'ETB'} {Number(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          {formatCurrency(row.amount, row.currency || 'ETB', 2)}
         </span>
       ),
     },

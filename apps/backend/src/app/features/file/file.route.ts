@@ -70,6 +70,13 @@ router
     StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
     FileController.getFile
   )
+  .patch(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE),
+    FileController.uploadFile.pre,
+    FileController.uploadFile.post,
+    FileController.updateFile
+  )
   .delete(
     StaffAuthMiddleware.verifyStaff,
     StaffAuthMiddleware.restrictStaff(
