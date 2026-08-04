@@ -25,7 +25,7 @@ const ETH_MONTHS = [
  */
 function toEthiopian(gYear: number, gMonth: number, gDay: number): { year: number; month: number; day: number } {
   const jd = gregorianToJDN(gYear, gMonth, gDay);
-  const ETHIOPIAN_EPOCH = 1724220;
+  const ETHIOPIAN_EPOCH = 1723856;
   const r = (jd - ETHIOPIAN_EPOCH) % 1461;
   const n = r % 365 + 365 * Math.floor(r / 1460);
 

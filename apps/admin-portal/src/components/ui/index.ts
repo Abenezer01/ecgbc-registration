@@ -70,4 +70,4 @@ export { RowActions, presets } from "./RowActions";
 export type { RowActionsProps, Action, ActionVariant } from "./RowActions";
 
 export { PhoneInput } from "./PhoneInput";
-export type { PhoneInputProps, CountryCode } from "./PhoneInput";
+export type { PhoneInputProps } from "./PhoneInput";

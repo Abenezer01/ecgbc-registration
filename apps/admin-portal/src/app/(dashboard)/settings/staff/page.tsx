@@ -5,7 +5,7 @@ import { UserCog, Search, RefreshCw, Plus, Shield, Building2 } from "lucide-reac
 import {
   PageHeader, Button, Input, Badge, Avatar, DataTable,
   Pagination, Modal, ModalFooter, FormField, Select, MultiSelect,
-  RowActions, presets,
+  RowActions, presets, PhoneInput,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useStaffList, useCreateStaff, useDeleteStaff, useUpdateStaff, useUpdateFellowships } from "@/hooks/useStaff";
@@ -283,7 +283,7 @@ function CreateStaffModal({ open, onClose }: { open: boolean; onClose: () => voi
         </FormField>
         <div className="grid grid-cols-2 gap-4">
           <FormField id="sf-phone" label="Phone number">
-            <Input id="sf-phone" type="tel" value={form.phoneNumber} onChange={set("phoneNumber")} placeholder="+251…" />
+            <PhoneInput id="sf-phone" value={form.phoneNumber} onChange={(val) => setForm((p) => ({ ...p, phoneNumber: val }))} />
           </FormField>
           <FormField id="sf-role" label="Role">
             <Select id="sf-role" value={form.roleId} onChange={set("roleId")} placeholder="Select role…">
@@ -387,7 +387,7 @@ function EditStaffModal({ open, staff, onClose }: { open: boolean; staff: Staff;
         </FormField>
         <div className="grid grid-cols-2 gap-4">
           <FormField id="ef-phone" label="Phone number">
-            <Input id="ef-phone" type="tel" value={form.phoneNumber} onChange={set("phoneNumber")} placeholder="+251…" />
+            <PhoneInput id="ef-phone" value={form.phoneNumber} onChange={(val) => setForm((p) => ({ ...p, phoneNumber: val }))} />
           </FormField>
           <FormField id="ef-role" label="Role">
             <Select id="ef-role" value={form.roleId} onChange={set("roleId")} placeholder="Select role…">

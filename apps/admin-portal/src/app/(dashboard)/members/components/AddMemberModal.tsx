@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, UploadCloud, FileText, X } from "lucide-react";
 import {
-  Drawer, Button, Input, FormField, Select, Label, RowActions, presets,
+  Drawer, Button, Input, FormField, Select, Label, RowActions, presets, PhoneInput,
 } from "@/components/ui";
 import { useCreateMember } from "@/hooks/useMembers";
 import { useFellowships } from "@/hooks/useFellowships";
@@ -382,54 +382,59 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
-            <FormField id="bm-title" label="የቦርድ ኃላፊነት (Title)">
-              <Select
-                id="bm-title"
-                value={boardTitleId}
-                onChange={(e) => setBoardTitleId(e.target.value)}
+          <div className="space-y-3">
+            {/* Row 1: Title + Amharic name */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField id="bm-title" label="የቦርድ ኃላፊነት (Title)">
+                <Select
+                  id="bm-title"
+                  value={boardTitleId}
+                  onChange={(e) => setBoardTitleId(e.target.value)}
+                >
+                  <option value="">Select Title...</option>
+                  {boardTitleOptions.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.note ? `${t.description} (${t.note})` : t.description}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField id="bm-name" label="ስም (Amharic)">
+                <Input
+                  id="bm-name"
+                  value={boardName}
+                  onChange={(e) => setBoardName(e.target.value)}
+                  placeholder="ሙሉ ስም"
+                />
+              </FormField>
+            </div>
+            {/* Row 2: English name + Phone + Add button */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <FormField id="bm-name-en" label="Name (English)">
+                <Input
+                  id="bm-name-en"
+                  value={boardNameEn}
+                  onChange={(e) => setBoardNameEn(e.target.value)}
+                  placeholder="Full name in English"
+                />
+              </FormField>
+              <FormField id="bm-phone" label="ስልክ (Phone)">
+                <PhoneInput
+                  id="bm-phone"
+                  value={boardPhone}
+                  onChange={(val) => setBoardPhone(val)}
+                />
+              </FormField>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddBoardMember}
+                disabled={!boardName.trim() || !boardPhone.trim() || !boardTitleId}
+                className="w-full"
               >
-                <option value="">Select Title...</option>
-                {boardTitleOptions.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.note ? `${t.description} (${t.note})` : t.description}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-            <FormField id="bm-name" label="ስም (Amharic)">
-              <Input
-                id="bm-name"
-                value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
-                placeholder="ሙሉ ስም"
-              />
-            </FormField>
-            <FormField id="bm-name-en" label="Name (English)">
-              <Input
-                id="bm-name-en"
-                value={boardNameEn}
-                onChange={(e) => setBoardNameEn(e.target.value)}
-                placeholder="Full name in English"
-              />
-            </FormField>
-            <FormField id="bm-phone" label="ስልክ (Phone)">
-              <Input
-                id="bm-phone"
-                value={boardPhone}
-                onChange={(e) => setBoardPhone(e.target.value)}
-                placeholder="+251..."
-              />
-            </FormField>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddBoardMember}
-              disabled={!boardName.trim() || !boardPhone.trim() || !boardTitleId}
-              className="w-full"
-            >
-              {editingBoardId ? "Update" : "Add"}
-            </Button>
+                {editingBoardId ? "Update" : "Add"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -477,11 +482,11 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
             </FormField>
 
             <FormField id="phone" label="ስልክ ቁጥር (Phone Number)" error={errors.phoneNumber}>
-              <Input
+              <PhoneInput
                 id="phone"
                 value={form.phoneNumber}
-                onChange={(e) => setForm((p) => ({ ...p, phoneNumber: e.target.value }))}
-                placeholder="+251..."
+                onChange={(val) => setForm((p) => ({ ...p, phoneNumber: val }))}
+                error={errors.phoneNumber}
               />
             </FormField>
 

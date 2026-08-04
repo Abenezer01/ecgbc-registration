@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import {
   Card, CardContent, Button, Input, Select, FormField,
-  Drawer, RowActions, presets,
+  Drawer, RowActions, presets, PhoneInput,
 } from "@/components/ui";
 import { useMember, useUpdateMember } from "@/hooks/useMembers";
 import { useAuth } from "@/hooks/useAuth";
@@ -344,11 +344,10 @@ export default function OverviewPage() {
           </FormField>
 
           <FormField id="bm-phone" label="Phone" required>
-            <Input
+            <PhoneInput
               id="bm-phone"
               value={draft.phoneNumber}
-              onChange={(e) => setDraft((p) => ({ ...p, phoneNumber: e.target.value }))}
-              placeholder="+251..."
+              onChange={(val) => setDraft((p) => ({ ...p, phoneNumber: val }))}
             />
           </FormField>
         </form>
