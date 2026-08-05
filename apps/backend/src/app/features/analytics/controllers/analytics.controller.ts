@@ -4,262 +4,248 @@ import { catchAsync } from "../../../config/error.config";
 import { sendSuccessResponse } from "../../../shared/helpers/response.helper";
 
 export const getAnalytics = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  // 1. Demographics & Fellowships
-  const totalMembers = await prisma.member.count({ where: { isActive: true } });
-  const diasporaMembers = await prisma.member.count({ where: { isActive: true, isInEthiopia: false } });
-  const activeFellowships = await prisma.councilFellowship.count({ where: { isActive: true } });
-  
+  const reqAny = req as any;
+  const isAdmin: boolean = Boolean(reqAny.isAdminRole);
+  const allowedFellowshipIds: string[] = reqAny.rbac?.allowedFellowshipIds || [];
+
+  // Build a reusable base filter for member queries
+  const memberBaseWhere: any = { isActive: true };
+  if (!isAdmin && allowedFellowshipIds.length > 0) {
+    memberBaseWhere.councilFellowshipId = { in: allowedFellowshipIds };
+  } else if (!isAdmin && allowedFellowshipIds.length === 0) {
+    // No fellowship assignments => return empty analytics
+    return sendSuccessResponse(res, {
+      analytics: {
+        totalMembers: 0,
+        diasporaMembers: 0,
+        activeFellowships: 0,
+        registrationTimeline: [],
+        regionalDistribution: [],
+        categoryDistribution: [],
+        topFellowships: [],
+        financials: { expectedRevenue: 0, collectedRevenue: 0, inReviewRevenue: 0, pendingRevenue: 0 },
+        compliance: { rate: 0, pendingReview: 0, statusDistribution: [] },
+        engagement: { activeChurchUsers: 0, recentActivity: [] },
+      },
+    });
+  }
+
+  // ── 1. Demographics ──────────────────────────────────────────────────────
+  const totalMembers = await prisma.member.count({ where: memberBaseWhere });
+  const diasporaMembers = await prisma.member.count({ where: { ...memberBaseWhere, isInEthiopia: false } });
+
+  // For admins count all active fellowships; for scoped users count their assigned ones
+  const activeFellowships = isAdmin
+    ? await prisma.councilFellowship.count({ where: { isActive: true } })
+    : allowedFellowshipIds.length;
+
   // Registration Timeline (in-memory grouping by month)
-  const members = await prisma.member.findMany({ select: { createdAt: true } });
+  const members = await prisma.member.findMany({
+    where: memberBaseWhere,
+    select: { createdAt: true },
+  });
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const timelineMap: Record<string, number> = {};
-  members.forEach(m => {
+  members.forEach((m) => {
     const month = months[m.createdAt.getMonth()];
     timelineMap[month] = (timelineMap[month] || 0) + 1;
   });
-  const registrationTimeline = Object.keys(timelineMap).length > 0 
-    ? Object.entries(timelineMap).map(([month, count]) => ({ month, count }))
-    : [{ month: months[new Date().getMonth()], count: 0 }];
-    
+  const registrationTimeline =
+    Object.keys(timelineMap).length > 0
+      ? Object.entries(timelineMap).map(([month, count]) => ({ month, count }))
+      : [{ month: months[new Date().getMonth()], count: 0 }];
+
   // Regional Distribution
   const membersByRegion = await prisma.member.groupBy({
-    by: ['regionId'],
+    by: ["regionId"],
     _count: { regionId: true },
-    where: { isActive: true }
+    where: memberBaseWhere,
   });
-  const regionIds = membersByRegion.map(m => m.regionId).filter(Boolean) as string[];
+  const regionIds = membersByRegion.map((m) => m.regionId).filter(Boolean) as string[];
   const regions = await prisma.dataLookup.findMany({ where: { id: { in: regionIds } } });
-  const regionalDistribution = membersByRegion.map(m => {
-    const region = regions.find(r => r.id === m.regionId);
-    return {
-      name: region ? region.description : "Unknown",
-      value: m._count.regionId
-    };
+  const regionalDistribution = membersByRegion.map((m) => {
+    const region = regions.find((r) => r.id === m.regionId);
+    return { name: region ? region.description : "Unknown", value: m._count.regionId };
   });
 
   // Category Distribution
   const membersByCategory = await prisma.member.groupBy({
-    by: ['typeId'],
+    by: ["typeId"],
     _count: { typeId: true },
-    where: { isActive: true }
+    where: memberBaseWhere,
   });
-  const categoryIds = membersByCategory.map(m => m.typeId).filter(Boolean) as string[];
+  const categoryIds = membersByCategory.map((m) => m.typeId).filter(Boolean) as string[];
   const categories = await prisma.dataLookup.findMany({ where: { id: { in: categoryIds } } });
-  const categoryDistribution = membersByCategory.map(m => {
-    const category = categories.find(c => c.id === m.typeId);
-    return {
-      name: category ? category.description : "Unknown",
-      value: m._count.typeId
-    };
+  const categoryDistribution = membersByCategory.map((m) => {
+    const category = categories.find((c) => c.id === m.typeId);
+    return { name: category ? category.description : "Unknown", value: m._count.typeId };
   });
 
-  // Top 5 Fellowships
+  // Top 5 Fellowships by member count (within scope)
   const topFellowshipsData = await prisma.member.groupBy({
-    by: ['councilFellowshipId'],
+    by: ["councilFellowshipId"],
     _count: { councilFellowshipId: true },
-    where: { isActive: true },
-    orderBy: {
-      _count: { councilFellowshipId: 'desc' }
-    },
-    take: 5
+    where: memberBaseWhere,
+    orderBy: { _count: { councilFellowshipId: "desc" } },
+    take: 5,
   });
-  
-  const fellowshipIds = topFellowshipsData.map(f => f.councilFellowshipId);
+  const fellowshipIds = topFellowshipsData.map((f) => f.councilFellowshipId);
   const fellowships = await prisma.councilFellowship.findMany({
     where: { id: { in: fellowshipIds } },
-    select: { id: true, name: true }
+    select: { id: true, name: true },
   });
-  
-  const topFellowships = topFellowshipsData.map(f => {
-    const fw = fellowships.find(fl => fl.id === f.councilFellowshipId);
-    return {
-      name: fw ? fw.name : "Unknown",
-      value: f._count.councilFellowshipId
-    };
+  const topFellowships = topFellowshipsData.map((f) => {
+    const fw = fellowships.find((fl) => fl.id === f.councilFellowshipId);
+    return { name: fw ? fw.name : "Unknown", value: f._count.councilFellowshipId };
   });
 
-  // 3. Compliance & Reporting (move this up to get activeReportRequest for financials)
+  // ── 2. Compliance (get activeReportRequest first, used in financials too) ─
   const activeReportRequest = await prisma.reportRequest.findFirst({
     where: { isActive: true },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: "desc" },
   });
 
-  // 2. Financial Overview
+  // ── 3. Financial Overview ─────────────────────────────────────────────────
+  // Scope ReportingFees by member fellowship
+  const reportingFeeWhere: any = {};
+  if (!isAdmin && allowedFellowshipIds.length > 0) {
+    reportingFeeWhere.member = { councilFellowshipId: { in: allowedFellowshipIds } };
+  }
+
   const reportingFees = await prisma.reportingFee.findMany({
-    select: { 
-      amount: true, 
+    where: reportingFeeWhere,
+    select: {
+      amount: true,
       status: true,
-      report: {
-        select: {
-          status: {
-            select: { value: true }
-          }
-        }
-      }
-    }
+      report: { select: { status: { select: { value: true } } } },
+    },
   });
-  
+
   let totalCollected = 0;
   let inReviewRevenue = 0;
-  
-  reportingFees.forEach(fee => {
+  reportingFees.forEach((fee) => {
     const amt = Number(fee.amount);
-    if (fee.status === 'PAID') {
+    if (fee.status === "PAID") {
       totalCollected += amt;
     } else if (
-      fee.status === 'PENDING' || 
-      fee.status === 'PENDING_REVIEW' || 
-      (fee.report && fee.report.status.value === 'SUBMITTED')
+      fee.status === "PENDING" ||
+      fee.status === "PENDING_REVIEW" ||
+      (fee.report && fee.report.status.value === "SUBMITTED")
     ) {
       inReviewRevenue += amt;
     }
   });
-  
-  // Calculate expected revenue by multiplying member count with active fee rules
+
+  // Expected revenue — scoped to this fellowship's members
   let totalExpectedRevenue = 0;
-  
-  // Find all active fee rules, prioritizing ones linked to the current request, or global ones (reportRequestId: null)
   const feeRuleWhere: any = { isActive: true };
   if (activeReportRequest) {
-    feeRuleWhere.OR = [
-      { reportRequestId: activeReportRequest.id },
-      { reportRequestId: null }
-    ];
+    feeRuleWhere.OR = [{ reportRequestId: activeReportRequest.id }, { reportRequestId: null }];
   } else {
     feeRuleWhere.reportRequestId = null;
   }
-
-  const activeFeeRules = await prisma.feeRule.findMany({
-    where: feeRuleWhere
-  });
+  const activeFeeRules = await prisma.feeRule.findMany({ where: feeRuleWhere });
 
   if (activeFeeRules.length > 0) {
     for (const rule of activeFeeRules) {
       const amount = Number(rule.amount);
-      const whereClause: any = { isActive: true };
-      
+      const whereClause: any = { ...memberBaseWhere };
       if (rule.memberTypeId) whereClause.typeId = rule.memberTypeId;
       if (rule.memberCategoryId) whereClause.memberCategoryId = rule.memberCategoryId;
-      
       const memberCount = await prisma.member.count({ where: whereClause });
-      totalExpectedRevenue += (memberCount * amount);
+      totalExpectedRevenue += memberCount * amount;
     }
   }
-  
-  // If no fee rules are found, try CategoryFeeRate
+
   if (totalExpectedRevenue === 0) {
     const categoryRates = await prisma.categoryFeeRate.findMany();
     if (categoryRates.length > 0) {
       for (const rate of categoryRates) {
         const amount = Number(rate.amount);
-        let memberCount = await prisma.member.count({
-          where: { isActive: true, memberCategoryId: rate.categoryId }
-        });
-        
-        // If memberCategoryId doesn't match, maybe the rate is linked to typeId
-        if (memberCount === 0) {
-          memberCount = await prisma.member.count({
-            where: { isActive: true, typeId: rate.categoryId }
-          });
+        let cnt = await prisma.member.count({ where: { ...memberBaseWhere, memberCategoryId: rate.categoryId } });
+        if (cnt === 0) {
+          cnt = await prisma.member.count({ where: { ...memberBaseWhere, typeId: rate.categoryId } });
         }
-        
-        totalExpectedRevenue += (memberCount * amount);
+        totalExpectedRevenue += cnt * amount;
       }
     }
   }
-  
-  // Calculate pending revenue as the difference between expected and collected
+
   let totalPending = 0;
   if (totalExpectedRevenue > 0) {
-    totalPending = totalExpectedRevenue - totalCollected - inReviewRevenue;
-    if (totalPending < 0) totalPending = 0;
+    totalPending = Math.max(0, totalExpectedRevenue - totalCollected - inReviewRevenue);
   }
-  
+
+  // ── 4. Report Compliance ──────────────────────────────────────────────────
   let reportStatusDistribution: any[] = [];
   let overallComplianceRate = 0;
   let reportsPendingReview = 0;
 
   if (activeReportRequest && totalMembers > 0) {
+    const reportWhere: any = { reportRequestId: activeReportRequest.id };
+    if (!isAdmin && allowedFellowshipIds.length > 0) {
+      reportWhere.member = { councilFellowshipId: { in: allowedFellowshipIds } };
+    }
+
     const reports = await prisma.report.findMany({
-      where: { reportRequestId: activeReportRequest.id },
-      include: { status: true }
+      where: reportWhere,
+      include: { status: true },
     });
-    
-    const submittedCount = reports.filter(r => r.status.value !== 'PENDING' && r.status.value !== 'NOT_REPORTED').length;
+
+    const submittedCount = reports.filter(
+      (r) => r.status.value !== "PENDING" && r.status.value !== "NOT_REPORTED"
+    ).length;
     overallComplianceRate = Math.round((submittedCount / totalMembers) * 100);
-    
+
     const statusGroups: Record<string, number> = {};
-    reports.forEach(r => {
+    reports.forEach((r) => {
       const statusName = r.status.description || r.status.value;
       statusGroups[statusName] = (statusGroups[statusName] || 0) + 1;
-      if (r.status.value === 'SUBMITTED') {
-        reportsPendingReview++;
-      }
+      if (r.status.value === "SUBMITTED") reportsPendingReview++;
     });
-    
+
     const notSubmittedCount = totalMembers - reports.length;
-    if (notSubmittedCount > 0) {
-      statusGroups['Not Submitted'] = notSubmittedCount;
-    }
-    
+    if (notSubmittedCount > 0) statusGroups["Not Submitted"] = notSubmittedCount;
+
     reportStatusDistribution = Object.entries(statusGroups).map(([name, value]) => ({ name, value }));
   } else if (!activeReportRequest) {
-    reportStatusDistribution = [{ name: 'No Active Requests', value: 1 }];
+    reportStatusDistribution = [{ name: "No Active Requests", value: 1 }];
   }
 
-  // 4. Activity & Engagement
-  // Active Church Portals (last 7 days)
+  // ── 5. Engagement ─────────────────────────────────────────────────────────
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
-  const activeChurchUsers = await prisma.churchUser.count({
-    where: { lastLoginAt: { gte: sevenDaysAgo } }
-  });
+
+  const churchUserWhere: any = { lastLoginAt: { gte: sevenDaysAgo } };
+  if (!isAdmin && allowedFellowshipIds.length > 0) {
+    churchUserWhere.member = { councilFellowshipId: { in: allowedFellowshipIds } };
+  }
+  const activeChurchUsers = await prisma.churchUser.count({ where: churchUserWhere });
 
   const recentActivity = await prisma.activity.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: 10,
-    select: {
-      id: true,
-      action: true,
-      entity: true,
-      description: true,
-      performedByType: true,
-      createdAt: true
-    }
+    select: { id: true, action: true, entity: true, description: true, performedByType: true, createdAt: true },
   });
 
-  const analytics = {
-    // Demographics
-    totalMembers,
-    diasporaMembers,
-    activeFellowships,
-    registrationTimeline,
-    regionalDistribution,
-    categoryDistribution,
-    topFellowships,
-    
-    // Financials
-    financials: {
-      expectedRevenue: totalExpectedRevenue,
-      collectedRevenue: totalCollected,
-      inReviewRevenue: inReviewRevenue,
-      pendingRevenue: totalPending
+  sendSuccessResponse(res, {
+    analytics: {
+      totalMembers,
+      diasporaMembers,
+      activeFellowships,
+      registrationTimeline,
+      regionalDistribution,
+      categoryDistribution,
+      topFellowships,
+      financials: {
+        expectedRevenue: totalExpectedRevenue,
+        collectedRevenue: totalCollected,
+        inReviewRevenue,
+        pendingRevenue: totalPending,
+      },
+      compliance: { rate: overallComplianceRate, pendingReview: reportsPendingReview, statusDistribution: reportStatusDistribution },
+      engagement: { activeChurchUsers, recentActivity },
     },
-    
-    // Compliance
-    compliance: {
-      rate: overallComplianceRate,
-      pendingReview: reportsPendingReview,
-      statusDistribution: reportStatusDistribution
-    },
-    
-    // Engagement
-    engagement: {
-      activeChurchUsers,
-      recentActivity
-    }
-  };
-
-  sendSuccessResponse(res, { analytics });
+  });
 });
+

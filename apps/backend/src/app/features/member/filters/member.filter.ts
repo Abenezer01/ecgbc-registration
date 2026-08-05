@@ -58,6 +58,8 @@ export const getMembers = catchAsync(
         const allowed = rbac?.allowedFellowshipIds || [];
         if (allowed && allowed.length > 0) {
           filters = { ...filters, councilFellowshipId: { in: allowed } } as IFilter;
+        } else {
+          filters = { ...filters, id: { in: [] } } as IFilter; // No allowed fellowships -> empty result
         }
       }
     }
