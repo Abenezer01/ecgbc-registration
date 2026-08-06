@@ -53,5 +53,32 @@ router
     StaffController.updateStaff
   );
 
+// Fellowship assignment routes
+router
+  .route("/:id/fellowships")
+  .get(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.StaffPermission.STAFF_VIEW),
+    StaffController.getStaffFellowships
+  )
+  .post(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.StaffPermission.STAFF_CHANGE),
+    StaffController.assignStaffFellowships
+  )
+  .patch(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.StaffPermission.STAFF_CHANGE),
+    StaffController.updateStaffFellowships
+  );
+
+router
+  .route("/:id/fellowships/:fellowshipId")
+  .delete(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.StaffPermission.STAFF_CHANGE),
+    StaffController.removeStaffFellowship
+  );
+
 
 export default router;

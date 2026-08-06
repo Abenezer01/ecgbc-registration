@@ -171,3 +171,79 @@ export const updateStaff = catchAsync(
     sendSuccessResponse(res, { staff });
   }
 );
+
+export const getStaffFellowships = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const staff = await prisma.staff.findUnique({
+      where: { id: req.params.id },
+      include: { role: true, state: true },
+    });
+    if (!staff) return next(new AppError(`Staff not found`, 404));
+
+    const staffFellowships = await prisma.staffFellowship.findMany({
+      where: { staffId: req.params.id },
+      include: { fellowship: true },
+    });
+
+    sendSuccessResponse(res, {
+      staff,
+      fellowships: staffFellowships.map((sf) => sf.fellowship),
+    });
+  }
+);
+
+export const assignStaffFellowships = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { fellowshipIds } = req.body as { fellowshipIds: string[] };
+    const staffId = req.params.id;
+
+    if (!Array.isArray(fellowshipIds)) {
+      return next(new AppError("fellowshipIds must be an array", 400));
+    }
+
+    const created = await Promise.all(
+      fellowshipIds.map((fellowshipId) =>
+        prisma.staffFellowship.upsert({
+          where: { staffId_fellowshipId: { staffId, fellowshipId } },
+          update: {},
+          create: { staffId, fellowshipId },
+        })
+      )
+    );
+
+    sendSuccessResponse(res, { assigned: created.length });
+  }
+);
+
+export const updateStaffFellowships = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { fellowshipIds } = req.body as { fellowshipIds: string[] };
+    const staffId = req.params.id;
+
+    if (!Array.isArray(fellowshipIds)) {
+      return next(new AppError("fellowshipIds must be an array", 400));
+    }
+
+    await prisma.staffFellowship.deleteMany({ where: { staffId } });
+
+    const created = await Promise.all(
+      fellowshipIds.map((fellowshipId) =>
+        prisma.staffFellowship.create({ data: { staffId, fellowshipId } })
+      )
+    );
+
+    sendSuccessResponse(res, { assigned: created.length });
+  }
+);
+
+export const removeStaffFellowship = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id: staffId, fellowshipId } = req.params;
+
+    await prisma.staffFellowship.deleteMany({
+      where: { staffId, fellowshipId },
+    });
+
+    sendSuccessResponse(res, { removed: true });
+  }
+);
