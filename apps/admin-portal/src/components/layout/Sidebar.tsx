@@ -30,12 +30,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { name: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard },
-  { name: "Members",       href: "/members",      icon: Users },
-  { name: "Fellowships",   href: "/fellowships",  icon: Building2 },
-  { name: "Reports",       href: "/reports",      icon: FileText },
+  { name: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard, permission: "view_dashboard" },
+  { name: "Members",       href: "/members",      icon: Users, permission: "view_member" },
+  { name: "Fellowships",   href: "/fellowships",  icon: Building2, permission: "view_fellowship" },
+  { name: "Reports",       href: "/reports",      icon: FileText, permission: "view_report" },
   { name: "Finance",       href: "/finance",      icon: DollarSign, permission: "view_finance" },
-  { name: "Master Data",   href: "/lookup",       icon: Database,   permission: "view_lookup" },
+  { name: "Master Data",   href: "/lookup",       icon: Database,   permission: "view_permission" },
   { name: "Activity Logs", href: "/logs",         icon: History,    permission: "view_logs" },
 
 ];
@@ -106,10 +106,11 @@ export function Sidebar() {
         })}
 
         {/* System section */}
-        <div className="pt-3 mt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-          <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
-            System
-          </p>
+        {(hasPermission("view_role") || hasPermission("view_staff")) && (
+          <div className="pt-3 mt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+            <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
+              System
+            </p>
           <Link
             href="/settings"
             className={cn(
@@ -125,7 +126,8 @@ export function Sidebar() {
             </div>
             {settingsActive && <ChevronRight className="h-3.5 w-3.5 text-blue-400 dark:text-blue-500" />}
           </Link>
-        </div>
+          </div>
+        )}
       </nav>
 
       {/* User Footer */}

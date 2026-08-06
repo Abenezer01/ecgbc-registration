@@ -72,9 +72,9 @@ export default function LookupPage() {
   const [editTarget, setEditTarget] = useState<DataLookup | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DataLookup | null>(null);
 
-  const canAdd = hasPermission("add_lookup") || hasPermission("add_permission");
-  const canEdit = hasPermission("change_lookup") || hasPermission("change_permission");
-  const canDelete = hasPermission("delete_lookup") || hasPermission("delete_permission");
+  const canAdd = hasPermission("add_permission");
+  const canEdit = hasPermission("change_permission");
+  const canDelete = hasPermission("delete_permission");
 
   const { data: lookups = [], isLoading, refetch, isFetching } = useDataLookups();
   const { mutateAsync: createLookup, isPending: creating } = useCreateDataLookup();

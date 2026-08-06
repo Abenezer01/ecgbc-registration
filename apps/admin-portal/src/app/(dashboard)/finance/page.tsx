@@ -6,10 +6,13 @@ import { FinanceSummaryCards } from "../../../components/finance/FinanceSummaryC
 import { FeeTable } from "../../../components/finance/FeeTable";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function FinanceDashboardPage() {
   const { data, isLoading } = useFinanceSummary();
   const router = useRouter();
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("manage_finance");
 
   return (
     <div className="space-y-8">
@@ -59,6 +62,7 @@ export default function FinanceDashboardPage() {
             onSendClick={() => router.push("/finance/fees")}
             onPayClick={() => router.push("/finance/fees")}
             onVerifyClick={() => router.push("/finance/fees")}
+            canManage={canManage}
           />
         </div>
       </section>

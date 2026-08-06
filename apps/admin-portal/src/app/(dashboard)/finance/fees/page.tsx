@@ -7,10 +7,13 @@ import { SendFeeDialog } from "../../../../components/finance/SendFeeDialog";
 import { MarkPaidDialog } from "../../../../components/finance/MarkPaidDialog";
 import { VerifyPaymentDialog } from "../../../../components/finance/VerifyPaymentDialog";
 import { Pagination } from "@/components/ui";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function FinanceFeesPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("manage_finance");
 
   const { data, isLoading } = useReportingFees({ page, limit });
   const { mutateAsync: sendFee, isPending: sending } = useSendFee();
@@ -81,6 +84,7 @@ export default function FinanceFeesPage() {
           onSendClick={handleSendClick}
           onPayClick={handlePayClick}
           onVerifyClick={handleVerifyClick}
+          canManage={canManage}
         />
         {data && data.total > limit && (
           <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">

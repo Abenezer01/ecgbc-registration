@@ -26,8 +26,8 @@ export default function FellowshipMembersPage() {
   });
 
   const { hasPermission } = useAuth();
-  const canViewReports = hasPermission("report_view") || hasPermission("member_view");
-  const canManageUsers = hasPermission("church_user_view") || hasPermission("member_view");
+  const canViewReports = hasPermission("view_report") || hasPermission("view_member");
+  const canManageUsers = hasPermission("view_church_user") || hasPermission("view_member");
 
   const tabs = [
     { id: "overview", label: "Overview", icon: <User />, path: `/fellowships/${id}/overview` },

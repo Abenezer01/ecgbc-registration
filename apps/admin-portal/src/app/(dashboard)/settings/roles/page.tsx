@@ -1,20 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
-import { RefreshCw, Plus, Trash2, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { RefreshCw, Plus, Trash2, ShieldCheck, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import {
   PageHeader, Button, Badge, Modal, ModalFooter,
   FormField, Input,
 } from "@/components/ui";
-import { useRoles, usePermissions, useCreateRole, useDeleteRole } from "@/hooks/useRoles";
+import { useRoles, usePermissions, useCreateRole, useDeleteRole, useUpdateRole } from "@/hooks/useRoles";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
-// Group permissions by category prefix
+// Group permissions by category prefix (first segment before "_")
 function groupPermissions(permissions: any[]) {
   return permissions.reduce((acc: Record<string, any[]>, p) => {
-    const [, ...rest] = p.codeName.split("_");
-    const group = rest.join("_").replace(/_/g, " ");
     const category = p.codeName.split("_")[0];
     if (!acc[category]) acc[category] = [];
     acc[category].push(p);
@@ -26,14 +24,15 @@ export default function RolesPage() {
   const { hasPermission } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
 
   const canAdd    = hasPermission("add_role");
   const canDelete = hasPermission("delete_role");
+  const canEdit   = hasPermission("change_role");
 
   const { data: roles = [], isLoading, refetch, isFetching } = useRoles();
   const { mutateAsync: deleteRole, isPending: deleting } = useDeleteRole();
-;
 
   return (
     <div className="space-y-6">
@@ -107,9 +106,21 @@ export default function RolesPage() {
                 {/* Expanded Permissions */}
                 {expandedRole === role.id && (
                   <div className="px-4 pb-4 bg-zinc-50/50 dark:bg-zinc-950/30 border-t border-zinc-100 dark:border-zinc-800">
-                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 pt-3 pb-2 uppercase tracking-widest">
-                      Assigned Permissions
-                    </p>
+                    <div className="flex items-center justify-between pt-3 pb-2">
+                      <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+                        Assigned Permissions
+                      </p>
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditTarget(role)}
+                          className="h-7 text-xs gap-1.5"
+                        >
+                          <Pencil className="h-3 w-3" /> Edit Permissions
+                        </Button>
+                      )}
+                    </div>
                     {role.permissions?.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {role.permissions.map((p: any) => (
@@ -135,6 +146,14 @@ export default function RolesPage() {
       {/* Create Role Modal */}
       <CreateRoleModal open={createOpen} onClose={() => setCreateOpen(false)} />
 
+      {/* Edit Permissions Modal */}
+      {editTarget && (
+        <EditPermissionsModal
+          role={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
+
       {/* Delete Confirm */}
       <Modal
         open={!!deleteTarget}
@@ -158,6 +177,131 @@ export default function RolesPage() {
         </ModalFooter>
       </Modal>
     </div>
+  );
+}
+
+// ─── Edit Permissions Modal ──────────────────────────────────────────────────
+function EditPermissionsModal({ role, onClose }: { role: any; onClose: () => void }) {
+  const { data: allPermissions = [] } = usePermissions();
+  const { mutateAsync: updateRole, isPending } = useUpdateRole();
+  const [selected, setSelected] = useState<string[]>([]);
+
+  // Seed selection from current role permissions
+  useEffect(() => {
+    setSelected(role.permissions?.map((p: any) => p.id) ?? []);
+  }, [role]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => setSelected(allPermissions.map((p: any) => p.id));
+  const clearAll  = () => setSelected([]);
+
+  const grouped = groupPermissions(allPermissions);
+
+  const handleSave = async () => {
+    try {
+      await updateRole({ id: role.id, permissions: selected });
+      onClose();
+    } catch {}
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Edit Permissions — ${role.name}`}
+      description="Toggle permissions to grant or revoke access for this role."
+      size="lg"
+    >
+      <div className="space-y-4">
+        {/* Quick actions */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-zinc-500">
+            <span className="font-semibold text-zinc-800 dark:text-white">{selected.length}</span>
+            {" "}of {allPermissions.length} selected
+          </span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={selectAll} className="h-7 text-xs">Select All</Button>
+            <Button size="sm" variant="outline" onClick={clearAll} className="h-7 text-xs">Clear All</Button>
+          </div>
+        </div>
+
+        {/* Permission groups */}
+        <div className="space-y-4 max-h-96 overflow-y-auto pr-1 rounded-lg">
+          {Object.entries(grouped).map(([category, perms]) => {
+            const groupIds = (perms as any[]).map((p) => p.id);
+            const allSelected = groupIds.every((id) => selected.includes(id));
+            const someSelected = groupIds.some((id) => selected.includes(id));
+
+            const toggleGroup = () => {
+              if (allSelected) {
+                setSelected((prev) => prev.filter((id) => !groupIds.includes(id)));
+              } else {
+                setSelected((prev) => [...new Set([...prev, ...groupIds])]);
+              }
+            };
+
+            return (
+              <div key={category} className="border border-zinc-100 dark:border-zinc-800 rounded-lg p-3">
+                {/* Group header with toggle all */}
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 capitalize">
+                    {category}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={toggleGroup}
+                    className={cn(
+                      "text-[10px] font-medium px-2 py-0.5 rounded transition-colors",
+                      allSelected
+                        ? "text-indigo-600 dark:text-indigo-400 hover:text-indigo-800"
+                        : someSelected
+                        ? "text-amber-600 dark:text-amber-400 hover:text-amber-800"
+                        : "text-zinc-400 hover:text-zinc-600"
+                    )}
+                  >
+                    {allSelected ? "Deselect all" : "Select all"}
+                  </button>
+                </div>
+
+                {/* Permission chips */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  {(perms as any[]).map((p: any) => {
+                    const isSelected = selected.includes(p.id);
+                    return (
+                      <button
+                        type="button"
+                        key={p.id}
+                        onClick={() => toggle(p.id)}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-lg text-xs font-mono text-left transition-all border",
+                          isSelected
+                            ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300"
+                            : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-indigo-200 hover:bg-indigo-50/30"
+                        )}
+                      >
+                        {p.codeName}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <ModalFooter>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} disabled={isPending}>
+          {isPending ? "Saving…" : "Save Permissions"}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 

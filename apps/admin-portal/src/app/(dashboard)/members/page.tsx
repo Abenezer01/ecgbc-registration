@@ -46,6 +46,8 @@ const DEFAULT_FILTERS: MembersFilters = {
 export default function MembersPage() {
   const router = useRouter();
   const { staff, rbac, hasPermission } = useAuth();
+  const canDeleteMember = hasPermission("delete_member");
+  const canExport = hasPermission("view_member");
   const staffIsOwner = staff?.role?.type?.value === "role_type_owner";
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -275,10 +277,12 @@ export default function MembersPage() {
             <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} aria-label="Refresh">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
-            <Button variant="outline" onClick={handleExportAll} disabled={downloading}>
-              <Download className="mr-2 h-4 w-4" />
-              {downloading ? "Exporting..." : "Export"}
-            </Button>
+            {canExport && (
+              <Button variant="outline" onClick={handleExportAll} disabled={downloading}>
+                <Download className="mr-2 h-4 w-4" />
+                {downloading ? "Exporting..." : "Export"}
+              </Button>
+            )}
             {hasPermission("add_member") && (
               <Button onClick={() => setAddOpen(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
@@ -297,21 +301,25 @@ export default function MembersPage() {
               {selectedIds.length} selected
             </div>
             <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportSelected}
-                disabled={downloading}
-              >
-                Export Selected
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDeleteSelected}
-              >
-                Delete Selected
-              </Button>
+              {canExport && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportSelected}
+                  disabled={downloading}
+                >
+                  Export Selected
+                </Button>
+              )}
+              {canDeleteMember && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                >
+                  Delete Selected
+                </Button>
+              )}
             </div>
           </div>
         </>

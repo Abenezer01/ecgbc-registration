@@ -11,10 +11,11 @@ import {
   LogPermission,
   ChurchUserPermission,
   DashboardPermission
-} from "../../app/features/permission/enums/permission.enum";
-import prisma from "../../app/config/db.config";
+} from "./src/app/features/permission/enums/permission.enum";
 
-export const seedPermissions = async (): Promise<any> => {
+const prisma = new PrismaClient();
+
+async function main() {
   const allEnums = [
     MemberPermission,
     StaffPermission,
@@ -28,9 +29,7 @@ export const seedPermissions = async (): Promise<any> => {
     ChurchUserPermission,
     DashboardPermission
   ];
-  
   const allPermCodes = allEnums.flatMap(e => Object.values(e));
-  console.log(`Syncing ${allPermCodes.length} permissions to DB from enums...`);
 
   const createdPerms = [];
   for (const code of allPermCodes) {
@@ -42,7 +41,6 @@ export const seedPermissions = async (): Promise<any> => {
     createdPerms.push(perm);
   }
 
-  // Ensure Admin and Owner roles are automatically granted all new permissions
   const roleTypes = await prisma.dataLookup.findMany({
     where: { value: { in: ["role_type_owner", "role_type_admin"] } },
   });
@@ -63,7 +61,11 @@ export const seedPermissions = async (): Promise<any> => {
           },
         },
       });
+      console.log(`Updated permissions for role: ${role.name}`);
     }
-    console.log("Successfully linked permissions to Admin and Owner roles.");
   }
-};
+}
+
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

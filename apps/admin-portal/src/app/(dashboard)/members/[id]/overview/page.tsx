@@ -55,11 +55,11 @@ export default function OverviewPage() {
   const [formError, setFormError]   = useState<string | null>(null);
 
   // ── permissions ────────────────────────────────────────────────────────────
-  const canViewFiles   = hasPermission("file_view")        || hasPermission("member_view");
-  const canViewReports = hasPermission("report_view")      || hasPermission("member_view");
-  const canManageUsers = hasPermission("church_user_view") || hasPermission("member_view");
-  const canDeactivate  = hasPermission("member_deactivate")|| hasPermission("member_delete");
-  const canEdit        = hasPermission("member_change")    || hasPermission("member_edit");
+  const canViewFiles   = hasPermission("view_file")        || hasPermission("view_member");
+  const canViewReports = hasPermission("view_report")      || hasPermission("view_member");
+  const canManageUsers = hasPermission("view_church_user") || hasPermission("view_member");
+  const canDeactivate  = hasPermission("deactivate_member")|| hasPermission("delete_member");
+  const canEdit        = hasPermission("change_member");
 
   const titleOptions = lookups.filter((l) => l.type === "board_title");
 

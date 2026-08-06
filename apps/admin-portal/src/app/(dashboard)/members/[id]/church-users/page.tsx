@@ -24,10 +24,10 @@ export default function ChurchUsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<ChurchUser | null>(null);
   const [resetPasswordTarget, setResetPasswordTarget] = useState<ChurchUser | null>(null);
 
-  const canViewFiles = hasPermission("file_view") || hasPermission("member_view");
-  const canViewReports = hasPermission("report_view") || hasPermission("member_view");
-  const canManageUsers = hasPermission("church_user_view") || hasPermission("member_view");
-  const canDeactivate = hasPermission("member_deactivate") || hasPermission("member_delete");
+  const canViewFiles = hasPermission("view_file") || hasPermission("view_member");
+  const canViewReports = hasPermission("view_report") || hasPermission("view_member");
+  const canManageUsers = hasPermission("view_church_user") || hasPermission("view_member");
+  const canDeactivate = hasPermission("deactivate_member") || hasPermission("delete_member");
 
   const tabs = [
     { id: "overview", label: "Overview", icon: <User />, path: `/members/${id}/overview` },

@@ -13,10 +13,10 @@ export default function FellowshipSettingsPage() {
   const { data: fellowship, isLoading } = useFellowship(id);
   const { hasPermission } = useAuth();
 
-  const canViewMembers = hasPermission("member_view");
-  const canViewReports = hasPermission("report_view");
-  const canManageSettings = hasPermission("fellowship_change") || hasPermission("fellowship_edit");
-  const canDeactivate = hasPermission("fellowship_deactivate") || hasPermission("fellowship_delete");
+  const canViewMembers = hasPermission("view_member");
+  const canViewReports = hasPermission("view_report");
+  const canManageSettings = hasPermission("change_fellowship");
+  const canDeactivate = hasPermission("deactivate_fellowship") || hasPermission("delete_fellowship");
 
   const tabs = [
     { id: "overview", label: "Overview", icon: <Building2 />, path: `/fellowships/${id}/overview` },

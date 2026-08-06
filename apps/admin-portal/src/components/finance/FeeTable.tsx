@@ -11,9 +11,10 @@ interface FeeTableProps {
   onSendClick: (fee: ReportingFee) => void;
   onPayClick: (fee: ReportingFee) => void;
   onVerifyClick: (fee: ReportingFee) => void;
+  canManage?: boolean;
 }
 
-export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyClick }: FeeTableProps) {
+export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyClick, canManage = true }: FeeTableProps) {
   const columns = [
     {
       key: "member",
@@ -70,7 +71,7 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
       className: "text-right w-40",
       cell: (row: ReportingFee) => (
         <div className="flex justify-end gap-2">
-          {row.status === "PENDING" && (
+          {canManage && row.status === "PENDING" && (
             <Button
               onClick={() => onSendClick(row)}
               variant="outline"
@@ -80,7 +81,7 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
               <Send className="h-3.5 w-3.5" /> Send
             </Button>
           )}
-          {row.report?.bankReference && (
+          {canManage && row.report?.bankReference && (
             <Button
               onClick={() => onVerifyClick(row)}
               variant="outline"
@@ -90,7 +91,7 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
               Verify
             </Button>
           )}
-          {(row.status === "SENT" || row.status === "PENDING") && (
+          {canManage && (row.status === "SENT" || row.status === "PENDING") && (
             <Button
               onClick={() => onPayClick(row)}
               variant="primary"

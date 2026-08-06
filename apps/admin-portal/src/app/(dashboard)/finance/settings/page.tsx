@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { FeeRulesManager } from "../../../../components/finance/FeeRulesManager";
 import { PaymentMethodsSettings } from "../../../../components/finance/PaymentMethodsSettings";
-import { Percent, CreditCard } from "lucide-react";
+import { Percent, CreditCard, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const tabs = [
   { key: "fee-rules", label: "Fee Rules", icon: Percent },
@@ -13,6 +14,24 @@ const tabs = [
 
 export default function FinanceSettingsPage() {
   const [activeTab, setActiveTab] = useState("fee-rules");
+  const { hasPermission } = useAuth();
+
+  // Require manage_finance for settings
+  if (!hasPermission("manage_finance")) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <ShieldAlert className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+            Access Denied
+          </h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            You don't have permission to manage finance settings.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 space-y-6">

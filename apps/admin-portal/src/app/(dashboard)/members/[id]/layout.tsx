@@ -24,8 +24,8 @@ export default function MemberDetailLayout({ children }: MemberDetailLayoutProps
   const { hasPermission } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
 
-  const canEdit = hasPermission("member_change") || hasPermission("member_edit");
-  const canDeactivate = hasPermission("member_deactivate") || hasPermission("member_delete");
+  const canEdit = hasPermission("change_member");
+  const canDeactivate = hasPermission("deactivate_member") || hasPermission("delete_member");
 
   if (isLoading) {
     return <div className="p-10 text-center animate-pulse">Loading...</div>;

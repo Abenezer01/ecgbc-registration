@@ -12,9 +12,9 @@ export default function FellowshipReportsPage() {
   const { data: fellowship, isLoading } = useFellowship(id);
   const { hasPermission } = useAuth();
 
-  const canViewMembers = hasPermission("member_view");
-  const canViewReports = hasPermission("report_view");
-  const canManageSettings = hasPermission("fellowship_change") || hasPermission("fellowship_edit");
+  const canViewMembers = hasPermission("view_member");
+  const canViewReports = hasPermission("view_report");
+  const canManageSettings = hasPermission("change_fellowship");
 
   const tabs = [
     { id: "overview", label: "Overview", icon: <Building2 />, path: `/fellowships/${id}/overview` },

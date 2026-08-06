@@ -5,9 +5,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, FileText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { hasPermission } = useAuth();
+
+  // Protect entire finance section
+  if (!hasPermission("view_finance")) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Settings className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+            Access Denied
+          </h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            You don't have permission to view finance data.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { name: "Dashboard", href: "/finance", icon: LayoutDashboard },

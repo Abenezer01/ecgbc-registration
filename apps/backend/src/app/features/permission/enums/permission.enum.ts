@@ -53,4 +53,19 @@ export enum MemberPermission {
     FINANCE_VIEW = "view_finance",
     FINANCE_MANAGE = "manage_finance",
   }
+
+  export enum LogPermission {
+    LOG_VIEW = "view_logs",
+  }
+
+  export enum ChurchUserPermission {
+    CHURCH_USER_ADD = "add_church_user",
+    CHURCH_USER_CHANGE = "change_church_user",
+    CHURCH_USER_VIEW = "view_church_user",
+    CHURCH_USER_DELETE = "delete_church_user",
+    CHURCH_USER_RESET_PASSWORD = "reset_church_user_password",
+  }
  
+  export enum DashboardPermission {
+    DASHBOARD_VIEW = "view_dashboard",
+  }

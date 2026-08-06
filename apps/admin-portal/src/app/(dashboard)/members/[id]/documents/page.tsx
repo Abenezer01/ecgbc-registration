@@ -38,13 +38,13 @@ export default function DocumentsPage() {
   const { hasPermission } = useAuth();
 
   // ── permissions ─────────────────────────────────────────────────────────────
-  const canViewFiles   = hasPermission("file_view")        || hasPermission("member_view");
-  const canViewReports = hasPermission("report_view")      || hasPermission("member_view");
-  const canManageUsers = hasPermission("church_user_view") || hasPermission("member_view");
-  const canDeactivate  = hasPermission("member_deactivate")|| hasPermission("member_delete");
-  const canAdd         = hasPermission("add_file")         || hasPermission("member_change");
-  const canEdit        = hasPermission("add_file")         || hasPermission("member_change");
-  const canDelete      = hasPermission("delete_file")      || hasPermission("member_change");
+  const canViewFiles   = hasPermission("view_file")        || hasPermission("view_member");
+  const canViewReports = hasPermission("view_report")      || hasPermission("view_member");
+  const canManageUsers = hasPermission("view_church_user") || hasPermission("view_member");
+  const canDeactivate  = hasPermission("deactivate_member")|| hasPermission("delete_member");
+  const canAdd         = hasPermission("add_file")         || hasPermission("change_member");
+  const canEdit        = hasPermission("change_file")      || hasPermission("change_member");
+  const canDelete      = hasPermission("delete_file")      || hasPermission("change_member");
 
   const tabs = [
     { id: "overview",     label: "Overview",      icon: <User />,        path: `/members/${id}/overview` },
