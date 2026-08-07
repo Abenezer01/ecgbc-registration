@@ -397,7 +397,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
           <div className="space-y-3">
             {/* Row 1: Title + Amharic name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField id="bm-title" label="የቦርድ ኃላፊነት (Title)">
+              <FormField id="bm-title" label="ማዕረግ (Title)">
                 <Select
                   id="bm-title"
                   value={boardTitleId}
