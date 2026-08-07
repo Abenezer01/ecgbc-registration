@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export interface ChurchUser {
   id: string;
+  memberId?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -33,5 +34,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem("church_portal_token");
     set({ user: null, church: null, isAuthenticated: false });
+    window.location.href = "/login";
   },
 }));

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Church } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,6 +21,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
       setIsLoading(true);
       const { data } = await api.post("/church-auth/login", formData);
@@ -27,10 +29,10 @@ export default function LoginPage() {
       localStorage.setItem("church_portal_token", data.data.accessToken);
       setAuth(data.data.user, data.data.church);
       
-      toast.success("Welcome back!");
       router.push("/dashboard");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed");
+    } catch (err: any) {
+      const message = err.response?.data?.message || "Incorrect email or password. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -136,11 +138,18 @@ export default function LoginPage() {
               />
             </div>
 
+            {error && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30 px-4 py-3">
+                <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
               className={cn(
-                "w-full h-11 rounded-lg font-medium text-white transition-all shadow-lg shadow-slate-900/20 mt-2",
+                "w-full h-11 rounded-lg font-medium text-white transition-all shadow-lg shadow-slate-900/20",
                 "bg-slate-900 hover:bg-slate-800 focus:ring-4 focus:ring-slate-900/20",
                 "flex items-center justify-center",
                 isLoading && "opacity-70 cursor-not-allowed"

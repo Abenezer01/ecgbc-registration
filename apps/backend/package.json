@@ -13,6 +13,7 @@
     "reset": "tsx ./src/seeders/reset/reset.runner.ts",
     "seed:datalookup": "tsx ./src/seeders/data-lookup/create.runner.ts",
     "seed:board-titles": "tsx ./src/seeders/data-lookup/seed-board-titles.runner.ts",
+    "seed:file-categories": "tsx ./src/seeders/data-lookup/seed-file-categories.runner.ts",
     "seed:permission": "tsx ./src/seeders/permission/create.runner.ts",
     "seed:role": "tsx ./src/seeders/role/create.runner.ts",
     "seed:role-permission": "tsx ./src/seeders/role-permission/create.runner.ts",

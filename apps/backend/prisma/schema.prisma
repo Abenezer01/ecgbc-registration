@@ -16,6 +16,7 @@ model DataLookup {
   isDefault           Boolean
   value               String              @unique
   note                String              @db.Text
+  isRequired          Boolean             @default(false)
   createdAt           DateTime            @default(now()) @map("created_at")
   updatedAt           DateTime            @updatedAt @map("updated_at")
   regions             CouncilFellowship[] @relation("RegionLookup")

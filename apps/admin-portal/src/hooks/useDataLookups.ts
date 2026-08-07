@@ -9,6 +9,7 @@ export interface DataLookup {
   value: string;
   description: string;
   note?: string;
+  isRequired?: boolean;
   documentRequirement?: {
     id: string;
     fileTypeId: string;

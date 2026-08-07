@@ -205,7 +205,19 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (files.length === 0) {
+    
+    // Validate Required Files
+    const requiredCategories = fileCategoryOptions.filter(c => c.isRequired);
+    const uploadedCategoryIds = Object.values(fileCategories);
+    
+    const missingCategories = requiredCategories.filter(rc => !uploadedCategoryIds.includes(rc.id));
+    
+    if (missingCategories.length > 0) {
+      setFileError(`Please upload the following required documents: ${missingCategories.map(c => c.description).join(", ")}`);
+      return;
+    }
+
+    if (files.length === 0 && requiredCategories.length === 0) {
       setFileError("At least one document attachment is required.");
       return;
     }
@@ -520,6 +532,26 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
             ተያያዥ ፋይሎች (Member Files)
           </h4>
 
+          {/* Required Documents Checklist */}
+          {fileCategoryOptions.filter(c => c.isRequired).length > 0 && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-100 dark:border-blue-900/50">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Required Documents:</p>
+              <ul className="text-xs space-y-1 text-blue-700 dark:text-blue-400">
+                {fileCategoryOptions.filter(c => c.isRequired).map(c => {
+                  const isUploaded = Object.values(fileCategories).includes(c.id);
+                  return (
+                    <li key={c.id} className="flex items-center gap-2">
+                      <span className={isUploaded ? "text-green-600 dark:text-green-400" : "text-zinc-400"}>
+                        {isUploaded ? "☑" : "☐"}
+                      </span>
+                      <span className={isUploaded ? "line-through opacity-70" : ""}>{c.description}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           {fileError && (
             <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
               {fileError}
@@ -566,7 +598,9 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
                       >
                         <option value="">Select Category...</option>
                         {fileCategoryOptions.map((c) => (
-                          <option key={c.id} value={c.id}>{c.description}</option>
+                          <option key={c.id} value={c.id}>
+                            {c.description} {c.isRequired ? "(Required)" : ""}
+                          </option>
                         ))}
                       </Select>
                     )}

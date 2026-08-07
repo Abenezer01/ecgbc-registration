@@ -4,7 +4,7 @@ import * as FileController from "./controllers/file.controller";
 import * as FilesFilter from "./filters/file.filter";
 import * as StaffAuthMiddleware from "../auth/middlewares/auth.middleware";
 import * as Permissions from "../permission/enums/permission.enum";
-import { createMemberFileValidator } from "./validators/create-file.validator";
+import { createMemberFileValidator, createMemberFilesValidator } from "./validators/create-file.validator";
 // import { editMemberValidator } from "./validators/edit-report.validator";
 
 const router = express.Router();
@@ -38,7 +38,7 @@ router
     ),
     FileController.uploadMemberFiles.pre,
     FileController.uploadMemberFiles.post,
-    createMemberFileValidator,
+    createMemberFilesValidator,
     FileController.bulkUploadMemberFiles
   );
   router
