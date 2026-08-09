@@ -19,5 +19,11 @@ export const createMemberValidator = [
   check("typeId").not().isEmpty().withMessage("typeId is required."),
   // check('stateId').not().isEmpty().withMessage('stateId is required.'),
   check("isInEthiopia").isBoolean().withMessage("isInEthiopia is required."),
+  
+  // Contact Person Validation (Optional)
+  check("contactPersonFullName").optional().notEmpty().withMessage("Contact person full name is required if provided."),
+  check("contactPersonPhoneNumber").optional().notEmpty().withMessage("Contact person phone number is required if provided."),
+  check("contactPersonEmail").optional().isEmail().withMessage("Invalid contact person email."),
+  
   validate,
 ];

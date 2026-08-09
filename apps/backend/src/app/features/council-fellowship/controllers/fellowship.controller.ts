@@ -30,7 +30,7 @@ export const getFellowship = catchAsync(
 
     const fellowship = await prisma.councilFellowship.findUnique({
       where: { id: req.params.id },
-      include: { boardMembers: true, files: true, region: true }, // Include region details
+      include: { boardMembers: { include: { title: true } }, files: true, region: true, contactPerson: true },
     });
 
     if (!fellowship) {
@@ -60,7 +60,7 @@ export const createFellowship = catchAsync(
     let {
       name,
       country,
-      regionId, // <-- use regionId instead of region
+      regionId,
       city,
       subcity,
       zone,
@@ -73,6 +73,9 @@ export const createFellowship = catchAsync(
       certificateIssuedDate,
       isInEthiopia,
       boardMembers,
+      contactPersonFullName,
+      contactPersonPhoneNumber,
+      contactPersonEmail,
     } = req.body;
 
     const fellowship = await prisma.councilFellowship.create({
@@ -82,7 +85,7 @@ export const createFellowship = catchAsync(
         certificateIssuedDate: new Date(certificateIssuedDate),
         isInEthiopia,
         country,
-        regionId, // <-- use regionId
+        regionId,
         city,
         subcity: subcity || "",
         zone: zone || "",
@@ -94,8 +97,17 @@ export const createFellowship = catchAsync(
         boardMembers: {
           create: boardMembers,
         },
+        ...(contactPersonFullName && contactPersonPhoneNumber ? {
+          contactPerson: {
+            create: {
+              fullName: contactPersonFullName,
+              phoneNumber: contactPersonPhoneNumber,
+              email: contactPersonEmail || null,
+            }
+          }
+        } : {}),
       },
-      include: { boardMembers: true },
+      include: { boardMembers: true, contactPerson: true },
     });
     sendSuccessResponse(res, { fellowship });
   }
@@ -112,7 +124,7 @@ export const updateFellowship = catchAsync(
       isInEthiopia,
       boardMembers,
       regionId,
-      region, // Support 'region' alias for regionId
+      region,
       country,
       city,
       subcity,
@@ -120,6 +132,9 @@ export const updateFellowship = catchAsync(
       district,
       houseNumber,
       poBoxNumber,
+      contactPersonFullName,
+      contactPersonPhoneNumber,
+      contactPersonEmail,
     } = req.body;
 
     // Prefer precomputed RBAC scope; fallback to StaffFellowship junction
@@ -154,6 +169,30 @@ export const updateFellowship = catchAsync(
     if (district) updatedData.district = district;
     if (houseNumber) updatedData.houseNumber = houseNumber;
     if (poBoxNumber) updatedData.poBoxNumber = poBoxNumber;
+
+    // Handle contactPerson upsert/delete
+    const currentFellowship = await prisma.councilFellowship.findUnique({
+      where: { id: req.params.id },
+      include: { contactPerson: true },
+    });
+    if (contactPersonFullName && contactPersonPhoneNumber) {
+      updatedData.contactPerson = {
+        upsert: {
+          create: {
+            fullName: contactPersonFullName,
+            phoneNumber: contactPersonPhoneNumber,
+            email: contactPersonEmail || null,
+          },
+          update: {
+            fullName: contactPersonFullName,
+            phoneNumber: contactPersonPhoneNumber,
+            email: contactPersonEmail || null,
+          },
+        },
+      };
+    } else if (currentFellowship?.contactPerson) {
+      updatedData.contactPerson = { delete: true };
+    }
 
     if (boardMembers) {
       // 1. Get existing board member IDs for the fellowship
@@ -202,7 +241,7 @@ export const updateFellowship = catchAsync(
     const fellowship = await prisma.councilFellowship.update({
       where: { id: req.params.id },
       data: { ...updatedData },
-      include: { boardMembers: true },
+      include: { boardMembers: { include: { title: true } }, contactPerson: true },
     });
 
     // Process new files if any
@@ -229,5 +268,27 @@ export const updateFellowship = catchAsync(
     }
 
     sendSuccessResponse(res, { fellowship });
+  }
+);
+
+export const toggleFellowshipBoardMemberStatus = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { fellowshipId, boardMemberId } = req.params;
+
+    const boardMember = await prisma.boardMember.findFirst({
+      where: { id: boardMemberId, councilFellowshipId: fellowshipId },
+    });
+
+    if (!boardMember) {
+      return next(new AppError(`Board member not found`, 404));
+    }
+
+    const updated = await prisma.boardMember.update({
+      where: { id: boardMemberId },
+      data: { isActive: !(boardMember as any).isActive },
+      include: { title: true },
+    });
+
+    sendSuccessResponse(res, { boardMember: updated });
   }
 );

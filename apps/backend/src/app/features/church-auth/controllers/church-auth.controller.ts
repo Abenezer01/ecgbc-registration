@@ -49,17 +49,29 @@ export const loginChurchUser = catchAsync(
     });
 
     // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET || "your-secret-key";
-    const jwtExpiresIn = process.env.JWT_EXPIRES_IN || "7d";
+    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY || "your-secret-key";
+    const jwtExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET_KEY || "your-refresh-secret-key";
+    const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
-    const token = jwt.sign(
-      {
-        churchUserId: churchUser.id,
-        email: churchUser.email,
-      },
+    const payload = {
+      churchUserId: churchUser.id,
+      email: churchUser.email,
+    };
+
+    const accessToken = jwt.sign(
+      payload,
       jwtSecret,
       {
         expiresIn: jwtExpiresIn as jwt.SignOptions["expiresIn"],
+      }
+    );
+
+    const refreshToken = jwt.sign(
+      payload,
+      jwtRefreshSecret,
+      {
+        expiresIn: jwtRefreshExpiresIn as jwt.SignOptions["expiresIn"],
       }
     );
 
@@ -73,7 +85,8 @@ export const loginChurchUser = catchAsync(
     }, req);
 
     sendSuccessResponseWithMessage(res, {
-      accessToken: token,
+      accessToken,
+      refreshToken,
       user: {
         id: churchUser.id,
         firstName: churchUser.firstName,
@@ -85,6 +98,86 @@ export const loginChurchUser = catchAsync(
       },
       church: churchUser.member,
     }, "Login successful");
+  }
+);
+
+/**
+ * Refresh church user token
+ */
+export const refreshChurchToken = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      throw new AppError("Refresh token is required", 400);
+    }
+
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET_KEY || "your-refresh-secret-key";
+    let decoded: any;
+    try {
+      decoded = jwt.verify(refreshToken, jwtRefreshSecret);
+    } catch (err) {
+      throw new AppError("Invalid or expired refresh token", 401);
+    }
+
+    const churchUser = await prisma.churchUser.findUnique({
+      where: { id: decoded.churchUserId },
+      include: {
+        member: {
+          select: {
+            id: true,
+            name: true,
+            certificateNo: true,
+            councilFellowshipId: true,
+          },
+        },
+      },
+    });
+
+    if (!churchUser) {
+      throw new AppError("Church user not found", 404);
+    }
+
+    if (!churchUser.isActive) {
+      throw new AppError("Your account is inactive. Please contact administrator.", 403);
+    }
+
+    // Generate new JWT tokens
+    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY || "your-secret-key";
+    const jwtExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
+    const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+
+    const payload = {
+      churchUserId: churchUser.id,
+      email: churchUser.email,
+    };
+
+    const newAccessToken = jwt.sign(
+      payload,
+      jwtSecret,
+      { expiresIn: jwtExpiresIn as jwt.SignOptions["expiresIn"] }
+    );
+
+    const newRefreshToken = jwt.sign(
+      payload,
+      jwtRefreshSecret,
+      { expiresIn: jwtRefreshExpiresIn as jwt.SignOptions["expiresIn"] }
+    );
+
+    sendSuccessResponseWithMessage(res, {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: {
+        id: churchUser.id,
+        firstName: churchUser.firstName,
+        lastName: churchUser.lastName,
+        email: churchUser.email,
+        phone: churchUser.phone,
+        role: churchUser.role,
+        memberId: churchUser.memberId,
+      },
+      church: churchUser.member,
+    }, "Token refreshed successfully");
   }
 );
 

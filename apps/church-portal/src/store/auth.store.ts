@@ -33,6 +33,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (user, church) => set({ user, church, isAuthenticated: true }),
   logout: () => {
     localStorage.removeItem("church_portal_token");
+    localStorage.removeItem("church_portal_refresh_token");
     set({ user: null, church: null, isAuthenticated: false });
     window.location.href = "/login";
   },

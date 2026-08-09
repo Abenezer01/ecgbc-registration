@@ -23,6 +23,7 @@ interface BoardMemberRow {
   fullNameEn: string;
   phoneNumber: string;
   titleId: string;
+  isActive?: boolean;
   title?: { id: string; description: string; note?: string };
 }
 
@@ -48,6 +49,7 @@ export default function OverviewPage() {
   const { hasPermission }                 = useAuth();
   const { data: lookups = [] }            = useDataLookups();
   const { mutateAsync: updateMember, isPending: saving } = useUpdateMember();
+  const { patch } = useApi();
 
   // ── drawer state ───────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -139,6 +141,16 @@ export default function OverviewPage() {
     await persist(boardMembers.filter((bm) => bm.id !== bmId));
   };
 
+  const handleToggleStatus = async (bmId: string) => {
+    try {
+      await patch(`/members/${id}/board-members/${bmId}/toggle-status`, {});
+      // Refresh the page or invalidate queries to get the new status
+      window.location.reload(); 
+    } catch (error) {
+      console.error("Failed to toggle board member status", error);
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   if (isLoading) return <div className="p-10 text-center animate-pulse">Loading...</div>;
   if (!member)   return <div className="p-10 text-center text-zinc-500">Member not found.</div>;
@@ -193,6 +205,35 @@ export default function OverviewPage() {
           </nav>
         </div>
 
+        {/* Contact Person */}
+        {(member as any)?.contactPerson && (
+          <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 mb-4">
+              <User className="h-4 w-4 text-zinc-400" />
+              ዋና ተወካይ (Contact Person)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">ሙሉ ስም (Full Name)</p>
+                  <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{(member as any).contactPerson.fullName}</p>
+               </div>
+               <div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">ስልክ (Phone)</p>
+                  <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                    <Phone className="h-3 w-3 text-zinc-400" />
+                    {(member as any).contactPerson.phoneNumber}
+                  </p>
+               </div>
+               {(member as any).contactPerson.email && (
+                 <div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">ኢሜይል (Email)</p>
+                    <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{(member as any).contactPerson.email}</p>
+                 </div>
+               )}
+            </div>
+          </div>
+        )}
+
         {/* Board Members */}
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -245,6 +286,13 @@ export default function OverviewPage() {
                     <RowActions
                       className="opacity-0 group-hover:opacity-100 transition-opacity flex-col"
                       actions={[
+                        {
+                          icon: <ShieldAlert className="h-4 w-4" />,
+                          label: bm.isActive ? "Deactivate" : "Activate",
+                          onClick: () => handleToggleStatus(bm.id),
+                          allowed: canEdit,
+                          disabled: saving,
+                        },
                         presets.edit({ onClick: () => openEdit(bm), allowed: canEdit, disabled: saving }),
                         presets.delete({
                           onClick: () => handleDelete(bm.id),
@@ -256,6 +304,11 @@ export default function OverviewPage() {
                     />
                   )}
                 </CardContent>
+                {!bm.isActive && (
+                  <div className="bg-red-50 dark:bg-red-950/20 px-4 py-2 text-xs text-red-600 dark:text-red-400 border-t border-red-100 dark:border-red-900/50 flex items-center justify-center">
+                    Inactive
+                  </div>
+                )}
               </Card>
             ))}
           </div>

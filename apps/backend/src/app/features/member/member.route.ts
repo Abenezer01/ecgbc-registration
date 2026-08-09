@@ -147,4 +147,12 @@ router.get('/check-certificate/:certificateNo',
   MemberController.checkCertificateNumber
 );
 
+// Toggle board member active/inactive status
+router.patch(
+  '/:memberId/board-members/:boardMemberId/toggle-status',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE),
+  MemberController.toggleBoardMemberStatus
+);
+
 export default router;

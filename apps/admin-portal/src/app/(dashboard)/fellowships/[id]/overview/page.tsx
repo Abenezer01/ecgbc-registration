@@ -112,6 +112,32 @@ export default function FellowshipOverviewPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {fellowship.contactPerson && (
+                <div>
+                  <h3 className="text-sm font-medium text-zinc-500 flex items-center gap-2 mb-2">
+                    <User className="h-4 w-4" /> Contact Person
+                  </h3>
+                  <Card className="bg-zinc-50/50 dark:bg-zinc-800/20 border-none shadow-none">
+                    <CardContent className="p-4 space-y-3">
+                      <div>
+                        <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Full Name</p>
+                        <p className="font-medium text-zinc-900 dark:text-zinc-100">{fellowship.contactPerson.fullName}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Phone Number</p>
+                        <p className="font-medium text-zinc-900 dark:text-zinc-100">{fellowship.contactPerson.phoneNumber}</p>
+                      </div>
+                      {fellowship.contactPerson.email && (
+                        <div>
+                          <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Email</p>
+                          <p className="font-medium text-zinc-900 dark:text-zinc-100">{fellowship.contactPerson.email}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
           </div>
         </div>

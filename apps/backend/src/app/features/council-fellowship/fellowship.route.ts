@@ -41,4 +41,12 @@ router
   );
 
 
+// Toggle fellowship board member active/inactive status
+router.patch(
+  '/:fellowshipId/board-members/:boardMemberId/toggle-status',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.CouncilFellowship.COUNCIL_FELLOWSHIP_CHANGE),
+  RoleController.toggleFellowshipBoardMemberStatus
+);
+
 export default router;

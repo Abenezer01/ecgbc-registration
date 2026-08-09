@@ -13,5 +13,11 @@ export const createFellowshipValidator = [
     .isEmpty()
     .withMessage("certificateIssuedDate is required."),
   check("isInEthiopia").isBoolean().withMessage("isInEthiopia is required."),
+  
+  // Contact Person Validation (Optional)
+  check("contactPersonFullName").optional().notEmpty().withMessage("Contact person full name is required if provided."),
+  check("contactPersonPhoneNumber").optional().notEmpty().withMessage("Contact person phone number is required if provided."),
+  check("contactPersonEmail").optional().isEmail().withMessage("Invalid contact person email."),
+  
   validate,
 ];

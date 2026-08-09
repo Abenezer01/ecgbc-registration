@@ -49,6 +49,10 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
     email: "",
     isActive: true,
     boardMembers: [] as { id: string; fullName: string; fullNameEn: string; phoneNumber: string; titleId: string }[],
+    // Contact Person
+    contactPersonFullName: "",
+    contactPersonPhoneNumber: "",
+    contactPersonEmail: "",
   });
 
   const [files, setFiles] = useState<File[]>([]);
@@ -522,6 +526,39 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
                   <option key={s.id} value={s.id}>{s.description}</option>
                 ))}
               </Select>
+            </FormField>
+          </div>
+        </div>
+
+        {/* Section: Contact Person */}
+        <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
+          <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+            ዋና ተወካይ (Contact Person)
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField id="cp-fullname" label="ሙሉ ስም (Full Name)">
+              <Input
+                id="cp-fullname"
+                value={form.contactPersonFullName}
+                onChange={(e) => setForm((p) => ({ ...p, contactPersonFullName: e.target.value }))}
+                placeholder="Contact person full name"
+              />
+            </FormField>
+            <FormField id="cp-phone" label="ስልክ (Phone)">
+              <PhoneInput
+                id="cp-phone"
+                value={form.contactPersonPhoneNumber}
+                onChange={(val) => setForm((p) => ({ ...p, contactPersonPhoneNumber: val }))}
+              />
+            </FormField>
+            <FormField id="cp-email" label="ኢሜይል (Email)">
+              <Input
+                id="cp-email"
+                type="email"
+                value={form.contactPersonEmail}
+                onChange={(e) => setForm((p) => ({ ...p, contactPersonEmail: e.target.value }))}
+                placeholder="Contact person email"
+              />
             </FormField>
           </div>
         </div>

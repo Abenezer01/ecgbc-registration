@@ -27,6 +27,7 @@ export default function LoginPage() {
       const { data } = await api.post("/church-auth/login", formData);
       
       localStorage.setItem("church_portal_token", data.data.accessToken);
+      localStorage.setItem("church_portal_refresh_token", data.data.refreshToken);
       setAuth(data.data.user, data.data.church);
       
       router.push("/dashboard");

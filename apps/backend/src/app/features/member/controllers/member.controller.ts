@@ -356,6 +356,7 @@ export const getMember = catchAsync(
         region: true,
         reports: true,
         councilFellowship: true,
+        contactPerson: true,
       },
     });
 
@@ -395,6 +396,9 @@ export const createMember = catchAsync(
       boardMembers,
       memberFiles,
       memberCategoryId,
+      contactPersonFullName,
+      contactPersonPhoneNumber,
+      contactPersonEmail,
     } = req.body;
 
     // Non-admins can only create inside their assigned fellowships
@@ -442,6 +446,15 @@ export const createMember = catchAsync(
         boardMembers: {
           create: boardMembers,
         },
+        ...(contactPersonFullName && contactPersonPhoneNumber ? {
+          contactPerson: {
+            create: {
+              fullName: contactPersonFullName,
+              phoneNumber: contactPersonPhoneNumber,
+              email: contactPersonEmail || null,
+            }
+          }
+        } : {}),
       },
       include: {
         boardMembers: { include: { title: true } },
@@ -502,11 +515,14 @@ export const updateMember = catchAsync(
       district,
       houseNumber,
       poBoxNumber,
+      contactPersonFullName,
+      contactPersonPhoneNumber,
+      contactPersonEmail,
     } = req.body;
     const memberId = req.params.id;
     let currentMember = await prisma.member.findUnique({
       where: { id: memberId },
-      include: {},
+      include: { contactPerson: true },
     });
     if (!currentMember) {
       return next(
@@ -553,6 +569,29 @@ export const updateMember = catchAsync(
     if (councilFellowshipId)
       updatedData.councilFellowshipId = councilFellowshipId;
     if (memberCategoryId) updatedData.memberCategoryId = memberCategoryId;
+
+    if (contactPersonFullName && contactPersonPhoneNumber) {
+      updatedData.contactPerson = {
+        upsert: {
+          create: {
+            fullName: contactPersonFullName,
+            phoneNumber: contactPersonPhoneNumber,
+            email: contactPersonEmail || null,
+          },
+          update: {
+            fullName: contactPersonFullName,
+            phoneNumber: contactPersonPhoneNumber,
+            email: contactPersonEmail || null,
+          },
+        },
+      };
+    } else if (currentMember.contactPerson) {
+      // If cleared from the UI
+      updatedData.contactPerson = {
+        delete: true,
+      };
+    }
+
     if (boardMembers) {
       // 1. Get existing board member IDs for the member
       const existingIds = await prisma.boardMember.findMany({
@@ -938,3 +977,25 @@ export const hardDeleteMember = catchAsync(async (req: Request, res: Response, n
 
     sendSuccessResponse(res, null, 204);
 });
+
+export const toggleBoardMemberStatus = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { memberId, boardMemberId } = req.params;
+
+    const boardMember = await prisma.boardMember.findFirst({
+      where: { id: boardMemberId, memberId },
+    });
+
+    if (!boardMember) {
+      return next(new AppError(`Board member not found`, 404));
+    }
+
+    const updated = await prisma.boardMember.update({
+      where: { id: boardMemberId },
+      data: { isActive: !(boardMember as any).isActive },
+      include: { title: true },
+    });
+
+    sendSuccessResponse(res, { boardMember: updated });
+  }
+);

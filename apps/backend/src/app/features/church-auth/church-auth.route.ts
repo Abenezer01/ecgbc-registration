@@ -18,6 +18,12 @@ router.post(
   ChurchAuthController.loginChurchUser
 );
 
+// Refresh church user token
+router.post(
+  "/refresh",
+  ChurchAuthController.refreshChurchToken
+);
+
 // Get authenticated church user
 router.get(
   "/me",

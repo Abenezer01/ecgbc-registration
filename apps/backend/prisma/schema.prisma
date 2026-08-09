@@ -102,6 +102,7 @@ model Member {
   memberCategoryId      String?
   memberCategory        DataLookup?       @relation("MemberCategoryLookup", fields: [memberCategoryId], references: [id])
   churchUsers           ChurchUser[]
+  contactPerson         ContactPerson?
 
   @@index([city])
   @@index([councilFellowshipId])
@@ -121,6 +122,7 @@ model BoardMember {
   fullName            String
   fullNameEn          String?
   phoneNumber         String
+  isActive            Boolean            @default(true)
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
   councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
@@ -226,6 +228,7 @@ model CouncilFellowship {
   reports               Report[]
   staffLinks            StaffFellowship[]
   feeRules              FeeRule[]
+  contactPerson         ContactPerson?
 
   @@index([regionId], map: "CouncilFellowship_regionId_fkey")
 }
@@ -374,4 +377,17 @@ model Activity {
   @@index([entityId])
   @@index([performedBy])
   @@index([createdAt])
+}
+
+model ContactPerson {
+  id                  String             @id @default(uuid())
+  fullName            String
+  email               String?
+  phoneNumber         String
+  memberId            String?            @unique
+  councilFellowshipId String?            @unique
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  member              Member?            @relation(fields: [memberId], references: [id])
+  councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
 }
