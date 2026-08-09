@@ -34,9 +34,10 @@ interface EditingState {
   fullNameEn: string;
   phoneNumber: string;
   titleId: string;
+  isActive: boolean;
 }
 
-const EMPTY: EditingState = { id: null, fullName: "", fullNameEn: "", phoneNumber: "", titleId: "" };
+const EMPTY: EditingState = { id: null, fullName: "", fullNameEn: "", phoneNumber: "", titleId: "", isActive: true };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -88,6 +89,7 @@ export default function OverviewPage() {
           fullNameEn:  bm.fullNameEn,
           phoneNumber: bm.phoneNumber,
           titleId:     bm.titleId,
+          isActive:    bm.isActive ?? true,
         })),
       },
     });
@@ -107,6 +109,7 @@ export default function OverviewPage() {
       fullNameEn:  bm.fullNameEn || "",
       phoneNumber: bm.phoneNumber,
       titleId:     bm.titleId || bm.title?.id || "",
+      isActive:    bm.isActive ?? true,
     });
     setFormError(null);
     setDrawerOpen(true);
@@ -123,13 +126,13 @@ export default function OverviewPage() {
       // editing existing
       next = boardMembers.map((bm) =>
         bm.id === draft.id
-          ? { ...bm, fullName: draft.fullName, fullNameEn: draft.fullNameEn, phoneNumber: draft.phoneNumber, titleId: draft.titleId }
+          ? { ...bm, fullName: draft.fullName, fullNameEn: draft.fullNameEn, phoneNumber: draft.phoneNumber, titleId: draft.titleId, isActive: draft.isActive }
           : bm
       );
     } else {
       // adding new
       const tempId = Math.random().toString(36).substr(2, 9);
-      next = [...boardMembers, { id: tempId, fullName: draft.fullName, fullNameEn: draft.fullNameEn, phoneNumber: draft.phoneNumber, titleId: draft.titleId }];
+      next = [...boardMembers, { id: tempId, fullName: draft.fullName, fullNameEn: draft.fullNameEn, phoneNumber: draft.phoneNumber, titleId: draft.titleId, isActive: draft.isActive }];
     }
 
     await persist(next);
@@ -402,6 +405,21 @@ export default function OverviewPage() {
               value={draft.phoneNumber}
               onChange={(val) => setDraft((p) => ({ ...p, phoneNumber: val }))}
             />
+          </FormField>
+
+          <FormField id="bm-status" label="Status">
+            <div className="flex items-center gap-3 h-10">
+              <input
+                id="bm-status"
+                type="checkbox"
+                checked={draft.isActive}
+                onChange={(e) => setDraft((p) => ({ ...p, isActive: e.target.checked }))}
+                className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                {draft.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
           </FormField>
         </form>
       </Drawer>
