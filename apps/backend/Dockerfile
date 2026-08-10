@@ -29,7 +29,7 @@ COPY . .
 # Optional: If your build process specifically needs Prisma Client types regenerated with full source
 # RUN pnpm exec prisma generate 
 
-RUN pnpm run build
+RUN npm run build
 RUN ls -la /usr/src/app/prisma 
 RUN ls -la /usr/src/app/
 # Stage 3: Runner - Production image

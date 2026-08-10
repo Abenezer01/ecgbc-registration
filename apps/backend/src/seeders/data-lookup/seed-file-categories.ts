@@ -1,11 +1,11 @@
 import prisma from "../../app/config/db.config";
 
 const FILE_CATEGORIES = [
-  { description: "Registration Certificate", note: "የምዝገባ ምስክር ወረቀት", value: "file_cat_registration_cert", index: 1, isRequired: true },
-  { description: "Annual Report", note: "ዓመታዊ ሪፖርት", value: "file_cat_annual_report", index: 2, isRequired: false },
-  { description: "Financial Statement", note: "የፋይናንስ መግለጫ", value: "file_cat_financial_statement", index: 3, isRequired: false },
-  { description: "Board Resolution", note: "የቦርድ ውሳኔ", value: "file_cat_board_resolution", index: 4, isRequired: false },
-  { description: "ID Copy", note: "የመታወቂያ ቅጂ", value: "file_cat_id_copy", index: 5, isRequired: false },
+  { description: "Certificate and certificate letter", note: "የምስክር ወረቀት እና የምስክር ወረቀት ደብዳቤ", value: "file_cat_cert", index: 1, isRequired: true },
+  { description: "Board Members", note: "የቦርድ አባላት", value: "file_cat_board_members", index: 2, isRequired: false },
+  { description: "Bylaw", note: "መተዳደሪያ ደንብ", value: "file_cat_bylaw", index: 3, isRequired: false },
+  { description: "Minutes", note: "ቃለ ጉባኤ", value: "file_cat_minutes", index: 4, isRequired: false },
+  { description: "ID", note: "መታወቂያ", value: "file_cat_id", index: 5, isRequired: false },
   { description: "Other", note: "ሌላ", value: "file_cat_other", index: 6, isRequired: false },
 ];
 
