@@ -25,7 +25,7 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
             {row.member?.name || "Unknown"}
           </p>
           <p className="text-xs text-zinc-500">
-            {row.member?.memberCategory?.description || "No Category"}
+            {row.member?.memberCategory?.description || row.member?.type?.description || "No Category"}
           </p>
         </div>
       ),

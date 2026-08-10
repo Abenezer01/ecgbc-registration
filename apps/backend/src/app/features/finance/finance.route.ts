@@ -62,6 +62,11 @@ router.get(
   restrictStaff(FinancePermission.FINANCE_VIEW),
   FinanceController.getReportingFees
 );
+router.get(
+  "/fees/preview",
+  restrictStaff(FinancePermission.FINANCE_VIEW),
+  FinanceController.getFeePreview
+);
 router.post(
   "/fees/generate",
   restrictStaff(FinancePermission.FINANCE_MANAGE),

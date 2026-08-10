@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, Search, Filter, Plus, Eye, FileDown, Pencil, Trash2, Send } from "lucide-react";
+import { ArrowLeft, FileText, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, Search, Filter, Plus, Eye, FileDown, Pencil, Trash2, Send, Building, Activity } from "lucide-react";
 import { Card, CardContent, Button, Input, Pagination } from "@/components/ui";
 import { formatNumber, formatCurrency, formatPercentage } from "@/lib/utils";
 import { useReportRequest } from "@/hooks/useReportRequest";
@@ -16,6 +16,9 @@ export default function ReportRequestDetailPage() {
   const [activeTab, setActiveTab] = useState<"reported" | "not-reported">("reported");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFellowship, setFilterFellowship] = useState("");
+  const [filterDays, setFilterDays] = useState<number | "">("");
+  const [customDays, setCustomDays] = useState<string>("");
+  const [isCustomDays, setIsCustomDays] = useState(false);
 
   const { data, isLoading, error, refetch } = useReportRequest(id);
   const generateFeesMutation = useGenerateMissingFees();
@@ -48,11 +51,15 @@ export default function ReportRequestDetailPage() {
 
   const filteredReported = data?.reported?.filter((r: any) => {
     const member = r.member || {};
-    const matchesSearch = 
+    const matchesSearch =
       member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.certificateNo?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFellowship = !filterFellowship || member.councilFellowshipId === filterFellowship;
-    return matchesSearch && matchesFellowship;
+    const matchesDays = !filterDays || (
+      r.reportedAt &&
+      new Date(r.reportedAt) >= new Date(Date.now() - Number(filterDays) * 24 * 60 * 60 * 1000)
+    );
+    return matchesSearch && matchesFellowship && matchesDays;
   }) || [];
 
   const filteredNotReported = data?.notReported?.filter((m: any) => {
@@ -79,6 +86,29 @@ export default function ReportRequestDetailPage() {
   
   const generatedPendingAmount = data?.reported?.reduce((sum: number, r: any) => sum + (r.reportingFee?.status !== "PAID" ? Number(r.reportingFee?.amount || 0) : 0), 0) || 0;
   const totalPendingAmount = generatedPendingAmount + potentialAdditionalRevenue;
+
+  // ---- Fellowship breakdown (computed client-side) ----
+  const fellowshipMap = new Map<string, { name: string; reported: number; total: number }>();
+  data?.reported?.forEach((r: any) => {
+    const fId = r.member?.councilFellowshipId;
+    if (!fId) return;
+    const name = r.member?.councilFellowship?.name || fId;
+    const entry = fellowshipMap.get(fId) || { name, reported: 0, total: 0 };
+    entry.reported += 1;
+    entry.total += 1;
+    fellowshipMap.set(fId, entry);
+  });
+  data?.notReported?.forEach((m: any) => {
+    const fId = m.councilFellowshipId;
+    if (!fId) return;
+    const fellowshipName = m.councilFellowship?.name || fId;
+    const existing = fellowshipMap.get(fId);
+    const entry = existing || { name: fellowshipName, reported: 0, total: 0 };
+    entry.total += 1;
+    fellowshipMap.set(fId, entry);
+  });
+  const fellowshipStats = Array.from(fellowshipMap.values())
+    .sort((a, b) => b.reported - a.reported || b.total - a.total);
 
   if (isLoading) {
     return (
@@ -302,6 +332,88 @@ export default function ReportRequestDetailPage() {
         </Card>
       </div>
 
+      {/* Fellowship Compliance + Progress Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Fellowship Compliance Progress */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Building className="h-5 w-5 text-zinc-500" />
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Fellowship Compliance</h3>
+          </div>
+          {fellowshipStats.length === 0 ? (
+            <p className="text-sm text-zinc-500 py-4 text-center">No fellowship data yet.</p>
+          ) : (
+            <div className="space-y-4 max-h-64 overflow-y-auto pr-1">
+              {fellowshipStats.map((f, idx) => (
+                <div key={idx} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate mr-3" title={f.name}>
+                      {f.name}
+                    </span>
+                    <span className="text-xs text-zinc-500 shrink-0">
+                      {f.reported} / {f.total}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 transition-all duration-500"
+                        style={{ width: `${f.total > 0 ? (f.reported / f.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-400 shrink-0 w-16 text-right">
+                      {f.total - f.reported} pending
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Reporting Activity Summary */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="h-5 w-5 text-zinc-500" />
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Reporting Activity</h3>
+          </div>
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="relative h-36 w-36">
+              <svg className="h-36 w-36 -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f4f4f5" strokeWidth="3" />
+                <circle
+                  cx="18" cy="18" r="15.9" fill="none"
+                  stroke="#22c55e"
+                  strokeWidth="3"
+                  strokeDasharray={`${reportedPercentage}, 100`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{reportedPercentage}%</span>
+                <span className="text-xs text-zinc-500">Compliant</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-6 text-center">
+              <div>
+                <p className="text-xl font-bold text-emerald-600">{reportedCount}</p>
+                <p className="text-xs text-zinc-500">Reported</p>
+              </div>
+              <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800" />
+              <div>
+                <p className="text-xl font-bold text-amber-500">{notReportedCount}</p>
+                <p className="text-xs text-zinc-500">Pending</p>
+              </div>
+              <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800" />
+              <div>
+                <p className="text-xl font-bold text-zinc-700 dark:text-zinc-300">{totalMembers}</p>
+                <p className="text-xs text-zinc-500">Total</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
         <div className="border-b border-zinc-200 dark:border-zinc-800">
           <nav className="flex">
@@ -336,8 +448,8 @@ export default function ReportRequestDetailPage() {
           </nav>
         </div>
 
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-4">
-          <div className="flex-1 relative">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3 flex-wrap">
+          <div className="flex-1 relative min-w-48">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <Input
               placeholder="Search by name or certificate number..."
@@ -347,15 +459,63 @@ export default function ReportRequestDetailPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-zinc-400" />
+            <Filter className="h-4 w-4 text-zinc-400 shrink-0" />
             <select
               value={filterFellowship}
               onChange={(e) => setFilterFellowship(e.target.value)}
               className="px-3 py-2 text-sm border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Fellowships</option>
+              {fellowshipStats.map((f, idx) => (
+                <option key={idx} value={data?.reported?.find((r: any) => r.member?.councilFellowship?.name === f.name)?.member?.councilFellowshipId || data?.notReported?.find((m: any) => m.councilFellowship?.name === f.name)?.councilFellowshipId || ""}>
+                  {f.name}
+                </option>
+              ))}
             </select>
           </div>
+          {activeTab === "reported" && (
+            <div className="flex items-center gap-2">
+              <select
+                value={isCustomDays ? "custom" : filterDays}
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setIsCustomDays(true);
+                    setFilterDays("");
+                  } else {
+                    setIsCustomDays(false);
+                    setCustomDays("");
+                    setFilterDays(e.target.value === "" ? "" : Number(e.target.value));
+                  }
+                }}
+                className="px-3 py-2 text-sm border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Time</option>
+                <option value={7}>Last 7 days</option>
+                <option value={14}>Last 14 days</option>
+                <option value={30}>Last 30 days</option>
+                <option value={60}>Last 60 days</option>
+                <option value={90}>Last 90 days</option>
+                <option value="custom">Custom...</option>
+              </select>
+              {isCustomDays && (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={1}
+                    max={3650}
+                    placeholder="Days"
+                    value={customDays}
+                    onChange={(e) => {
+                      setCustomDays(e.target.value);
+                      setFilterDays(e.target.value ? Number(e.target.value) : "");
+                    }}
+                    className="w-20 px-2 py-2 text-sm border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-zinc-500">days</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="p-6">

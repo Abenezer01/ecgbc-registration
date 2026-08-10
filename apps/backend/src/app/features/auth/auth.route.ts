@@ -8,6 +8,9 @@ const router = express.Router();
 // Log in user
 router.post("/login", loginValidator, AuthController.loginStaff);
 
+// Refresh access token
+router.post("/refresh", AuthController.refreshAccessToken);
+
 router.get(
   "/",
   StaffAuthMiddleware.verifyStaff,

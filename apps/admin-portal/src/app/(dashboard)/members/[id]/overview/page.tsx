@@ -14,6 +14,7 @@ import { useMember, useUpdateMember } from "@/hooks/useMembers";
 import { useAuth } from "@/hooks/useAuth";
 import { useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
 import { useDataLookups } from "@/hooks/useDataLookups";
+import { useApi } from "@/lib/useApi";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -290,7 +291,8 @@ export default function OverviewPage() {
                       className="opacity-0 group-hover:opacity-100 transition-opacity flex-col"
                       actions={[
                         {
-                          icon: <ShieldAlert className="h-4 w-4" />,
+                          key: "toggle-status",
+                          icon: ShieldAlert,
                           label: bm.isActive ? "Deactivate" : "Activate",
                           onClick: () => handleToggleStatus(bm.id),
                           allowed: canEdit,

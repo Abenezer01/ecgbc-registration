@@ -14,6 +14,15 @@ import { updateMemberReportValidator } from "./validators/update-report.validato
 const router = express.Router();
 
 router
+  .route("/summary")
+  .get(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+    ReportFilter.getReports,
+    ReportController.getReportSummary
+  );
+
+router
   .route("/")
   .get(
     StaffAuthMiddleware.verifyStaff,

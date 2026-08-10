@@ -13,6 +13,11 @@ export interface Fellowship {
   isInEthiopia?: boolean;
   isActive: boolean;
   _count?: { members: number };
+  contactPerson?: {
+    fullName: string;
+    phoneNumber: string;
+    email?: string;
+  };
 }
 
 export interface FellowshipsFilters {

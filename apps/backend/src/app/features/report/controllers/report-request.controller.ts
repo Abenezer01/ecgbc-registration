@@ -57,6 +57,7 @@ export const getReportRequest = catchAsync(
             memberCategoryId: true,
             typeId: true,
             isActive: true,
+            councilFellowship: { select: { id: true, name: true } },
           },
         },
         reportingFee: {
@@ -85,6 +86,7 @@ export const getReportRequest = catchAsync(
         memberCategoryId: true,
         typeId: true,
         isActive: true,
+        councilFellowship: { select: { id: true, name: true } },
       },
       orderBy: { name: "asc" },
     });

@@ -33,6 +33,11 @@ export interface ReportingFee {
       value: string;
       description: string;
     };
+    type?: {
+      id: string;
+      value: string;
+      description: string;
+    };
   };
   report?: {
     id: string;
@@ -143,6 +148,19 @@ export function usePaymentMethods() {
       const res = await api.get(`/finance/payment-methods`);
       return res.data.data.methods;
     },
+  });
+}
+
+export function useFeePreview(memberId: string, reportRequestId?: string) {
+  return useQuery({
+    queryKey: ["admin-fee-preview", memberId, reportRequestId],
+    queryFn: async () => {
+      const res = await api.get(`/finance/fees/preview`, {
+        params: { memberId, reportRequestId },
+      });
+      return (extractData(res) as any).preview;
+    },
+    enabled: !!memberId,
   });
 }
 

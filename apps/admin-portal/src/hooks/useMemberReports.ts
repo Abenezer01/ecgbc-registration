@@ -44,6 +44,7 @@ export function useCreateMemberReport() {
       remark,
       bankReference,
       report,
+      reportRequestId,
     }: {
       memberId: string;
       year: number;
@@ -52,6 +53,7 @@ export function useCreateMemberReport() {
       remark?: string;
       bankReference?: string;
       report?: File;
+      reportRequestId?: string;
     }) => {
       const formData = new FormData();
       formData.append("member", memberId);
@@ -68,6 +70,7 @@ export function useCreateMemberReport() {
       if (remark) formData.append("remark", remark);
       if (bankReference) formData.append("bankReference", bankReference);
       if (report) formData.append("report", report);
+      if (reportRequestId) formData.append("reportRequestId", reportRequestId);
 
       const res = await api.post(`/reports/member`, formData, {
         headers: { "Content-Type": "multipart/form-data" },

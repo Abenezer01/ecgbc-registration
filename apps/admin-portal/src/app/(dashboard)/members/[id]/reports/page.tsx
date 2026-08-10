@@ -5,13 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText, Plus, Eye, Download, Calendar, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign } from "lucide-react";
 import { Badge, DataTable, Button, Modal, ModalFooter, FormField, Input, RowActions, presets } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
+import { useReportRequests } from "@/hooks/useReportRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { useMember } from "@/hooks/useMembers";
-import { useGenerateFee } from "@/hooks/useFinance";
+import { useGenerateFee, useFeePreview } from "@/hooks/useFinance";
 import { GenerateFeeDialog } from "@/components/finance/GenerateFeeDialog";
 import { FeeStatusBadge } from "@/components/finance/FeeStatusBadge";
+import { Select } from "@/components/ui";
 
 export default function ReportsPage() {
   const { id } = useParams() as { id: string };
@@ -41,12 +43,17 @@ export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
 
   // Form states
+  const [reportRequestId, setReportRequestId] = useState("");
   const [year, setYear] = useState("");
   const [bankReference, setBankReference] = useState("");
   const [reportedAt, setReportedAt] = useState("");
   const [remark, setRemark] = useState("");
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Report Requests (active only)
+  const { data: requestsData } = useReportRequests(1, 100);
+  const activeRequests = (requestsData?.requests ?? []).filter((r) => r.isActive);
 
   // File Viewer states
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -60,6 +67,8 @@ export default function ReportsPage() {
   const { mutateAsync: deleteReport, isPending: deleting } = useDeleteMemberReport();
   const { mutateAsync: generateFee, isPending: generatingFee } = useGenerateFee();
 
+  const { data: feePreview, isLoading: feePreviewLoading } = useFeePreview(memberId, reportRequestId);
+
   const [genFeeOpen, setGenFeeOpen] = useState(false);
   const [selectedReportIdForFee, setSelectedReportIdForFee] = useState<string | null>(null);
 
@@ -68,6 +77,7 @@ export default function ReportsPage() {
   const canDelete = hasPermission("delete_report") || hasPermission("member_change");
 
   const resetForm = () => {
+    setReportRequestId("");
     setYear("");
     setBankReference("");
     setReportedAt("");
@@ -76,16 +86,27 @@ export default function ReportsPage() {
     setError(null);
   };
 
+  const handleReportRequestChange = (id: string) => {
+    setReportRequestId(id);
+    const req = activeRequests.find((r) => r.id === id);
+    if (req) setYear(String(req.year));
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!year) {
-      setError("Please specify the report year.");
+    if (!reportRequestId) {
+      setError("Please select a report request.");
+      return;
+    }
+    if (!reportFile) {
+      setError("A scanned report file (PDF) is required.");
       return;
     }
     try {
       await createReport({
         memberId,
         year: Number(year),
+        reportRequestId,
         bankReference: bankReference || undefined,
         reportedAt: reportedAt || undefined,
         remark: remark || undefined,
@@ -351,21 +372,69 @@ export default function ReportsPage() {
         </div>
 
         {/* Add Report Modal */}
-        <Modal open={addOpen} onClose={() => { setAddOpen(false); resetForm(); }} title="Add Annual Report" size="md">
+        <Modal open={addOpen} onClose={() => { setAddOpen(false); resetForm(); }} title="Log Manual Report" size="md">
           <form onSubmit={handleCreateSubmit} className="space-y-4">
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
                 {error}
               </div>
             )}
+            <FormField id="reportRequest" label="Report Request" required>
+              <Select
+                id="reportRequest"
+                value={reportRequestId}
+                onChange={(e) => handleReportRequestChange(e.target.value)}
+                required
+              >
+                <option value="">— Select a report request —</option>
+                {activeRequests.map((req) => (
+                  <option key={req.id} value={req.id}>
+                    {req.title} ({req.year} E.C)
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            {/* Fee Preview UI */}
+            {reportRequestId && (
+              <div className="mt-2 mb-4">
+                {feePreviewLoading ? (
+                  <div className="text-xs text-zinc-500 animate-pulse">Calculating expected fee...</div>
+                ) : feePreview ? (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-medium text-sm text-emerald-900">Expected Fee Amount</span>
+                      <span className="font-bold text-lg text-emerald-700">
+                        {feePreview.amount} {feePreview.currency}
+                      </span>
+                    </div>
+                    {feePreview.feeMode === "MANUAL" ? (
+                      <p className="text-xs text-emerald-800">
+                        This request is configured for MANUAL fee assessment. Fee will be calculated later.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-emerald-800">
+                        Based on the member's category and rules. A fee record will be generated automatically upon submission.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                    <p className="text-xs text-orange-800 font-medium">No matching fee rule found for this member.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
-              <FormField id="year" label="Report Year (E.C)" required>
+              <FormField id="year" label="Report Year (E.C)">
                 <Input
                   id="year"
                   type="number"
-                  placeholder="2016"
+                  placeholder="Auto-filled"
                   value={year}
-                  onChange={(e) => setYear(e.target.value)}
+                  disabled
+                  className="bg-zinc-50 dark:bg-zinc-800"
                 />
               </FormField>
               <FormField id="bankReference" label="Bank Reference">
@@ -394,11 +463,12 @@ export default function ReportsPage() {
                   onChange={(e) => setRemark(e.target.value)}
                 />
               </FormField>
-              <FormField id="report-file" label="Upload Report Document (PDF)">
+              <FormField id="report-file" label="Upload Report Document (PDF)" required>
                 <input
                   id="report-file"
                   type="file"
                   accept=".pdf"
+                  required
                   onChange={(e) => setReportFile(e.target.files?.[0] || null)}
                   className="w-full text-sm border border-zinc-200 dark:border-zinc-800 rounded-lg p-2"
                 />

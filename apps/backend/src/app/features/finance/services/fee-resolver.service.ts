@@ -144,13 +144,13 @@ export async function resolveFeeAndCreate(
     }),
     prisma.report.findUnique({
       where: { id: reportId },
-      select: { bankReference: true },
+      select: { bankReference: true, crv: true },
     })
   ]);
 
   if (!member) return;
 
-  const initialStatus = report?.bankReference ? "PAID" : "PENDING";
+  const initialStatus = report?.crv ? "PAID" : "PENDING";
 
   let feeMode = "AUTO";
   let dueDate: Date | null = null;

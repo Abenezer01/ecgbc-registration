@@ -175,6 +175,53 @@ export const loginStaff = catchAsync(
   }
 );
 
+export const refreshAccessToken = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return next(new AppError("Refresh token is required", 400));
+    }
+
+    let payload: any;
+    try {
+      // @ts-ignore
+      payload = await promisify(jwt.verify)(refreshToken, env.JWT_REFRESH_SECRET_KEY);
+    } catch {
+      return next(new AppError("Invalid or expired refresh token", 401));
+    }
+
+    const staff = await prisma.staff.findUnique({
+      where: { id: payload.staff?.id },
+      include: { role: { include: { permissions: true, type: true } } },
+    });
+
+    if (!staff) {
+      return next(new AppError("Staff no longer exists", 401));
+    }
+
+    const tokenPayload = { staff: { id: staff.id } };
+
+    const newAccessToken = await promisify(jwt.sign)(
+      tokenPayload,
+      // @ts-ignore
+      env.JWT_ACCESS_SECRET_KEY,
+      // @ts-ignore
+      { expiresIn: env.JWT_ACCESS_EXPIRES_IN }
+    );
+
+    const newRefreshToken = await promisify(jwt.sign)(
+      tokenPayload,
+      // @ts-ignore
+      env.JWT_REFRESH_SECRET_KEY,
+      // @ts-ignore
+      { expiresIn: env.JWT_REFRESH_EXPIRES_IN }
+    );
+
+    sendSuccessResponse(res, { accessToken: newAccessToken, refreshToken: newRefreshToken });
+  }
+);
+
 export const getDashboardStats = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { startOfWeek, endOfWeek } = getWeekRange();

@@ -121,6 +121,99 @@ export const getReports = catchAsync(
   }
 );
 
+export const getReportSummary = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const whereFilters = { ...(req as any).filters };
+
+    const [
+      totalRequests,
+      activeRequests,
+      totalSubmissions,
+      statusCounts,
+      feeSum,
+      totalMembers,
+      recentSubmissions,
+      memberCountsByFellowship,
+      reportCountsByFellowship,
+      fellowships
+    ] = await Promise.all([
+      prisma.reportRequest.count(),
+      prisma.reportRequest.count({ where: { isActive: true } }),
+      prisma.report.count({ where: whereFilters }),
+      prisma.report.groupBy({
+        by: ['statusId'],
+        _count: { id: true },
+        where: whereFilters,
+      }),
+      (prisma as any).reportingFee.aggregate({
+        _sum: { amount: true },
+        where: { status: 'PAID' }
+      }),
+      prisma.member.count({ where: { isActive: true } }),
+      prisma.report.findMany({
+        where: whereFilters,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: {
+          member: { select: { id: true, name: true } },
+          status: { select: { value: true } },
+          reportingFee: { select: { status: true } }
+        }
+      }),
+      prisma.member.groupBy({
+        by: ['councilFellowshipId'],
+        _count: { id: true },
+        where: { isActive: true, councilFellowshipId: { not: undefined } }
+      }),
+      prisma.report.groupBy({
+        by: ['councilFellowshipId'],
+        _count: { id: true },
+        where: { ...whereFilters, councilFellowshipId: { not: undefined } }
+      }),
+      prisma.councilFellowship.findMany({ select: { id: true, name: true } })
+    ]);
+
+    // Map statusIds to their values
+    const statusIds = statusCounts.map((s) => s.statusId);
+    const statuses = await prisma.dataLookup.findMany({
+      where: { id: { in: statusIds } }
+    });
+
+    const submissionsByStatus = statusCounts.map((sc) => ({
+      status: statuses.find((s) => s.id === sc.statusId)?.value || 'UNKNOWN',
+      count: sc._count.id
+    }));
+
+    // Merge fellowship data
+    const submissionsByFellowship = fellowships.map(f => {
+      const totalFMembers = memberCountsByFellowship.find(m => m.councilFellowshipId === f.id)?._count.id || 0;
+      const reported = reportCountsByFellowship.find(r => r.councilFellowshipId === f.id)?._count.id || 0;
+      return {
+        fellowship: f.name,
+        reported,
+        notReported: Math.max(0, totalFMembers - reported),
+        total: totalFMembers
+      };
+    })
+    .filter(f => f.total > 0) // Only show fellowships that have members
+    .sort((a, b) => b.reported - a.reported || b.total - a.total)
+    .slice(0, 5);
+
+    sendSuccessResponse(res, {
+      summary: {
+        totalRequests,
+        activeRequests,
+        totalSubmissions,
+        submissionsByStatus,
+        submissionsByFellowship,
+        feesCollected: feeSum._sum.amount ? Number(feeSum._sum.amount) : 0,
+        totalMembers,
+        recentSubmissions,
+      }
+    });
+  }
+);
+
 export const getReport = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const report = await prisma.report.findUnique({
@@ -178,6 +271,10 @@ export const createMemberReport = catchAsync(
         year: Number(year),
       },
     });
+
+    if (!file && !existingReport?.file) {
+      return next(new AppError('A scanned report file is required.', 400));
+    }
 
     if (existingReport) {
       try {

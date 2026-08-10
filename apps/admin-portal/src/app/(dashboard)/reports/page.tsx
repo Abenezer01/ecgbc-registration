@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Eye, FileDown, Plus } from "lucide-react";
+import { FileText, Eye, FileDown, Plus, Banknote, CheckCircle, Users, Clock, Activity, Building, ChevronRight } from "lucide-react";
 import { DataTable, Button, Pagination, RowActions, presets } from "@/components/ui";
-import { useAllReports, GlobalReport } from "@/hooks/useAllReports";
+import { useAllReports, GlobalReport, useReportSummary } from "@/hooks/useAllReports";
 import { useReportRequests, useCreateReportRequest, useUpdateReportRequest, useDeleteReportRequest, ReportRequestData } from "@/hooks/useReportRequests";
 import { useGenerateMissingFees } from "@/hooks/useFeeRules";
 import { fileUrl } from "@/lib/file-url";
@@ -22,6 +22,9 @@ export default function ReportsPage() {
   // -- Submissions State --
   const [page, setPage] = useState(1);
   const { data: reportsData, isLoading: reportsLoading } = useAllReports(page, 20);
+
+  // -- Summary State --
+  const { data: summaryData, isLoading: summaryLoading } = useReportSummary();
 
   // File Viewer states
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -314,6 +317,196 @@ export default function ReportsPage() {
             <Plus className="h-4 w-4" /> New Request
           </Button>
         )}
+      </div>
+
+      {/* Dashboard Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+            <FileText className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-500">Total Submissions</p>
+            {summaryLoading ? (
+              <div className="h-7 w-16 bg-zinc-100 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-2xl font-bold text-zinc-900">{summaryData?.totalSubmissions || 0}</p>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+            <CheckCircle className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-500">Active Requests</p>
+            {summaryLoading ? (
+              <div className="h-7 w-16 bg-zinc-100 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-2xl font-bold text-zinc-900">{summaryData?.activeRequests || 0}</p>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+            <Banknote className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-500">Fees Collected (ETB)</p>
+            {summaryLoading ? (
+              <div className="h-7 w-20 bg-zinc-100 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-2xl font-bold text-zinc-900">
+                {(summaryData?.feesCollected || 0).toLocaleString()}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
+            <Users className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-500">Active Members</p>
+            {summaryLoading ? (
+              <div className="h-7 w-16 bg-zinc-100 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-2xl font-bold text-zinc-900">{summaryData?.totalMembers || 0}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Submissions by Status */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="h-5 w-5 text-zinc-500" />
+            <h3 className="font-semibold text-zinc-900">Submissions by Status</h3>
+          </div>
+          {summaryLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-10 bg-zinc-100 animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : summaryData?.submissionsByStatus && summaryData.submissionsByStatus.length > 0 ? (
+            <div className="space-y-4 flex-1">
+              {summaryData.submissionsByStatus.map((s, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 border border-zinc-100">
+                  <span className="text-sm font-medium text-zinc-700">{s.status}</span>
+                  <span className="text-sm font-bold text-zinc-900 bg-white px-2 py-1 rounded shadow-sm border border-zinc-200">
+                    {s.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 py-4 text-center flex-1">No status data available.</p>
+          )}
+        </div>
+
+        {/* Top Fellowships */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <Building className="h-5 w-5 text-zinc-500" />
+            <h3 className="font-semibold text-zinc-900">Fellowship Submissions</h3>
+          </div>
+          {summaryLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-14 bg-zinc-100 animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : summaryData?.submissionsByFellowship && summaryData.submissionsByFellowship.length > 0 ? (
+            <div className="space-y-4 flex-1">
+              {summaryData.submissionsByFellowship.map((f, idx) => (
+                <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-zinc-50 border border-zinc-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-zinc-800 truncate mr-2" title={f.fellowship}>
+                      {f.fellowship}
+                    </span>
+                    <span className="text-xs font-medium text-zinc-500">
+                      {f.reported} / {f.total}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-zinc-200 rounded-full overflow-hidden flex">
+                      <div 
+                        className="h-full bg-emerald-500 transition-all duration-500" 
+                        style={{ width: `${f.total > 0 ? (f.reported / f.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 shrink-0 w-12 text-right">
+                      {f.notReported} pending
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 py-4 text-center flex-1">No fellowship data available.</p>
+          )}
+        </div>
+
+        {/* Recent Submissions */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-5 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-zinc-500" />
+              <h3 className="font-semibold text-zinc-900">Recent Submissions</h3>
+            </div>
+            <button 
+              onClick={() => setActiveTab("submissions")}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+            >
+              View All <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {summaryLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex gap-3">
+                  <div className="h-10 w-10 bg-zinc-100 animate-pulse rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-3 w-1/2 bg-zinc-100 animate-pulse rounded" />
+                    <div className="h-3 w-1/3 bg-zinc-100 animate-pulse rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : summaryData?.recentSubmissions && summaryData.recentSubmissions.length > 0 ? (
+            <div className="space-y-3 flex-1">
+              {summaryData.recentSubmissions.map((rs) => (
+                <div key={rs.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-50 transition-colors border border-transparent hover:border-zinc-100">
+                  <div className="h-10 w-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900 truncate">
+                      {rs.member?.name || "Unknown Member"}
+                    </p>
+                    <p className="text-xs text-zinc-500 truncate">
+                      {rs.year} Report • {new Date(rs.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex flex-col gap-1 items-end">
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                      {rs.status.value}
+                    </span>
+                    {rs.reportingFee?.status === "PAID" && (
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+                        <Banknote className="h-3 w-3" /> Paid
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 py-4 text-center flex-1">No recent submissions.</p>
+          )}
+        </div>
       </div>
 
       <div className="flex space-x-1 bg-zinc-100/50 p-1 rounded-xl w-fit border border-zinc-200/50">

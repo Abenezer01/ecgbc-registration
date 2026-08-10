@@ -9,6 +9,7 @@ import {
 import { verifyPaymentWithGateway } from "../services/verification.service";
 import { FeeStatus } from "../enums/fee-status.enum";
 import nodemailer from "nodemailer";
+import { previewFee } from "../services/fee-resolver.service";
 
 // ---------------------------------------------------------------------------
 // Email helper
@@ -193,7 +194,7 @@ export const getReportingFees = catchAsync(
       (prisma as any).reportingFee.findMany({
         where,
         include: {
-          member: { select: { id: true, name: true, email: true, memberCategory: true } },
+          member: { select: { id: true, name: true, email: true, memberCategory: true, type: true } },
           report: { select: { id: true, year: true, bankReference: true, crv: true, status: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -204,6 +205,24 @@ export const getReportingFees = catchAsync(
     ]);
 
     sendPaginatedResponse(res, { fees }, { page, limit, total });
+  }
+);
+
+/** GET /finance/fees/preview — preview fee for a member before reporting */
+export const getFeePreview = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { memberId, reportRequestId } = req.query;
+
+    if (!memberId) {
+      return next(new AppError("memberId is required", 400));
+    }
+
+    const preview = await previewFee(
+      memberId as string,
+      (reportRequestId as string) || null
+    );
+
+    sendSuccessResponse(res, { preview });
   }
 );
 
@@ -359,6 +378,13 @@ export const markFeePaid = catchAsync(
         report: { select: { id: true, year: true, bankReference: true } },
       },
     });
+
+    if (crv && existing.report) {
+      await prisma.report.update({
+        where: { id: existing.report.id },
+        data: { crv },
+      });
+    }
 
     sendSuccessResponse(res, { fee });
   }
