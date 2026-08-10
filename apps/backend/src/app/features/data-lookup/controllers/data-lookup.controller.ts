@@ -20,7 +20,7 @@ export const getDataLookups = catchAsync(
 
 export const createDataLookup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { type, category, value, description, note, isDefault, index } = req.body;
+    const { type, category, value, description, note, isDefault, index, isRequired } = req.body;
 
     const lookup = await prisma.dataLookup.create({
       data: {
@@ -30,6 +30,7 @@ export const createDataLookup = catchAsync(
         description,
         note,
         isDefault: isDefault || false,
+        isRequired: isRequired || false,
         index: index || 0,
       },
     });
@@ -50,7 +51,7 @@ export const createDataLookup = catchAsync(
 export const updateDataLookup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const { type, category, value, description, note, isDefault, index } = req.body;
+    const { type, category, value, description, note, isDefault, index, isRequired } = req.body;
 
     const lookup = await prisma.dataLookup.update({
       where: { id },
@@ -61,6 +62,7 @@ export const updateDataLookup = catchAsync(
         ...(description && { description }),
         ...(note !== undefined && { note }),
         ...(isDefault !== undefined && { isDefault }),
+        ...(isRequired !== undefined && { isRequired }),
         ...(index !== undefined && { index }),
       },
     });
