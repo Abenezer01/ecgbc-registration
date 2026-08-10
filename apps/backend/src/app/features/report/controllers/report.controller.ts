@@ -264,55 +264,23 @@ export const createMemberReport = catchAsync(
     // RBAC enforcement for creating member report
     await assertAccessToMemberId(req, memberRecord.id);
 
-    // Upsert logic: update if exists, else create
+    // Check for existing report to prevent double reporting
     const existingReport = await prisma.report.findFirst({
-      where: {
+      where: reportRequestId ? {
+        memberId: member,
+        reportRequestId: reportRequestId,
+      } : {
         memberId: member,
         year: Number(year),
       },
     });
 
-    if (!file && !existingReport?.file) {
-      return next(new AppError('A scanned report file is required.', 400));
+    if (existingReport) {
+      return next(new AppError('This member has already reported for this request/year', 400));
     }
 
-    if (existingReport) {
-      try {
-        const updatedReport = await prisma.report.update({
-          where: { id: existingReport.id },
-          data: {
-            reportedAt: reportedAtDate,
-            file: file || existingReport.file,
-            bankReference: bankReference || existingReport.bankReference,
-            remark: remark || existingReport.remark,
-            statusId: reportedStatus.id,
-            ...(reportRequestId && { reportRequestId }),
-          },
-          include: { status: true, member: true, councilFellowship: true, reportingFee: true },
-        });
-        
-        // Resolve fee for the updated report
-        await resolveFeeAndCreate(updatedReport.id, member, updatedReport.reportRequestId);
-        
-        const freshReport = await prisma.report.findUnique({
-          where: { id: updatedReport.id },
-          include: { status: true, member: true, councilFellowship: true, reportingFee: true },
-        });
-
-        // Log activity
-        await logActivity({
-          action: ActivityAction.UPDATE,
-          entity: ActivityEntity.REPORT,
-          entityId: updatedReport.id,
-          description: `Updated report for member ${member} for year ${year}`,
-          metadata: { year, memberId: member, reportRequestId },
-        }, req);
-
-        sendSuccessResponseWithMessage(res, { report: freshReport }, "Report updated successfully");
-        return;
-      } catch (updateError) {
-        return next(new AppError(`Failed to update report: ${updateError instanceof Error ? updateError.message : 'Unknown error'}`, 500));
-      }
+    if (!file) {
+      return next(new AppError('A scanned report file is required.', 400));
     }
 
     const report = await prisma.report.create({
@@ -362,6 +330,19 @@ export const createFellowshipReport = catchAsync(
 
     // RBAC enforcement for creating fellowship report
     await assertAccessToFellowshipId(req, fellowship);
+
+    // Check for existing report to prevent double reporting
+    const existingReport = await prisma.report.findFirst({
+      where: {
+        councilFellowshipId: fellowship,
+        year: Number(year),
+        memberId: null, // Fellowship-level report
+      },
+    });
+
+    if (existingReport) {
+      return next(new AppError(`This fellowship has already reported for year ${year}`, 400));
+    }
 
     const report = await prisma.report.create({
       data: {
