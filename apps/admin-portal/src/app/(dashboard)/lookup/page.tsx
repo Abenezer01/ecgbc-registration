@@ -131,14 +131,13 @@ export default function LookupPage() {
         isFileTypeLookup(row) ? (
           <Checkbox
             id={`required-${row.id}`}
-            checked={!!row.documentRequirement?.isRequired}
-            disabled={!canEdit || updatingRequirement}
+            checked={!!row.isRequired}
+            disabled={!canEdit || updating}
             onClick={(event) => event.stopPropagation()}
-            onChange={(event) => {
-              updateRequirement({
-                fileTypeId: row.id,
-                isRequired: event.target.checked,
-                note: row.documentRequirement?.note || "",
+            onCheckedChange={(checked) => {
+              updateLookup({
+                id: row.id,
+                isRequired: !!checked,
               });
             }}
             aria-label={`Mark ${row.description} as required`}
@@ -375,7 +374,7 @@ function LookupFormModal({
     category: editTarget?.category || categoryForType(initialType || ""),
     value: editTarget?.value || "",
     description: editTarget?.description || "",
-    isRequired: !!editTarget?.documentRequirement?.isRequired,
+    isRequired: !!editTarget?.isRequired,
     requirementNote: editTarget?.documentRequirement?.note || "",
   });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
