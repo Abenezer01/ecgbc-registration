@@ -2,14 +2,13 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { UserPlus, Key, Shield, Search, RefreshCw, ArrowLeft, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert } from "lucide-react";
+import { UserPlus, Key, Shield, Search, RefreshCw, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert } from "lucide-react";
 import { Button, DataTable, Badge, Modal, ModalFooter, FormField, Input, Select } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useChurchUsersByMember, useCreateChurchUser, useDeleteChurchUser, useResetUserPassword, useToggleUserStatus, type ChurchUser } from "@/hooks/useChurchUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { useMember } from "@/hooks/useMembers";
 import { cn } from "@/lib/utils";
-import { useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
 
 const PAGE_SIZE = 20;
 
@@ -54,10 +53,9 @@ export default function ChurchUsersPage() {
   const churchUsers = data?.churchUsers ?? [];
   const total = data?.total ?? 0;
 
-  const { mutateAsync: createUser, isPending: creating } = useCreateChurchUser();
   const { mutateAsync: deleteUser, isPending: deleting } = useDeleteChurchUser();
   const { mutateAsync: resetPassword, isPending: resetting } = useResetUserPassword();
-  const { mutateAsync: toggleStatus, isPending: toggling } = useToggleUserStatus();
+  const { mutateAsync: toggleStatus } = useToggleUserStatus();
 
   const handleSearch = (val: string) => {
     setSearch(val);

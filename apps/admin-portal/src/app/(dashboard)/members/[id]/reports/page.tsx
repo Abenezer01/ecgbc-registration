@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, Plus, Eye, Download, Calendar, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign } from "lucide-react";
+import { FileText, Plus, Eye, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign } from "lucide-react";
 import { Badge, DataTable, Button, DateInput, Modal, ModalFooter, FormField, RowActions, presets, Input } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
 import { useReportRequests } from "@/hooks/useReportRequests";
@@ -65,7 +65,7 @@ export default function ReportsPage() {
   const { data: reports = [], isLoading, refetch } = useMemberReports(memberId);
   const { mutateAsync: createReport, isPending: creating } = useCreateMemberReport();
   const { mutateAsync: updateReport, isPending: updating } = useUpdateMemberReport();
-  const { mutateAsync: deleteReport, isPending: deleting } = useDeleteMemberReport();
+  const { mutateAsync: deleteReport } = useDeleteMemberReport();
   const { mutateAsync: generateFee, isPending: generatingFee } = useGenerateFee();
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { mutateAsync: verifyPayment } = useVerifyPayment();
@@ -95,6 +95,7 @@ export default function ReportsPage() {
       }
     }, 1500);
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bankReference, bankSuffix]);
 
   const { data: feePreview, isLoading: feePreviewLoading } = useFeePreview(memberId, reportRequestId);

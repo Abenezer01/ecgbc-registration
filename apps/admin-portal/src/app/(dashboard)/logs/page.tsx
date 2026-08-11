@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { History, Search, RefreshCw, Eye, Filter, Download, Calendar } from "lucide-react";
+import { History, Search, RefreshCw, Eye, Filter, Download } from "lucide-react";
 import {
   PageHeader, Button, DateInput, Badge, DataTable, Pagination, Select, Modal, ModalFooter, FormField, Input
 } from "@/components/ui";
@@ -91,7 +91,29 @@ function ShieldCheck(props: any) {
 
 export default function ActivityLogsPage() {
   const { hasPermission } = useAuth();
-  
+
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [actionFilter, setActionFilter] = useState("all");
+  const [entityFilter, setEntityFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [activeDetailLog, setActiveDetailLog] = useState<ActivityLog | null>(null);
+
+  const { data, isLoading, refetch, isFetching } = useActivityLogs({
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+    action: actionFilter !== "all" ? actionFilter : undefined,
+    entity: entityFilter !== "all" ? entityFilter : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
+
+  const logs = data?.logs || [];
+  const total = data?.total || 0;
+
   // Permission check
   if (!hasPermission("view_logs")) {
     return (
@@ -108,17 +130,6 @@ export default function ActivityLogsPage() {
       </div>
     );
   }
-  
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState("all");
-  const [entityFilter, setEntityFilter] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  
-  // Inspect log modal details
-  const [activeDetailLog, setActiveDetailLog] = useState<ActivityLog | null>(null);
 
   const handleSearch = (val: string) => {
     setSearch(val);
@@ -138,19 +149,6 @@ export default function ActivityLogsPage() {
     // TODO: Implement CSV export
     console.log("Export functionality to be implemented");
   };
-
-  const { data, isLoading, refetch, isFetching } = useActivityLogs({
-    page,
-    limit: PAGE_SIZE,
-    search: debouncedSearch || undefined,
-    action: actionFilter !== "all" ? actionFilter : undefined,
-    entity: entityFilter !== "all" ? entityFilter : undefined,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
-  });
-
-  const logs = data?.logs || [];
-  const total = data?.total || 0;
 
   const COLUMNS: Column<ActivityLog>[] = [
     {

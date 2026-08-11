@@ -9,7 +9,6 @@ import {
   useCreatePortalReport,
   useFeePreview,
   usePaymentMethods,
-  PaymentMethod,
   Report,
   PortalReportRequest,
   useVerifyPayment,
@@ -80,6 +79,7 @@ export default function ReportsPage() {
       }
     }, 3000);
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bankReference, feePreview?.amount]);
 
   const pendingRequests = reportRequests.filter((req) => req.reports.length === 0);

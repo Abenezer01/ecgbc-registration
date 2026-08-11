@@ -80,7 +80,7 @@ export default function LookupPage() {
   const { mutateAsync: createLookup, isPending: creating } = useCreateDataLookup();
   const { mutateAsync: updateLookup, isPending: updating } = useUpdateDataLookup();
   const { mutateAsync: deleteLookup, isPending: deleting } = useDeleteDataLookup();
-  const { mutateAsync: updateRequirement, isPending: updatingRequirement } = useUpdateDocumentRequirement();
+  // updateRequirement handled by inline API calls
 
   // Get list of unique types
   const uniqueTypes = Array.from(new Set(lookups.map((item) => item.type))).sort();

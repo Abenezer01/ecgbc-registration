@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Plus } from "lucide-react";
 import {
   Drawer, Button, Input, DateInput, FormField, Select, Label, RowActions, presets, PhoneInput,
@@ -10,7 +10,6 @@ import { useFellowships } from "@/hooks/useFellowships";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useAuth } from "@/hooks/useAuth";
 import { countries } from "@/lib/countries";
-import { formatEthiopianDate } from "@/lib/dateUtils";
 
 interface EditMemberModalProps {
   open: boolean;

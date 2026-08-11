@@ -7,8 +7,8 @@ import {
   Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 import {
-  Users, TrendingUp, CheckCircle2, CheckCircle, MapPin, DollarSign, Wallet,
-  AlertTriangle, Activity as ActivityIcon, Globe, Building2, UserPlus, Clock
+  Users, CheckCircle2, DollarSign, Wallet,
+  AlertTriangle, Activity as ActivityIcon, Globe, Building2, Clock
 } from "lucide-react";
 import api from "../../../lib/api";
 import { useAuth } from "../../../context/AuthContext";

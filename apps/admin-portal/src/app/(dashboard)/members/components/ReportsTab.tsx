@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { FileText, Plus, Eye, Download, Calendar, FileDown, MoreVertical } from "lucide-react";
+import { FileText, Plus, Eye, FileDown } from "lucide-react";
 import { Badge, DataTable, Button, DateInput, Modal, ModalFooter, FormField, Input, RowActions, presets, Select } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
 import { usePaymentMethods, useVerifyPayment } from "@/hooks/useFinance";
@@ -39,7 +39,7 @@ export function ReportsTab({ member }: ReportsTabProps) {
   const { data: reports = [], isLoading, refetch } = useMemberReports(memberId);
   const { mutateAsync: createReport, isPending: creating } = useCreateMemberReport();
   const { mutateAsync: updateReport, isPending: updating } = useUpdateMemberReport();
-  const { mutateAsync: deleteReport, isPending: deleting } = useDeleteMemberReport();
+  const { mutateAsync: deleteReport } = useDeleteMemberReport();
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { mutateAsync: verifyPayment } = useVerifyPayment();
 
@@ -68,6 +68,7 @@ export function ReportsTab({ member }: ReportsTabProps) {
       }
     }, 1500);
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bankReference, bankSuffix]);
 
   const canAdd = hasPermission("add_report") || hasPermission("member_change");

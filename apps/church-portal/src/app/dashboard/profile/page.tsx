@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Church, MapPin, Phone, Mail, Save, Building2 } from "lucide-react";
+import { Save, Building2 } from "lucide-react";
 import { Button, FormField, Input } from "@/components/ui";
 import { useAuthStore } from "@/store/auth.store";
 

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Users, FileText, FolderOpen, ShieldAlert, Building2, AlertTriangle } from "lucide-react";
+import { Users, FileText, ShieldAlert, Building2, AlertTriangle } from "lucide-react";
 import { Button, Card, CardContent } from "@/components/ui";
 import { useFellowship } from "@/hooks/useFellowships";
 import { useAuth } from "@/hooks/useAuth";

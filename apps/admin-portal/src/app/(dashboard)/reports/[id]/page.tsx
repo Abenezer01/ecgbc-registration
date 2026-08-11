@@ -7,7 +7,7 @@ import { Card, CardContent, Button, Input, Pagination } from "@/components/ui";
 import { formatNumber, formatCurrency, formatPercentage } from "@/lib/utils";
 import { useReportRequest } from "@/hooks/useReportRequest";
 import { useGenerateMissingFees } from "@/hooks/useFeeRules";
-import { useReportRequests, useUpdateReportRequest, useDeleteReportRequest } from "@/hooks/useReportRequests";
+import { useDeleteReportRequest } from "@/hooks/useReportRequests";
 import toast from "react-hot-toast";
 
 export default function ReportRequestDetailPage() {
@@ -22,7 +22,6 @@ export default function ReportRequestDetailPage() {
 
   const { data, isLoading, error, refetch } = useReportRequest(id);
   const generateFeesMutation = useGenerateMissingFees();
-  const updateRequestMutation = useUpdateReportRequest();
   const deleteRequestMutation = useDeleteReportRequest();
 
   const handleGenerateFees = async () => {

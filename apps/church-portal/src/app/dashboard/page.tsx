@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { Church, MapPin, Hash, UserCheck } from "lucide-react";
 
 export default function DashboardPage() {
-  const { church, user } = useAuthStore();
+  const { church } = useAuthStore();
 
   return (
     <div className="space-y-6">

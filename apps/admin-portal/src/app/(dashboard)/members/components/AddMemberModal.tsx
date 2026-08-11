@@ -11,7 +11,6 @@ import { useFellowships } from "@/hooks/useFellowships";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useAuth } from "@/hooks/useAuth";
 import { countries } from "@/lib/countries";
-import { formatEthiopianDate } from "@/lib/dateUtils";
 import api from "@/lib/api";
 
 interface AddMemberModalProps {

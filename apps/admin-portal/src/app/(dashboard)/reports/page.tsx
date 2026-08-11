@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Eye, FileDown, Plus, Banknote, CheckCircle, Users, Clock, Activity, Building, ChevronRight } from "lucide-react";
-import { DataTable, Button, Pagination, RowActions, presets } from "@/components/ui";
+import { DataTable, Button, Pagination, RowActions, presets, Input } from "@/components/ui";
 import { useAllReports, GlobalReport, useReportSummary } from "@/hooks/useAllReports";
 import { useReportRequests, useCreateReportRequest, useUpdateReportRequest, useDeleteReportRequest, ReportRequestData } from "@/hooks/useReportRequests";
 import { useGenerateMissingFees } from "@/hooks/useFeeRules";
