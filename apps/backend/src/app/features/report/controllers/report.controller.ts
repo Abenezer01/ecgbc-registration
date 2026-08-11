@@ -14,6 +14,7 @@ import {
 import { sendSuccessResponse, sendSuccessResponseWithMessage, sendPaginatedResponse } from "../../../shared/helpers/response.helper";
 import { resolveFeeAndCreate } from "../../finance/services/fee-resolver.service";
 import { logActivity, ActivityAction, ActivityEntity } from "../../../shared/services/activity.service";
+import { validateBankReference } from "../../finance/services/verification.service";
 import fs from 'fs';
 import path from 'path';
 
@@ -242,7 +243,7 @@ export const getReport = catchAsync(
 
 export const createMemberReport = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    let { year, member, reportedAt, file, bankReference, remark, reportRequestId } = req.body;
+    let { year, member, reportedAt, file, bankReference, bankSuffix, remark, reportRequestId } = req.body;
 
     const reportedStatus = await prisma.dataLookup.findUnique({
       where: { value: ReportStatus.REPORTED },
@@ -281,6 +282,10 @@ export const createMemberReport = catchAsync(
 
     if (!file) {
       return next(new AppError('A scanned report file is required.', 400));
+    }
+
+    if (bankReference) {
+      await validateBankReference(bankReference, undefined, bankSuffix);
     }
 
     const report = await prisma.report.create({
@@ -322,7 +327,7 @@ export const createFellowshipReport = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
 
-    let { year, fellowship, file, bankReference, remark } = req.body;
+    let { year, fellowship, file, bankReference, bankSuffix, remark } = req.body;
 
     const reportedStatus = (await prisma.dataLookup.findUnique({
       where: { value: ReportStatus.REPORTED },
@@ -342,6 +347,14 @@ export const createFellowshipReport = catchAsync(
 
     if (existingReport) {
       return next(new AppError(`This fellowship has already reported for year ${year}`, 400));
+    }
+
+    if (bankReference) {
+      try {
+        await validateBankReference(bankReference, undefined, bankSuffix);
+      } catch (err) {
+        return next(err);
+      }
     }
 
     const report = await prisma.report.create({
@@ -373,7 +386,7 @@ export const updateMemberReport = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
 const removeFile = req.body.report ==='remove'
-    let { reportId, file, bankReference, remark ,reportedAt,} = req.body;
+    let { reportId, file, bankReference, bankSuffix, remark ,reportedAt,} = req.body;
     const reportedStatus = (await prisma.dataLookup.findUnique({where:{value:ReportStatus.REPORTED}})) as unknown as DataLookup;
 
     // RBAC: ensure the staff can access this report before update
@@ -407,6 +420,10 @@ const removeFile = req.body.report ==='remove'
         return next(
           new AppError(`Report with ID ${reportId} does not exist`, 400)
         );
+      }
+
+      if (bankReference && bankReference !== existingReport.bankReference) {
+        await validateBankReference(bankReference, existingReport.id, bankSuffix);
       }
       if(removeFile){
         const oldFilePath = existingReport.file 

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, UploadCloud, FileText, X } from "lucide-react";
 import {
-  Drawer, Button, Input, FormField, Select, Label, RowActions, presets, PhoneInput,
+  Drawer, Button, Input, DateInput, FormField, Select, Label, RowActions, presets, PhoneInput,
 } from "@/components/ui";
 import { useCreateMember } from "@/hooks/useMembers";
 import { useFellowships } from "@/hooks/useFellowships";
@@ -347,20 +347,11 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
             </FormField>
 
             <FormField id="issued-date" label="ሰርተፊኬት የወሰዱበት ቀን (Issued Date)" error={errors.certificateIssuedDate} required>
-              <div className="flex items-center gap-3">
-                <Input
-                  id="issued-date"
-                  type="date"
-                  value={form.certificateIssuedDate}
-                  onChange={(e) => setForm((p) => ({ ...p, certificateIssuedDate: e.target.value }))}
-                  className="flex-1"
-                />
-                {form.certificateIssuedDate && (
-                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 px-2 py-1.5 rounded-lg whitespace-nowrap">
-                    🗓 {formatEthiopianDate(form.certificateIssuedDate)}
-                  </span>
-                )}
-              </div>
+              <DateInput
+                id="issued-date"
+                value={form.certificateIssuedDate}
+                onChange={(e) => setForm((p) => ({ ...p, certificateIssuedDate: e.target.value }))}
+              />
             </FormField>
           </div>
         </div>

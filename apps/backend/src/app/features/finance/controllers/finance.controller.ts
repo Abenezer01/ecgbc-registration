@@ -405,6 +405,36 @@ export const verifyPayment = catchAsync(
       phoneNumber,
     });
 
+    // 1. Check if transaction number is already used
+    if (verificationResult.receiptNo) {
+      const existingReport = await prisma.report.findFirst({
+        where: { bankReference: verificationResult.receiptNo },
+      });
+      if (existingReport) {
+        return next(new AppError(`The transaction number ${verificationResult.receiptNo} has already been used for another report.`, 400));
+      }
+    }
+
+    // 2. Check if the recipient name matches the configured account names
+    if (verificationResult.creditedPartyName) {
+      const paymentConfigs = await prisma.paymentMethodConfig.findMany({
+        where: { isEnabled: true },
+      });
+      const validNames = paymentConfigs
+        .map(c => c.accountName?.trim().toLowerCase())
+        .filter(Boolean) as string[];
+        
+      if (validNames.length > 0) {
+        const incomingName = verificationResult.creditedPartyName.trim().toLowerCase();
+        // Allow a match if one string contains the other (e.g. "ECGBC" vs "ECGBC HEAD OFFICE")
+        const isMatch = validNames.some(name => incomingName.includes(name) || name.includes(incomingName));
+        
+        if (!isMatch) {
+          return next(new AppError(`The recipient name on the receipt (${verificationResult.creditedPartyName}) does not match our configured account name.`, 400));
+        }
+      }
+    }
+
     sendSuccessResponse(res, { verification: verificationResult });
   }
 );

@@ -52,6 +52,7 @@ export function useCreateMemberReport() {
       reportedAt?: string;
       remark?: string;
       bankReference?: string;
+      bankSuffix?: string;
       report?: File;
       reportRequestId?: string;
     }) => {
@@ -69,6 +70,7 @@ export function useCreateMemberReport() {
       if (crv) formData.append("crv", crv);
       if (remark) formData.append("remark", remark);
       if (bankReference) formData.append("bankReference", bankReference);
+      if (bankSuffix) formData.append("bankSuffix", bankSuffix);
       if (report) formData.append("report", report);
       if (reportRequestId) formData.append("reportRequestId", reportRequestId);
 
@@ -102,6 +104,7 @@ export function useUpdateMemberReport() {
       reportedAt?: string;
       remark?: string;
       bankReference?: string;
+      bankSuffix?: string;
       report?: File;
     }) => {
       const formData = new FormData();
@@ -117,6 +120,7 @@ export function useUpdateMemberReport() {
       if (crv) formData.append("crv", crv);
       if (remark) formData.append("remark", remark);
       if (bankReference) formData.append("bankReference", bankReference);
+      if (bankSuffix) formData.append("bankSuffix", bankSuffix);
       if (report) formData.append("report", report);
 
       const res = await api.patch(`/reports/member`, formData, {

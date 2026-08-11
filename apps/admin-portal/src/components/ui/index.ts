@@ -4,6 +4,8 @@ export type { ButtonProps } from "./Button";
 
 export { Input } from "./Input";
 export type { InputProps } from "./Input";
+export { DateInput } from "./DateInput";
+export type { DateInputProps } from "./DateInput";
 
 export { Label } from "./Label";
 export type { LabelProps } from "./Label";

@@ -151,6 +151,23 @@ export function usePaymentMethods() {
   });
 }
 
+export function useVerifyPayment() {
+  return useMutation({
+    mutationFn: async ({
+      reference,
+      suffix,
+      phoneNumber,
+    }: {
+      reference: string;
+      suffix?: string;
+      phoneNumber?: string;
+    }) => {
+      const res = await api.post(`/finance/verify`, { reference, suffix, phoneNumber });
+      return res.data.data.verification;
+    },
+  });
+}
+
 export function useFeePreview(memberId: string, reportRequestId?: string) {
   return useQuery({
     queryKey: ["admin-fee-preview", memberId, reportRequestId],
@@ -263,19 +280,3 @@ export function useMarkFeePaid() {
   });
 }
 
-export function useVerifyPayment() {
-  return useMutation({
-    mutationFn: async ({
-      reference,
-      suffix,
-      phoneNumber,
-    }: {
-      reference: string;
-      suffix?: string;
-      phoneNumber?: string;
-    }) => {
-      const res = await api.post(`/finance/verify`, { reference, suffix, phoneNumber });
-      return extractData(res) as any;
-    },
-  });
-}

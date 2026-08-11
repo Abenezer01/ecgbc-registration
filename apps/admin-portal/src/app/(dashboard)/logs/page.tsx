@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { History, Search, RefreshCw, Eye, Filter, Download, Calendar } from "lucide-react";
 import {
-  PageHeader, Button, Input, Badge, DataTable, Pagination, Select, Modal, ModalFooter, FormField
+  PageHeader, Button, DateInput, Badge, DataTable, Pagination, Select, Modal, ModalFooter, FormField
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useActivityLogs, type ActivityLog } from "@/hooks/useActivityLogs";
@@ -287,8 +287,7 @@ export default function ActivityLogsPage() {
             <option value="CHURCH_USER">Church User</option>
             <option value="STAFF">Staff</option>
           </Select>
-          <Input
-            type="date"
+          <DateInput
             placeholder="Start Date"
             value={startDate}
             onChange={(e) => {
@@ -296,8 +295,7 @@ export default function ActivityLogsPage() {
               setPage(1);
             }}
           />
-          <Input
-            type="date"
+          <DateInput
             placeholder="End Date"
             value={endDate}
             onChange={(e) => {

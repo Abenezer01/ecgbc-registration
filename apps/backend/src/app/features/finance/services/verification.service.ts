@@ -66,3 +66,43 @@ export const verifyPaymentWithGateway = async (payload: VerifyPaymentPayload) =>
     );
   }
 };
+
+import prisma from '../../../config/db.config';
+
+export const validateBankReference = async (reference: string, excludeReportId?: string, suffix?: string) => {
+  
+  // 1. Check uniqueness
+  const existingReport = await prisma.report.findFirst({
+    where: { 
+      bankReference: reference, 
+      ...(excludeReportId ? { NOT: { id: excludeReportId } } : {}) 
+    },
+  });
+  if (existingReport) {
+    throw new AppError(`The transaction number ${reference} has already been used for another report.`, 400);
+  }
+
+  // 2. Gateway Verification
+  const verificationResult = await verifyPaymentWithGateway({ reference, suffix });
+  
+  // 3. Name Match Check
+  if (verificationResult.creditedPartyName) {
+    const paymentConfigs = await prisma.paymentMethodConfig.findMany({
+      where: { isEnabled: true },
+    });
+    const validNames = paymentConfigs
+      .map((c: any) => c.accountName?.trim().toLowerCase())
+      .filter(Boolean) as string[];
+      
+    if (validNames.length > 0) {
+      const incomingName = verificationResult.creditedPartyName.trim().toLowerCase();
+      const isMatch = validNames.some(name => incomingName.includes(name) || name.includes(incomingName));
+      
+      if (!isMatch) {
+        throw new AppError(`The recipient name on the receipt (${verificationResult.creditedPartyName}) does not match our configured account name.`, 400);
+      }
+    }
+  }
+
+  return verificationResult;
+};

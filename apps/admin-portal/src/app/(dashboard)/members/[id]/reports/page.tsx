@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FileText, Plus, Eye, Download, Calendar, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign } from "lucide-react";
-import { Badge, DataTable, Button, Modal, ModalFooter, FormField, Input, RowActions, presets } from "@/components/ui";
+import { Badge, DataTable, Button, DateInput, Modal, ModalFooter, FormField, RowActions, presets, Input } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
 import { useReportRequests } from "@/hooks/useReportRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { useMember } from "@/hooks/useMembers";
-import { useGenerateFee, useFeePreview } from "@/hooks/useFinance";
+import { useGenerateFee, useFeePreview, usePaymentMethods, useVerifyPayment } from "@/hooks/useFinance";
 import { GenerateFeeDialog } from "@/components/finance/GenerateFeeDialog";
 import { FeeStatusBadge } from "@/components/finance/FeeStatusBadge";
 import { Select } from "@/components/ui";
@@ -46,6 +46,7 @@ export default function ReportsPage() {
   const [reportRequestId, setReportRequestId] = useState("");
   const [year, setYear] = useState("");
   const [bankReference, setBankReference] = useState("");
+  const [bankSuffix, setBankSuffix] = useState("");
   const [reportedAt, setReportedAt] = useState("");
   const [remark, setRemark] = useState("");
   const [reportFile, setReportFile] = useState<File | null>(null);
@@ -66,6 +67,35 @@ export default function ReportsPage() {
   const { mutateAsync: updateReport, isPending: updating } = useUpdateMemberReport();
   const { mutateAsync: deleteReport, isPending: deleting } = useDeleteMemberReport();
   const { mutateAsync: generateFee, isPending: generatingFee } = useGenerateFee();
+  const { data: paymentMethods = [] } = usePaymentMethods();
+  const { mutateAsync: verifyPayment } = useVerifyPayment();
+
+  // Auto-verification state
+  const [verificationStatus, setVerificationStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
+  const [verificationMsg, setVerificationMsg] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!bankReference.trim()) {
+      setVerificationStatus("idle");
+      setVerificationMsg("");
+      return;
+    }
+    setVerificationStatus("verifying");
+    setVerificationMsg("");
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const result = await verifyPayment({ reference: bankReference.trim() });
+        setVerificationStatus("success");
+        setVerificationMsg(`Verified — ETB ${Number(result.amount).toLocaleString()}${result.payerName ? ` · ${result.payerName}` : ""}`);
+      } catch (err: any) {
+        setVerificationStatus("error");
+        setVerificationMsg(err.response?.data?.message || "Could not verify reference. Check and try again.");
+      }
+    }, 1500);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [bankReference, bankSuffix]);
 
   const { data: feePreview, isLoading: feePreviewLoading } = useFeePreview(memberId, reportRequestId);
 
@@ -80,10 +110,13 @@ export default function ReportsPage() {
     setReportRequestId("");
     setYear("");
     setBankReference("");
+    setBankSuffix("");
     setReportedAt("");
     setRemark("");
     setReportFile(null);
     setError(null);
+    setVerificationStatus("idle");
+    setVerificationMsg("");
   };
 
   const handleReportRequestChange = (id: string) => {
@@ -102,12 +135,21 @@ export default function ReportsPage() {
       setError("A scanned report file (PDF) is required.");
       return;
     }
+    if (!bankReference.trim()) {
+      setError("Bank Reference is required.");
+      return;
+    }
+    if (verificationStatus !== "success") {
+      setError(verificationStatus === "verifying" ? "Please wait — verifying payment..." : verificationMsg || "Payment verification failed. Please correct the bank reference.");
+      return;
+    }
     try {
       await createReport({
         memberId,
         year: Number(year),
         reportRequestId,
         bankReference: bankReference || undefined,
+        bankSuffix: bankSuffix || undefined,
         reportedAt: reportedAt || undefined,
         remark: remark || undefined,
         report: reportFile || undefined,
@@ -123,11 +165,20 @@ export default function ReportsPage() {
   const handleUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReport) return;
+    if (!bankReference.trim()) {
+      setError("Bank Reference is required.");
+      return;
+    }
+    if (verificationStatus !== "success") {
+      setError(verificationStatus === "verifying" ? "Please wait — verifying payment..." : verificationMsg || "Payment verification failed. Please correct the bank reference.");
+      return;
+    }
     try {
       await updateReport({
         reportId: selectedReport.id,
         memberId,
         bankReference: bankReference || undefined,
+        bankSuffix: bankSuffix || undefined,
         reportedAt: reportedAt || undefined,
         remark: remark || undefined,
         report: reportFile || undefined,
@@ -169,6 +220,8 @@ export default function ReportsPage() {
   const openEditFlow = (row: any) => {
     setSelectedReport(row);
     setBankReference(row.bankReference || "");
+    setBankSuffix(row.bankSuffix || "");
+    setYear(row.year?.toString() || "");
     setReportedAt(row.reportedAt ? row.reportedAt.split("T")[0] : "");
     setRemark(row.remark || "");
     setEditOpen(true);
@@ -437,24 +490,42 @@ export default function ReportsPage() {
                   className="bg-zinc-50 dark:bg-zinc-800"
                 />
               </FormField>
-              <FormField id="bankReference" label="Bank Reference">
+              <FormField id="reportedAt" label="Reported Date">
+                <DateInput
+                  id="reportedAt"
+                  value={reportedAt}
+                  onChange={(e) => setReportedAt(e.target.value)}
+                />
+              </FormField>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField id="bankSuffix" label="Payment Method (Bank)">
+                <Select
+                  value={bankSuffix}
+                  onChange={(e) => setBankSuffix(e.target.value)}
+                >
+                  <option value="">Select Bank...</option>
+                  {paymentMethods.filter(m => m.config?.isEnabled).map(m => (
+                    <option key={m.value} value={m.value}>{m.description}</option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField id="bankReference" label="Bank Reference #" required>
                 <Input
                   id="bankReference"
                   placeholder="Bank reference code"
                   value={bankReference}
                   onChange={(e) => setBankReference(e.target.value)}
+                  required
                 />
+                {bankReference && (
+                  <div className={`text-xs mt-1 font-medium ${verificationStatus === 'success' ? 'text-green-600' : verificationStatus === 'error' ? 'text-red-500' : 'text-neutral-500'}`}>
+                    {verificationStatus === 'verifying' ? 'Verifying...' : verificationMsg}
+                  </div>
+                )}
               </FormField>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              <FormField id="reportedAt" label="Reported Date">
-                <Input
-                  id="reportedAt"
-                  type="date"
-                  value={reportedAt}
-                  onChange={(e) => setReportedAt(e.target.value)}
-                />
-              </FormField>
               <FormField id="remark" label="Remarks/Comment">
                 <Input
                   id="remark"
@@ -493,24 +564,42 @@ export default function ReportsPage() {
             <FormField id="year-edit" label="Report Year">
               <Input id="year-edit" type="number" value={selectedReport?.year || ""} disabled />
             </FormField>
-            <FormField id="bankReference-edit" label="Bank Reference">
-              <Input
-                id="bankReference-edit"
-                placeholder="Bank reference code"
-                value={bankReference}
-                onChange={(e) => setBankReference(e.target.value)}
-              />
-            </FormField>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
             <FormField id="reportedAt-edit" label="Reported Date">
-              <Input
+              <DateInput
                 id="reportedAt-edit"
-                type="date"
                 value={reportedAt}
                 onChange={(e) => setReportedAt(e.target.value)}
               />
             </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField id="bankSuffix-edit" label="Payment Method (Bank)">
+              <Select
+                value={bankSuffix}
+                onChange={(e) => setBankSuffix(e.target.value)}
+              >
+                <option value="">Select Bank...</option>
+                {paymentMethods.filter(m => m.config?.isEnabled).map(m => (
+                  <option key={m.value} value={m.value}>{m.description}</option>
+                ))}
+              </Select>
+            </FormField>
+              <FormField id="bankReference-edit" label="Bank Reference #" required>
+                <Input
+                  id="bankReference-edit"
+                  placeholder="Bank reference code"
+                  value={bankReference}
+                  onChange={(e) => setBankReference(e.target.value)}
+                  required
+                />
+                {bankReference && (
+                  <div className={`text-xs mt-1 font-medium ${verificationStatus === 'success' ? 'text-green-600' : verificationStatus === 'error' ? 'text-red-500' : 'text-neutral-500'}`}>
+                    {verificationStatus === 'verifying' ? 'Verifying...' : verificationMsg}
+                  </div>
+                )}
+              </FormField>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
             <FormField id="remark-edit" label="Remarks/Comment">
               <Input
                 id="remark-edit"

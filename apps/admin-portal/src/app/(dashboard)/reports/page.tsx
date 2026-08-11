@@ -10,7 +10,7 @@ import { useGenerateMissingFees } from "@/hooks/useFeeRules";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { Modal } from "@/components/ui/Modal";
-import { Input } from "@/components/ui/Input";
+import { DateInput } from "@/components/ui";
 import { Label } from "@/components/ui/Label";
 import { Checkbox } from "@/components/ui/Checkbox";
 import toast from "react-hot-toast";
@@ -611,10 +611,9 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-2">
               <Label>Due Date *</Label>
-              <Input 
-                type="date" 
-                value={dueDate} 
-                onChange={(e) => setDueDate(e.target.value)} 
+              <DateInput
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
           </div>
