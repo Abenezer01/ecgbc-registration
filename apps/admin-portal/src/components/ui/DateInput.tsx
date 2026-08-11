@@ -51,4 +51,4 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
 DateInput.displayName = "DateInput";
 
 export { DateInput };
-export type { DateInputProps };
+
