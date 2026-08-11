@@ -131,7 +131,7 @@ export default function LookupPage() {
         isFileTypeLookup(row) ? (
           <Checkbox
             id={`required-${row.id}`}
-            checked={!!row.isRequired}
+            checked={row.isRequired === true || String(row.isRequired) === "true" || row.documentRequirement?.isRequired === true}
             disabled={!canEdit || updating}
             onClick={(event) => event.stopPropagation()}
             onChange={(e) => {
