@@ -43,6 +43,7 @@ export function useCreateMemberReport() {
       reportedAt,
       remark,
       bankReference,
+      bankSuffix,
       report,
       reportRequestId,
     }: {
