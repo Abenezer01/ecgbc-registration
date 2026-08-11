@@ -134,10 +134,10 @@ export default function LookupPage() {
             checked={!!row.isRequired}
             disabled={!canEdit || updating}
             onClick={(event) => event.stopPropagation()}
-            onCheckedChange={(checked) => {
+            onChange={(e) => {
               updateLookup({
                 id: row.id,
-                isRequired: !!checked,
+                isRequired: e.target.checked,
               });
             }}
             aria-label={`Mark ${row.description} as required`}
