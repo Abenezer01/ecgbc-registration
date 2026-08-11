@@ -70,7 +70,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
   const regionOptions = lookups.filter((l) => l.type === "region");
   const stateOptions = lookups.filter((l) => l.type === "object_state" && l.value !== "object_state_deleted");
   const boardTitleOptions = lookups.filter((l) => l.type === "board_title");
-  const fileCategoryOptions = lookups.filter((l) => l.type === "file_category");
+  const fileCategoryOptions = lookups.filter((l) => l.category === "FILE_TYPE" || l.type === "Document Type");
 
   // Filter fellowships based on role permissions
   const fellowshipOptions = useMemo(() => {

@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
-import { useRequiredDocumentTypes, useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
+import { useRequiredDocumentTypes } from "@/hooks/useDocumentCompleteness";
 
 interface DocumentsTabProps {
   member: any;
@@ -42,13 +42,12 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
   // ── queries & mutations ─────────────────────────────────────────────────────
   const { data: files = [], isLoading, refetch } = useMemberFiles({ memberId, isFromSelamMinster: false });
   const { data: documentTypes = [] } = useRequiredDocumentTypes();
-  const { data: documentCompleteness } = useDocumentCompleteness(memberId);
   const { mutateAsync: uploadFiles, isPending: uploading } = useUploadMemberFiles();
   const { mutateAsync: updateFile, isPending: updatingFile } = useUpdateMemberFile();
   const { mutateAsync: deleteFile } = useDeleteMemberFile();
   const { data: lookups = [] } = useDataLookups();
 
-  const fileCategoryOptions = lookups.filter((l) => l.type === "file_category");
+  const fileCategoryOptions = lookups.filter((l) => l.category === "FILE_TYPE" || l.type === "Document Type");
 
   const canAdd    = hasPermission("add_file")    || hasPermission("member_change");
   const canEdit   = hasPermission("add_file")    || hasPermission("member_change");
@@ -127,20 +126,20 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* Required Documents Checklist */}
-      {documentCompleteness && documentTypes.length > 0 && (
+      {documentTypes.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Required Documents</h3>
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Document Checklist</h3>
             <span className="text-xs text-zinc-500">
-              {documentCompleteness.uploadedCount} of {documentCompleteness.totalRequired} completed
+              {files.filter(f => documentTypes.some(dt => dt.id === (f as any).fileType?.id || dt.value === f.category?.value)).length} of {documentTypes.filter(dt => dt.isRequired || dt.documentRequirement?.isRequired).length} required uploaded
             </span>
           </div>
           <div className="space-y-2">
             {documentTypes.map((docType) => {
-              const isUploaded = documentCompleteness.uploadedDocuments.some(
-                (doc) => doc.fileType?.id === docType.id
+              const isUploaded = files.some(
+                (f) => (f as any).fileType?.id === docType.id || f.category?.value === docType.value
               );
-              const isRequired = !!docType.documentRequirement?.isRequired;
+              const isRequired = !!(docType.documentRequirement?.isRequired ?? docType.isRequired);
               return (
                 <div key={docType.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                   {isUploaded
