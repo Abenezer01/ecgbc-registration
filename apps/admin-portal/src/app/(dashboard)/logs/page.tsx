@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { History, Search, RefreshCw, Eye, Filter, Download, Calendar } from "lucide-react";
 import {
-  PageHeader, Button, DateInput, Badge, DataTable, Pagination, Select, Modal, ModalFooter, FormField
+  PageHeader, Button, DateInput, Badge, DataTable, Pagination, Select, Modal, ModalFooter, FormField, Input
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useActivityLogs, type ActivityLog } from "@/hooks/useActivityLogs";
