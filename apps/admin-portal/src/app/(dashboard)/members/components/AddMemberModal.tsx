@@ -209,21 +209,6 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
     e.preventDefault();
     if (!validate()) return;
     
-    // Validate Required Files
-    const requiredCategories = fileCategoryOptions.filter(c => c.isRequired);
-    const uploadedCategoryIds = Object.values(fileCategories);
-    
-    const missingCategories = requiredCategories.filter(rc => !uploadedCategoryIds.includes(rc.id));
-    
-    if (missingCategories.length > 0) {
-      setFileError(`Please upload the following required documents: ${missingCategories.map(c => c.description).join(", ")}`);
-      return;
-    }
-
-    if (files.length === 0 && requiredCategories.length === 0) {
-      setFileError("At least one document attachment is required.");
-      return;
-    }
 
     try {
       const created = await createMember({ newMember: form, files, fileCategories });

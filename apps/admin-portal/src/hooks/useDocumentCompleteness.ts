@@ -11,6 +11,7 @@ export interface DocumentType {
   value: string;
   note: string;
   isDefault: boolean;
+  isRequired?: boolean;
   documentRequirement?: {
     id: string;
     fileTypeId: string;
