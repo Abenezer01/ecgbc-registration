@@ -97,6 +97,7 @@ export function useUpdateMemberReport() {
       reportedAt,
       remark,
       bankReference,
+      bankSuffix,
       report,
     }: {
       reportId: string;
