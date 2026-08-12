@@ -131,13 +131,22 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Document Checklist</h3>
             <span className="text-xs text-zinc-500">
-              {files.filter(f => documentTypes.some(dt => dt.id === (f as any).fileType?.id || dt.value === f.category?.value)).length} of {documentTypes.filter(dt => dt.isRequired || dt.documentRequirement?.isRequired).length} required uploaded
+              {documentTypes.filter(dt => {
+                const isRequired = !!(dt.documentRequirement?.isRequired ?? dt.isRequired);
+                return isRequired && files.some(f =>
+                  f.category?.id === dt.id ||
+                  f.category?.value === dt.value ||
+                  (f as any).fileType?.id === dt.id
+                );
+              }).length} of {documentTypes.filter(dt => !!(dt.documentRequirement?.isRequired ?? dt.isRequired)).length} required uploaded
             </span>
           </div>
           <div className="space-y-2">
             {documentTypes.map((docType) => {
-              const isUploaded = files.some(
-                (f) => (f as any).fileType?.id === docType.id || f.category?.value === docType.value
+              const isUploaded = files.some((f) =>
+                f.category?.id === docType.id ||
+                f.category?.value === docType.value ||
+                (f as any).fileType?.id === docType.id
               );
               const isRequired = !!(docType.documentRequirement?.isRequired ?? docType.isRequired);
               return (
