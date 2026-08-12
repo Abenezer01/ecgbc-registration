@@ -82,11 +82,15 @@ export default function LookupPage() {
   const { mutateAsync: deleteLookup, isPending: deleting } = useDeleteDataLookup();
   // updateRequirement handled by inline API calls
 
+  // Exclude legacy file_category entries — Document Type (FILE_TYPE) replaces them
+  const EXCLUDED_TYPES = ["file_category", "file_type"];
+  const visibleLookups = lookups.filter((item) => !EXCLUDED_TYPES.includes(item.type?.toLowerCase()));
+
   // Get list of unique types
-  const uniqueTypes = Array.from(new Set(lookups.map((item) => item.type))).sort();
+  const uniqueTypes = Array.from(new Set(visibleLookups.map((item) => item.type))).sort();
 
   // Client side search and filter
-  const filteredLookups = lookups.filter((item) => {
+  const filteredLookups = visibleLookups.filter((item) => {
     const matchesSearch =
       item.value.toLowerCase().includes(search.toLowerCase()) ||
       item.description.toLowerCase().includes(search.toLowerCase()) ||
