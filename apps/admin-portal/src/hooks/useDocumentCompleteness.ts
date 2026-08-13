@@ -66,7 +66,7 @@ export function useRequiredDocumentTypes() {
   return useQuery({
     queryKey: ["document-types"],
     queryFn: async () => {
-      const res = await api.get("/data-lookups?category=FILE_TYPE");
+      const res = await api.get("/data-lookups?category=FILE_TYPE&type=Document Type");
       const { data } = extractPaginatedData(res);
       return ((data as any).dataLookups || (data as any).lookups || (data as any).dataLookups || []) as DocumentType[];
     },

@@ -80,7 +80,7 @@ export default function DocumentsPage() {
   const { mutateAsync: updateFile,  isPending: updatingFile }  = useUpdateMemberFile();
   const { mutateAsync: deleteFile }                            = useDeleteMemberFile();
 
-  const fileCategoryOptions = lookups.filter((l) => l.category === "FILE_TYPE" || l.type === "Document Type");
+  const fileCategoryOptions = lookups.filter((l) => l.type === "Document Type");
 
   // ── upload handlers ───────────────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -83,8 +83,8 @@ export const multerConfig = (
   const upload = multer({
     storage,
     limits: {
-      fileSize: 1024 * 1024 * 1024,
-      fieldSize: 1024 * 1024 * 1024,
+      fileSize: 1024 * 1024 * 10,  // 10 MB
+      fieldSize: 1024 * 1024 * 10, // 10 MB
     },
     fileFilter: function (req, file, cb) {
       if (filter.CONTENT.includes(file.mimetype)) {

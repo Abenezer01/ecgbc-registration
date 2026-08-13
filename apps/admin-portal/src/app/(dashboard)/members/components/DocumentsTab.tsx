@@ -47,7 +47,7 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
   const { mutateAsync: deleteFile } = useDeleteMemberFile();
   const { data: lookups = [] } = useDataLookups();
 
-  const fileCategoryOptions = lookups.filter((l) => l.category === "FILE_TYPE" || l.type === "Document Type");
+  const fileCategoryOptions = lookups.filter((l) => l.type === "Document Type");
 
   const canAdd    = hasPermission("add_file")    || hasPermission("member_change");
   const canEdit   = hasPermission("add_file")    || hasPermission("member_change");
