@@ -45,14 +45,32 @@ export function useDocumentCompleteness(memberId: string) {
   return useQuery({
     queryKey: ["document-completeness", memberId],
     queryFn: async () => {
-      // TODO: Implement backend endpoint for document completeness
-      // For now, return a default response to prevent 404 errors
+      // Fetch required document types
+      const typesRes = await api.get("/data-lookups?category=FILE_TYPE&type=Document Type");
+      const typesData = extractPaginatedData(typesRes).data;
+      const documentTypes = ((typesData as any).dataLookups || (typesData as any).lookups || []) as DocumentType[];
+      const requiredTypes = documentTypes.filter(dt => !!(dt.documentRequirement?.isRequired ?? dt.isRequired));
+
+      // Fetch uploaded files for member
+      const filesRes = await api.get("/files", { params: { memberId, _limit: 100 } });
+      const filesData = extractPaginatedData(filesRes).data;
+      const files = ((filesData as any).files || []) as any[];
+
+      // Calculate completeness
+      const missingDocuments = requiredTypes.filter(dt => 
+        !files.some(f => 
+          f.category?.id === dt.id || 
+          f.category?.value === dt.value || 
+          f.fileType?.id === dt.id
+        )
+      );
+
       return {
-        isComplete: false,
-        totalRequired: 0,
-        uploadedCount: 0,
-        missingDocuments: [],
-        uploadedDocuments: [],
+        isComplete: missingDocuments.length === 0,
+        totalRequired: requiredTypes.length,
+        uploadedCount: requiredTypes.length - missingDocuments.length,
+        missingDocuments,
+        uploadedDocuments: files,
       } as DocumentCompletenessResult;
     },
     enabled: !!memberId,
