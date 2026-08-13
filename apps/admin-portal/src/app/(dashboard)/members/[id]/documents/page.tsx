@@ -197,9 +197,9 @@ export default function DocumentsPage() {
               <div className="space-y-2">
                 {documentTypes.map((docType) => {
                   const isUploaded = documentCompleteness.uploadedDocuments.some(
-                    (doc) => doc.fileType?.id === docType.id
+                    (doc: any) => doc.category?.id === docType.id || doc.category?.value === docType.value || doc.fileType?.id === docType.id
                   );
-                  const isRequired = !!docType.documentRequirement?.isRequired;
+                  const isRequired = !!(docType.documentRequirement?.isRequired ?? docType.isRequired);
                   return (
                     <div key={docType.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                       {isUploaded

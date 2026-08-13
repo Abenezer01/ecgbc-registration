@@ -11,6 +11,16 @@ const FILE_CATEGORIES = [
 
 export const seedFileCategories = async (): Promise<void> => {
   console.log("Seeding file categories (Document Types)...");
+
+  // Clean up legacy categories that are no longer used
+  const validValues = FILE_CATEGORIES.map(c => c.value);
+  await prisma.dataLookup.deleteMany({
+    where: {
+      category: "FILE_TYPE",
+      value: { notIn: validValues }
+    }
+  });
+
   await Promise.all(
     FILE_CATEGORIES.map((cat) =>
       prisma.dataLookup.upsert({
