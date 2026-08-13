@@ -202,7 +202,7 @@ export function EditMemberModal({ open, onClose, member }: EditMemberModalProps)
       if (err.response?.data?.errors) {
         const backendErrors: Record<string, string> = {};
         err.response.data.errors.forEach((itm: any) => {
-          backendErrors[itm.field || "name"] = itm.msg || itm.message;
+          backendErrors[itm.path || itm.param || itm.field || "name"] = itm.msg || itm.message;
         });
         setErrors(backendErrors);
       }

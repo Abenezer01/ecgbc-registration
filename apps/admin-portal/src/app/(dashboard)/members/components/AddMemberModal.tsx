@@ -218,7 +218,7 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
       if (err.response?.data?.errors) {
         const backendErrors: Record<string, string> = {};
         err.response.data.errors.forEach((itm: any) => {
-          backendErrors[itm.field || "name"] = itm.msg || itm.message;
+          backendErrors[itm.path || itm.param || itm.field || "name"] = itm.msg || itm.message;
         });
         setErrors(backendErrors);
       }
@@ -507,9 +507,34 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
 
         {/* Section: Contact Person */}
         <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/80 space-y-4">
-          <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
-            ዋና ተወካይ (Contact Person)
-          </h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
+              ዋና ተወካይ (Contact Person)
+            </h4>
+            {form.boardMembers.length > 0 && (
+              <div className="w-64">
+                <Select
+                  value=""
+                  onChange={(e) => {
+                    const bm = form.boardMembers.find(b => b.id === e.target.value);
+                    if (bm) {
+                      setForm(p => ({
+                        ...p,
+                        contactPersonFullName: bm.fullName,
+                        contactPersonPhoneNumber: bm.phoneNumber,
+                      }));
+                    }
+                  }}
+                  className="!py-1.5 !text-xs"
+                >
+                  <option value="">Select from Board Members...</option>
+                  {form.boardMembers.map(bm => (
+                    <option key={bm.id} value={bm.id}>{bm.fullName}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField id="cp-fullname" label="ሙሉ ስም (Full Name)">
               <Input
