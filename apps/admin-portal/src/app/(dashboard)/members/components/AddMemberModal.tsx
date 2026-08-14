@@ -263,19 +263,15 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
               </Select>
             </FormField>
 
-            <FormField id="isInEthiopia" label="የውጭ ሃገር ተቋም (Location Type)">
-              <div className="flex items-center gap-3 h-10">
-                <input
-                  type="checkbox"
-                  id="isInEthiopia"
-                  checked={!form.isInEthiopia}
-                  onChange={(e) => setForm((p) => ({ ...p, isInEthiopia: !e.target.checked, regionId: "", country: "" }))}
-                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500"
-                />
-                <Label htmlFor="isInEthiopia" className="cursor-pointer">
-                  {form.isInEthiopia ? "Ethiopia (ሀገር ውስጥ)" : "Outside Ethiopia (የውጭ ሃገር)"}
-                </Label>
-              </div>
+            <FormField id="isInEthiopia" label="Location Type (የተቋሙ አድራሻ)">
+              <Select
+                id="isInEthiopia"
+                value={form.isInEthiopia ? "true" : "false"}
+                onChange={(e) => setForm((p) => ({ ...p, isInEthiopia: e.target.value === "true", regionId: "", country: "" }))}
+              >
+                <option value="true">Ethiopia (ሀገር ውስጥ)</option>
+                <option value="false">Outside Ethiopia (የውጭ ሃገር)</option>
+              </Select>
             </FormField>
 
             <FormField id="typeId" label="የተቋሙ አይነት (Member Type)" error={errors.typeId} required>
