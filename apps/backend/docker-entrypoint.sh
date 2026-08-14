@@ -7,7 +7,6 @@ echo "🔄 Applying database schema changes (prisma db push)..."
 # NO --accept-data-loss: if Prisma detects a destructive change it will
 # abort and the container will fail loudly instead of silently destroying data.
 npx prisma db push --skip-generate
-npm run seed:file-categories
 
 echo "✅ Database schema is up to date."
 echo "🚀 Starting application..."
