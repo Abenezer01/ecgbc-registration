@@ -30,6 +30,7 @@ import churchUserRouter from "./app/features/church-user/church-user.route";
 import churchPortalRouter from "./app/features/church-portal/church-portal.route";
 import financeRouter from "./app/features/finance/finance.route";
 import activityRouter from "./app/features/activity/activity.route";
+import actionStateRouter from "./app/features/action-state/action-state.route";
 
 const env = cleanEnv(process.env, {
   PORT: port(),
@@ -81,6 +82,7 @@ app.use("/api/v1/church-users", churchUserRouter);
 app.use("/api/v1/church-portal", churchPortalRouter);
 app.use("/api/v1/finance", financeRouter);
 app.use("/api/v1/logs", activityRouter);
+app.use("/api/v1/action-states", actionStateRouter);
 
 /**
  * Non existing url middleware

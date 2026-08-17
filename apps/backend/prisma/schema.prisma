@@ -83,6 +83,7 @@ model Member {
   councilFellowshipId   String
   typeId                String
   stateId               String
+  currentActionState    String?  @default("REGISTERED")
   regionId              String?
   reasonForInactive     String?           @db.Text
   createdAt             DateTime          @default(now()) @map("created_at")
@@ -196,6 +197,7 @@ model Staff {
   role                   Role       @relation(fields: [roleId], references: [id])
   state                  DataLookup @relation("StateLookup", fields: [stateId], references: [id])
   fellowships            StaffFellowship[]
+  actionStates           ActionState[] @relation("ActionStateStaff")
 
   @@index([roleId], map: "Staff_roleId_fkey")
   @@index([stateId], map: "Staff_stateId_fkey")
@@ -209,6 +211,7 @@ model CouncilFellowship {
   description           String?
   isInEthiopia          Boolean
   isActive              Boolean       @default(true)
+  currentActionState    String?  @default("REGISTERED")
   country               String?
   city                  String?
   subcity               String?
@@ -377,6 +380,22 @@ model Activity {
   @@index([entityId])
   @@index([performedBy])
   @@index([createdAt])
+}
+
+model ActionState {
+  id           String   @id @default(uuid())
+  entityType   String   // "MEMBER" | "FELLOWSHIP" | "PAYMENT" | "INVOICE" | ...
+  entityId     String
+  state        String   // "REGISTERED" | "CHECKED" | "APPROVED" | custom
+  note         String?  @db.Text
+  performedBy  String
+  performedAt  DateTime @default(now())
+  staff        Staff    @relation("ActionStateStaff", fields: [performedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([entityType, state])
+  @@index([performedBy])
+  @@index([performedAt])
 }
 
 model ContactPerson {

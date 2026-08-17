@@ -487,6 +487,20 @@ export const createMember = catchAsync(
       metadata: { name, certificateNo, councilFellowshipId, typeId },
     }, req);
 
+    // Auto-create initial REGISTERED action state
+    const staffId = (req as any).staff?.id as string | undefined;
+    if (staffId) {
+      await (prisma as any).actionState.create({
+        data: {
+          entityType: "MEMBER",
+          entityId: member.id,
+          state: "REGISTERED",
+          note: "Member registered",
+          performedBy: staffId,
+        },
+      });
+    }
+
     sendSuccessResponse(res, { member });
   }
 );
