@@ -16,6 +16,7 @@ import {
   History,
   DollarSign,
   FileText,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/context/ThemeContext";
@@ -37,7 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Finance",       href: "/finance",      icon: DollarSign, permission: "view_finance" },
   { name: "Master Data",   href: "/lookup",       icon: Database,   permission: "view_permission" },
   { name: "Activity Logs", href: "/logs",         icon: History,    permission: "view_logs" },
-
+  { name: "Name Check",    href: "/name-reservation", icon: ShieldAlert, permission: "view_member" },
 ];
 
 export function Sidebar() {

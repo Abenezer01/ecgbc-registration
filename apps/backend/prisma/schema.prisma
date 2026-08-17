@@ -198,6 +198,8 @@ model Staff {
   state                  DataLookup @relation("StateLookup", fields: [stateId], references: [id])
   fellowships            StaffFellowship[]
   actionStates           ActionState[] @relation("ActionStateStaff")
+  requestedNameReservations NameReservation[] @relation("NameReservationRequester")
+  reviewedNameReservations  NameReservation[] @relation("NameReservationReviewer")
 
   @@index([roleId], map: "Staff_roleId_fkey")
   @@index([stateId], map: "Staff_stateId_fkey")
@@ -409,4 +411,24 @@ model ContactPerson {
   updatedAt           DateTime           @updatedAt @map("updated_at")
   member              Member?            @relation(fields: [memberId], references: [id])
   councilFellowship   CouncilFellowship? @relation(fields: [councilFellowshipId], references: [id])
+}
+
+model NameReservation {
+  id              String    @id @default(uuid())
+  requestedNameAm String
+  requestedNameEn String?
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, USED, EXPIRED
+  similarityData  String?   @db.Text            // JSON of closely matched existing names
+  requestedBy     String    // Staff ID
+  reviewedBy      String?   // Staff ID
+  reviewedAt      DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  requester       Staff     @relation("NameReservationRequester", fields: [requestedBy], references: [id])
+  reviewer        Staff?    @relation("NameReservationReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([status])
+  @@index([requestedBy])
 }

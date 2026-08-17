@@ -31,6 +31,7 @@ import churchPortalRouter from "./app/features/church-portal/church-portal.route
 import financeRouter from "./app/features/finance/finance.route";
 import activityRouter from "./app/features/activity/activity.route";
 import actionStateRouter from "./app/features/action-state/action-state.route";
+import nameReservationRouter from "./app/features/name-reservation/name-reservation.route";
 
 const env = cleanEnv(process.env, {
   PORT: port(),
@@ -83,6 +84,7 @@ app.use("/api/v1/church-portal", churchPortalRouter);
 app.use("/api/v1/finance", financeRouter);
 app.use("/api/v1/logs", activityRouter);
 app.use("/api/v1/action-states", actionStateRouter);
+app.use("/api/v1/name-reservations", nameReservationRouter);
 
 /**
  * Non existing url middleware

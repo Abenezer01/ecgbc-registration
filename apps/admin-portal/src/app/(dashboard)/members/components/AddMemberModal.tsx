@@ -4,9 +4,10 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, UploadCloud, FileText, X } from "lucide-react";
 import {
-  Drawer, Button, Input, DateInput, FormField, Select, Label, RowActions, presets, PhoneInput,
+  Drawer, Button, Input, DateInput, FormField, Select, Label, RowActions, presets, PhoneInput, Badge
 } from "@/components/ui";
 import { useCreateMember } from "@/hooks/useMembers";
+import { useNameReservation } from "@/hooks/useNameReservation";
 import { useFellowships } from "@/hooks/useFellowships";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useAuth } from "@/hooks/useAuth";
@@ -58,6 +59,9 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
   const [fileCategories, setFileCategories] = useState<Record<number, string>>({});
   const [fileError, setFileError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const { checkName } = useNameReservation();
+  const [similarityWarning, setSimilarityWarning] = useState<string | null>(null);
 
   // Board Member fields
   const [boardName, setBoardName] = useState("");
@@ -96,6 +100,27 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
       setForm((prev) => ({ ...prev, councilFellowshipId: fellowshipOptions[0].id }));
     }
   }, [fellowshipOptions, form.councilFellowshipId]);
+
+  // Debounced name check
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (form.name.trim().length > 2) {
+        try {
+          const res = await checkName({ nameAm: form.name });
+          if (res && res.length > 0 && res[0].score >= 85) {
+            setSimilarityWarning(`Warning: High similarity (${res[0].score}%) to existing ${res[0].entityType.toLowerCase()}: ${res[0].nameAm}`);
+          } else {
+            setSimilarityWarning(null);
+          }
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setSimilarityWarning(null);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [form.name, checkName]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -295,13 +320,15 @@ export function AddMemberModal({ open, onClose }: AddMemberModalProps) {
             Organization Details
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField id="name" label="የተቋሙ ስም (Organization Name)" error={errors.name} required>
+            <FormField id="name" label="Name (Amharic) *" error={errors.name}>
               <Input
-                id="name"
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                placeholder="ስም ያስገቡ"
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="ቤተክርስቲያን ስም"
               />
+              {similarityWarning && (
+                <p className="text-xs text-amber-600 mt-1 font-medium">{similarityWarning}</p>
+              )}
             </FormField>
 
             <FormField id="nameEn" label="Organization Name (English)">
