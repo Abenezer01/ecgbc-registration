@@ -1,6 +1,7 @@
 import React from "react";
 import { Avatar, Badge } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import ActionStateDrawer from "@/components/action-state/ActionStateDrawer";
 
 function statusBadge(isActive: boolean, stateObj?: any) {
   // Try to use the state object description if available, fallback to isActive boolean
@@ -73,5 +74,19 @@ export const columns: Column<any>[] = [
     key: "status",
     header: "Status",
     cell: (row) => statusBadge(row.isActive, row.state),
+  },
+  {
+    key: "actionState",
+    header: "Approval State",
+    cell: (row) => {
+      const entityType = row.kind === "fellowship" ? "FELLOWSHIP" : "MEMBER";
+      return (
+        <ActionStateDrawer
+          entityType={entityType}
+          entityId={row.id}
+          currentActionState={row.currentActionState}
+        />
+      );
+    },
   },
 ];

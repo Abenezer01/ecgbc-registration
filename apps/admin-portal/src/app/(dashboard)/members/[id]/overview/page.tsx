@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useApi } from "@/lib/useApi";
-import ActionStateTimeline from "@/components/action-state/ActionStateTimeline";
+import ActionStateDrawer from "@/components/action-state/ActionStateDrawer";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -211,12 +211,12 @@ export default function OverviewPage() {
         </div>
 
         {/* Action State Timeline */}
-        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 mb-4">
+        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-zinc-400" />
             Approval Status
           </h3>
-          <ActionStateTimeline
+          <ActionStateDrawer
             entityType="MEMBER"
             entityId={id}
             currentActionState={(member as any).currentActionState}

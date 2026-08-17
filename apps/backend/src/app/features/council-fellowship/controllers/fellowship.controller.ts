@@ -109,6 +109,20 @@ export const createFellowship = catchAsync(
       },
       include: { boardMembers: true, contactPerson: true },
     });
+
+    const staffId = (req as any).staff?.id as string | undefined;
+    if (staffId) {
+      await (prisma as any).actionState.create({
+        data: {
+          entityType: "FELLOWSHIP",
+          entityId: fellowship.id,
+          state: "REGISTERED",
+          note: "Fellowship registered",
+          performedBy: staffId,
+        },
+      });
+    }
+
     sendSuccessResponse(res, { fellowship });
   }
 );

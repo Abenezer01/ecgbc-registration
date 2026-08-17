@@ -6,7 +6,7 @@ import { Building2, Users, FileText, Phone, User, Globe } from "lucide-react";
 import { Card, CardContent, Button } from "@/components/ui";
 import { useFellowship } from "@/hooks/useFellowships";
 import { useAuth } from "@/hooks/useAuth";
-import ActionStateTimeline from "@/components/action-state/ActionStateTimeline";
+import ActionStateDrawer from "@/components/action-state/ActionStateDrawer";
 
 export default function FellowshipOverviewPage() {
   const { id } = useParams() as { id: string };
@@ -68,12 +68,12 @@ export default function FellowshipOverviewPage() {
         </div>
 
         {/* Approval Status */}
-        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 mb-4">
+        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Globe className="h-4 w-4 text-zinc-400" />
             Approval Status
           </h3>
-          <ActionStateTimeline
+          <ActionStateDrawer
             entityType="FELLOWSHIP"
             entityId={id}
             currentActionState={(fellowship as any).currentActionState}
