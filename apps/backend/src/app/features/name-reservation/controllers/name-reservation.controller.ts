@@ -1,69 +1,42 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { NameReservationService } from '../services/name-reservation.service';
-import { sendSuccessResponse, sendErrorResponse } from '../../../shared/utils/response';
+import { sendSuccessResponse } from '../../../shared/helpers/response.helper';
+import { catchAsync } from '../../../config/error.config';
+import AppError from '../../../shared/errors/app.error';
 
 const reservationService = new NameReservationService();
 
-export const checkName = async (req: Request, res: Response) => {
-  try {
-    const { nameAm, nameEn } = req.body;
-    if (!nameAm) {
-      return sendErrorResponse(res, 400, 'nameAm is required');
-    }
+export const checkName = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { nameAm, nameEn } = req.body;
+  if (!nameAm) return next(new AppError('nameAm is required', 400));
 
-    const results = await reservationService.checkNameSimilarity({ nameAm, nameEn });
-    sendSuccessResponse(res, { matches: results });
-  } catch (error) {
-    sendErrorResponse(res, 500, 'Failed to check name', error);
-  }
-};
+  const results = await reservationService.checkNameSimilarity({ nameAm, nameEn });
+  sendSuccessResponse(res, { matches: results });
+});
 
-export const createReservation = async (req: Request, res: Response) => {
-  try {
-    const { nameAm, nameEn } = req.body;
-    const staffId = (req as any).staff?.id;
+export const createReservation = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { nameAm, nameEn } = req.body;
+  const staffId = (req as any).staff?.id;
 
-    if (!nameAm) {
-      return sendErrorResponse(res, 400, 'nameAm is required');
-    }
-    if (!staffId) {
-      return sendErrorResponse(res, 401, 'Unauthorized');
-    }
+  if (!nameAm) return next(new AppError('nameAm is required', 400));
+  if (!staffId) return next(new AppError('Unauthorized', 401));
 
-    const reservation = await reservationService.createReservation({
-      nameAm,
-      nameEn,
-      staffId,
-    });
+  const reservation = await reservationService.createReservation({ nameAm, nameEn, staffId });
+  sendSuccessResponse(res, { reservation }, 201);
+});
 
-    sendSuccessResponse(res, { reservation }, 'Reservation created successfully');
-  } catch (error) {
-    sendErrorResponse(res, 500, 'Failed to create reservation', error);
-  }
-};
+export const getReservations = catchAsync(async (req: Request, res: Response) => {
+  const reservations = await reservationService.getReservations();
+  sendSuccessResponse(res, { reservations });
+});
 
-export const getReservations = async (req: Request, res: Response) => {
-  try {
-    const reservations = await reservationService.getReservations();
-    sendSuccessResponse(res, { reservations });
-  } catch (error) {
-    sendErrorResponse(res, 500, 'Failed to fetch reservations', error);
-  }
-};
+export const updateReservationStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const staffId = (req as any).staff?.id;
 
-export const updateReservationStatus = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    const staffId = (req as any).staff?.id;
+  if (!status) return next(new AppError('status is required', 400));
 
-    if (!status) {
-      return sendErrorResponse(res, 400, 'status is required');
-    }
-
-    const reservation = await reservationService.updateReservationStatus(id, status, staffId);
-    sendSuccessResponse(res, { reservation }, 'Status updated successfully');
-  } catch (error) {
-    sendErrorResponse(res, 500, 'Failed to update reservation status', error);
-  }
-};
+  const reservation = await reservationService.updateReservationStatus(id, status, staffId);
+  sendSuccessResponse(res, { reservation });
+});
