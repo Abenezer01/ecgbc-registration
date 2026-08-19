@@ -21,9 +21,9 @@ export const createMemberValidator = [
   check("isInEthiopia").isBoolean().withMessage("isInEthiopia is required."),
   
   // Contact Person Validation (Optional)
-  check("contactPersonFullName").optional().notEmpty().withMessage("Contact person full name is required if provided."),
-  check("contactPersonPhoneNumber").optional().notEmpty().withMessage("Contact person phone number is required if provided."),
-  check("contactPersonEmail").optional().isEmail().withMessage("Invalid contact person email."),
+  check("contactPersonFullName").optional({ checkFalsy: true }).notEmpty().withMessage("Contact person full name is required if provided."),
+  check("contactPersonPhoneNumber").optional({ checkFalsy: true }).notEmpty().withMessage("Contact person phone number is required if provided."),
+  check("contactPersonEmail").optional({ checkFalsy: true }).isEmail().withMessage("Invalid contact person email."),
   
   validate,
 ];
