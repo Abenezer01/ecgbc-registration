@@ -167,6 +167,7 @@ export const updateStaff = catchAsync(
       return next(
         new AppError(`Staff with ID ${req.params.id} does not exist`, 400)
       );
+    }
     sendSuccessResponse(res, { staff });
   }
 );
