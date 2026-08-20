@@ -15,13 +15,18 @@ export const checkName = catchAsync(async (req: Request, res: Response, next: Ne
 });
 
 export const createReservation = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { nameAm, nameEn } = req.body;
-  const staffId = (req as any).staff?.id;
+  const { nameAm, nameEn, publicName, publicPhone, publicEmail } = req.body;
+  const staffId = (req as any).staff?.id; // will be undefined for public requests
 
   if (!nameAm) return next(new AppError('nameAm is required', 400));
-  if (!staffId) return next(new AppError('Unauthorized', 401));
+  // If it's a public request, they should provide contact info
+  if (!staffId && !publicPhone && !publicEmail) {
+    return next(new AppError('Public requests require either phone or email for contact', 400));
+  }
 
-  const reservation = await reservationService.createReservation({ nameAm, nameEn, staffId });
+  const reservation = await reservationService.createReservation({
+    nameAm, nameEn, staffId, publicName, publicPhone, publicEmail
+  });
   sendSuccessResponse(res, { reservation }, 201);
 });
 
@@ -30,13 +35,18 @@ export const getReservations = catchAsync(async (req: Request, res: Response) =>
   sendSuccessResponse(res, { reservations });
 });
 
+export const getReservationById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const reservation = await reservationService.getReservationById(req.params.id);
+  if (!reservation) return next(new AppError('Reservation not found', 404));
+  sendSuccessResponse(res, { reservation });
+});
+
 export const updateReservationStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const staffId = (req as any).staff?.id;
+  const { status, remark } = req.body;
+  const staffId = (req as any).staff.id;
 
   if (!status) return next(new AppError('status is required', 400));
 
-  const reservation = await reservationService.updateReservationStatus(id, status, staffId);
+  const reservation = await reservationService.updateReservationStatus(req.params.id, status, staffId, remark);
   sendSuccessResponse(res, { reservation });
 });

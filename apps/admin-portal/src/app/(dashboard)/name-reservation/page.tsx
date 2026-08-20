@@ -66,12 +66,13 @@ export default function NameReservationPage() {
       header: "Actions",
       cell: (row) => (
         <div className="flex gap-2">
-          {row.status === "PENDING" && (
-            <>
-              <Button size="sm" variant="outline" onClick={() => updateStatus({ id: row.id, status: "APPROVED" })}>Approve</Button>
-              <Button size="sm" variant="destructive" onClick={() => updateStatus({ id: row.id, status: "REJECTED" })}>Reject</Button>
-            </>
-          )}
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => window.location.href = `/name-reservation/${row.id}`}
+          >
+            Review
+          </Button>
         </div>
       ),
     },

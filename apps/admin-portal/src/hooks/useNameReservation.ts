@@ -79,18 +79,30 @@ export function useNameReservation() {
     });
   };
 
+  const useReservation = (id: string) => {
+    return useQuery({
+      queryKey: ["name-reservations", id],
+      queryFn: async () => {
+        const response = await api.get(`/name-reservations/${id}`);
+        return (response.data as any).data?.reservation as NameReservation;
+      },
+      enabled: !!id,
+    });
+  };
+
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const response = await api.patch(`/name-reservations/${id}/status`, { status });
+    mutationFn: async ({ id, status, remark }: { id: string; status: string; remark?: string }) => {
+      const response = await api.patch(`/name-reservations/${id}/status`, { status, remark });
       return (response.data as any).data.reservation;
     },
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       addToast({
         title: "Success",
         description: "Reservation status updated.",
         variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: ["name-reservations"] });
+      queryClient.invalidateQueries({ queryKey: ["name-reservations", id] });
     },
     onError: (error: any) => {
       addToast({
@@ -107,6 +119,7 @@ export function useNameReservation() {
     createReservation: createReservationMutation.mutateAsync,
     isCreating: createReservationMutation.isPending,
     useReservations,
+    useReservation,
     updateStatus: updateStatusMutation.mutateAsync,
     isUpdatingStatus: updateStatusMutation.isPending,
   };

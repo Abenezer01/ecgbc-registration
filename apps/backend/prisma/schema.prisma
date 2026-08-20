@@ -414,19 +414,23 @@ model ContactPerson {
 }
 
 model NameReservation {
-  id              String    @id @default(uuid())
-  requestedNameAm String
-  requestedNameEn String?
-  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, USED, EXPIRED
-  similarityData  String?   @db.Text            // JSON of closely matched existing names
-  requestedBy     String    // Staff ID
-  reviewedBy      String?   // Staff ID
-  reviewedAt      DateTime?
-  expiresAt       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  requestedNameAm       String
+  requestedNameEn       String?
+  status                String    @default("PENDING") // PENDING, APPROVED, REJECTED, USED, EXPIRED
+  similarityData        String?   @db.Text            // JSON of closely matched existing names
+  requestedBy           String?   // Staff ID (null if public request)
+  publicRequesterName   String?   // For public requests
+  publicRequesterEmail  String?   // For public requests
+  publicRequesterPhone  String?   // For public requests
+  remark                String?   @db.Text // Reason for rejection or admin notes
+  reviewedBy            String?   // Staff ID
+  reviewedAt            DateTime?
+  expiresAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  requester       Staff     @relation("NameReservationRequester", fields: [requestedBy], references: [id])
+  requester       Staff?    @relation("NameReservationRequester", fields: [requestedBy], references: [id])
   reviewer        Staff?    @relation("NameReservationReviewer", fields: [reviewedBy], references: [id])
 
   @@index([status])

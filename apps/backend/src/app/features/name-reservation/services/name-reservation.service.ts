@@ -61,7 +61,14 @@ export class NameReservationService {
     return results;
   }
 
-  async createReservation(dto: { nameAm: string; nameEn?: string; staffId: string }) {
+  async createReservation(dto: {
+    nameAm: string;
+    nameEn?: string;
+    staffId?: string;
+    publicName?: string;
+    publicPhone?: string;
+    publicEmail?: string;
+  }) {
     const similarityResults = await this.checkNameSimilarity({ nameAm: dto.nameAm, nameEn: dto.nameEn });
     const topMatches = similarityResults.slice(0, 5);
     const hasHighSimilarity = topMatches.some((m) => m.score >= 85);
@@ -71,6 +78,9 @@ export class NameReservationService {
         requestedNameAm: dto.nameAm,
         requestedNameEn: dto.nameEn,
         requestedBy: dto.staffId,
+        publicRequesterName: dto.publicName,
+        publicRequesterPhone: dto.publicPhone,
+        publicRequesterEmail: dto.publicEmail,
         similarityData: JSON.stringify(topMatches),
         status: hasHighSimilarity ? 'PENDING' : 'APPROVED',
       },
@@ -87,10 +97,20 @@ export class NameReservationService {
     });
   }
 
-  async updateReservationStatus(id: string, status: string, staffId: string) {
+  async getReservationById(id: string) {
+    return await prisma.nameReservation.findUnique({
+      where: { id },
+      include: {
+        requester: { select: { id: true, firstName: true, lastName: true } },
+        reviewer: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+  }
+
+  async updateReservationStatus(id: string, status: string, staffId: string, remark?: string) {
     return await prisma.nameReservation.update({
       where: { id },
-      data: { status, reviewedBy: staffId, reviewedAt: new Date() },
+      data: { status, reviewedBy: staffId, reviewedAt: new Date(), remark },
     });
   }
 }
