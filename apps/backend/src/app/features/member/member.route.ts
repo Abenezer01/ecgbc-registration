@@ -129,6 +129,11 @@ router
     ),
     editMemberValidator,
     MemberController.updateMember
+  )
+  .delete(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_DEACTIVATE),
+    MemberController.softDeleteMember
   );
 
 router
