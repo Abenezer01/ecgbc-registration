@@ -18,7 +18,11 @@ export interface NameReservation {
   requestedNameEn: string | null;
   status: string;
   similarityData: string | null;
-  requestedBy: string;
+  requestedBy: string | null;
+  publicRequesterName: string | null;
+  publicRequesterEmail: string | null;
+  publicRequesterPhone: string | null;
+  remark: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
   expiresAt: string | null;
