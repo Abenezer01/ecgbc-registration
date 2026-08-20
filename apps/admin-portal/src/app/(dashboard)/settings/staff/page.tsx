@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { UserCog, Search, RefreshCw, Plus, Shield, Building2, User } from "lucide-react";
 import {
   PageHeader, Button, Input, Badge, Avatar, DataTable,
@@ -56,19 +57,19 @@ export default function StaffPage() {
       key: "name",
       header: "Staff Member",
       cell: (row) => (
-        <div className="flex items-center gap-3">
+        <Link href={`/settings/staff/${row.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <Avatar
             src={row.avatar}
             fallback={`${row.firstName?.[0] ?? ""}${row.lastName?.[0] ?? ""}`}
             size="sm"
           />
           <div>
-            <p className="font-medium text-zinc-900 dark:text-white">
+            <p className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
               {row.firstName} {row.lastName}
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">{row.email}</p>
           </div>
-        </div>
+        </Link>
       ),
     },
     {

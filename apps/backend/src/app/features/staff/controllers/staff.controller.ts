@@ -64,7 +64,15 @@ export const getStaff = catchAsync(
       where: {
         id: req.params.id,
       },
-      include: { role: true, state: true },
+      include: { 
+        role: true, 
+        state: true,
+        fellowships: {
+          include: {
+            fellowship: true
+          }
+        }
+      },
     });
 
     if (!staff) {

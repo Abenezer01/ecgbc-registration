@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, User, Mail, Phone, Calendar, CheckCircle, Clock, Shield, PlusCircle, FileText, Settings, UserPlus } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Calendar, CheckCircle, Clock, Shield, PlusCircle, FileText, Settings, UserPlus, Building2 } from "lucide-react";
 import { useStaffDetail, useStaffStats, useStaffLogs } from "@/hooks/useStaff";
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "@/components/ui";
 
@@ -94,6 +94,32 @@ export default function StaffDetailReviewPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Assigned Fellowships */}
+          {staff.fellowships && staff.fellowships.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-blue-500" />
+                  Assigned Fellowships
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-3 p-0">
+                <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {staff.fellowships.map((sf: any) => (
+                    <div key={sf.id} className="p-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {sf.fellowship?.name}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {sf.fellowship?.city}, {sf.fellowship?.country}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Stats & Logs */}
