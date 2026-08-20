@@ -133,7 +133,7 @@ router
   .delete(
     StaffAuthMiddleware.verifyStaff,
     StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_DEACTIVATE),
-    MemberController.softDeleteMember
+    MemberController.hardDeleteMember
   );
 
 router
