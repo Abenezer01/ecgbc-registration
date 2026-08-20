@@ -27,6 +27,22 @@ router
   );
 
 router
+  .route("/:id/stats")
+  .get(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.StaffPermission.STAFF_VIEW),
+    StaffController.getStaffStats
+  );
+
+router
+  .route("/:id/logs")
+  .get(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.StaffPermission.STAFF_VIEW),
+    StaffController.getStaffLogs
+  );
+
+router
   .route("/:id")
   .get(
     StaffAuthMiddleware.verifyStaff,

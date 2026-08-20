@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { UserCog, Search, RefreshCw, Plus, Shield, Building2 } from "lucide-react";
+import { UserCog, Search, RefreshCw, Plus, Shield, Building2, User } from "lucide-react";
 import {
   PageHeader, Button, Input, Badge, Avatar, DataTable,
   Pagination, Modal, ModalFooter, FormField, Select, MultiSelect,
@@ -121,6 +121,12 @@ export default function StaffPage() {
           <RowActions
             mode="menu"
             actions={[
+              {
+                key: "view-profile",
+                label: "View Profile",
+                icon: User,
+                onClick: () => { window.location.href = `/settings/staff/${row.id}`; },
+              },
               presets.edit({
                 onClick: () => setEditTarget(row),
                 allowed: canEdit,

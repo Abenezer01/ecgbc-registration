@@ -167,10 +167,68 @@ export const updateStaff = catchAsync(
       return next(
         new AppError(`Staff with ID ${req.params.id} does not exist`, 400)
       );
-    }
     sendSuccessResponse(res, { staff });
   }
 );
+
+export const getStaffStats = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const staffId = req.params.id;
+
+  // Total members created by staff (from Activity)
+  const totalMembersRegistered = await prisma.activity.count({
+    where: { performedBy: staffId, action: 'CREATE', entity: 'MEMBER' },
+  });
+
+  // Total reports processed by staff (from ActionState)
+  const totalReportsProcessed = await prisma.activity.count({
+    where: { performedBy: staffId, action: { in: ['CREATE', 'UPDATE'] }, entity: 'REPORT' },
+  });
+
+  // Name Reservations requested by staff
+  const totalNamesRequested = await prisma.nameReservation.count({
+    where: { requestedBy: staffId },
+  });
+
+  // Name Reservations reviewed by staff
+  const totalNamesReviewed = await prisma.nameReservation.count({
+    where: { reviewedBy: staffId },
+  });
+
+  sendSuccessResponse(res, { 
+    totalMembersRegistered,
+    totalReportsProcessed,
+    totalNamesRequested,
+    totalNamesReviewed
+  });
+});
+
+export const getStaffLogs = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const staffId = req.params.id;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const skip = (page - 1) * limit;
+
+  const logs = await prisma.activity.findMany({
+    where: { performedBy: staffId },
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: limit,
+  });
+
+  const total = await prisma.activity.count({
+    where: { performedBy: staffId },
+  });
+
+  sendSuccessResponse(res, { 
+    logs,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  });
+});
 
 export const getStaffFellowships = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {

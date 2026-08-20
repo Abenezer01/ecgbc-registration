@@ -41,6 +41,28 @@ export function useStaffDetail(id: string) {
   });
 }
 
+export function useStaffStats(id: string) {
+  return useQuery({
+    queryKey: ["staff", id, "stats"],
+    queryFn: async () => {
+      const res = await api.get(`/staff/${id}/stats`);
+      return extractData(res);
+    },
+    enabled: !!id,
+  });
+}
+
+export function useStaffLogs(id: string, page = 1, limit = 20) {
+  return useQuery({
+    queryKey: ["staff", id, "logs", page, limit],
+    queryFn: async () => {
+      const res = await api.get(`/staff/${id}/logs?page=${page}&limit=${limit}`);
+      return extractData(res);
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateStaff() {
   const qc = useQueryClient();
   return useMutation({
