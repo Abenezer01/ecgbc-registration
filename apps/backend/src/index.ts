@@ -58,6 +58,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
+// Handle all OPTIONS preflight requests globally (required for CORS to work)
+app.options("*", cors(corsOptions));
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
