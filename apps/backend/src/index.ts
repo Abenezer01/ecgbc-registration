@@ -52,10 +52,16 @@ if (env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+// --- PUBLIC ROUTES (Bypass strict global CORS) ---
+const publicCorsOptions = { origin: "*", methods: ["GET", "POST", "OPTIONS"] };
+app.use("/api/v1/name-reservations/public", cors(publicCorsOptions));
+app.options("/api/v1/name-reservations/public/*", cors(publicCorsOptions));
+// We map the actual routes for this inside the router later, but doing this applies the open CORS headers first
+
 const corsOptions = {
   origin: "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
 };
 app.use(cors(corsOptions));
 // Handle all OPTIONS preflight requests globally (required for CORS to work)
