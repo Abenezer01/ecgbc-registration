@@ -53,14 +53,19 @@ if (env.NODE_ENV === "development") {
 }
 
 // --- PUBLIC ROUTES (Bypass strict global CORS) ---
-const publicCorsOptions = { origin: "*", methods: ["GET", "POST", "OPTIONS"] };
+const publicCorsOptions = {
+  origin: function (origin: any, callback: any) { callback(null, true); },
+  methods: ["GET", "POST", "OPTIONS"],
+  credentials: true
+};
 app.use("/api/v1/name-reservations/public", cors(publicCorsOptions));
 app.options("/api/v1/name-reservations/public/*", cors(publicCorsOptions));
 // We map the actual routes for this inside the router later, but doing this applies the open CORS headers first
 
 const corsOptions = {
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  origin: function (origin: any, callback: any) { callback(null, true); },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  credentials: true
 };
 app.use(cors(corsOptions));
 // Handle all OPTIONS preflight requests globally (required for CORS to work)

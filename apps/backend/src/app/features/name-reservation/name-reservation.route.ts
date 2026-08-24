@@ -8,8 +8,9 @@ const router = Router();
 
 // Configure completely open CORS for the public endpoints
 const publicCors = cors({
-  origin: '*',
+  origin: function (origin: any, callback: any) { callback(null, true); },
   methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true
 });
 
 // Preflight options for public routes
