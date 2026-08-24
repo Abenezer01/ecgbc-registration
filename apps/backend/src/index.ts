@@ -60,8 +60,7 @@ app.options("/api/v1/name-reservations/public/*", cors(publicCorsOptions));
 
 const corsOptions = {
   origin: "*",
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 };
 app.use(cors(corsOptions));
 // Handle all OPTIONS preflight requests globally (required for CORS to work)
