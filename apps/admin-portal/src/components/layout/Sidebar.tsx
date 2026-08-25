@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  FileSignature,
   LayoutDashboard,
   Users,
   Database,
@@ -32,6 +33,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { name: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard, permission: "view_dashboard" },
+  { name: "Applications",  href: "/applications", icon: FileSignature, permission: "view_member" },
   { name: "Members",       href: "/members",      icon: Users, permission: "view_member" },
   { name: "Fellowships",   href: "/fellowships",  icon: Building2, permission: "view_fellowship" },
   { name: "Reports",       href: "/reports",      icon: FileText, permission: "view_report" },

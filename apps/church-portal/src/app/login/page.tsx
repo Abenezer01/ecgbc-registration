@@ -149,22 +149,28 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className={cn(
-                "w-full h-11 rounded-lg font-medium text-white transition-all shadow-lg shadow-slate-900/20",
-                "bg-slate-900 hover:bg-slate-800 focus:ring-4 focus:ring-slate-900/20",
-                "flex items-center justify-center",
-                isLoading && "opacity-70 cursor-not-allowed"
-              )}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-900 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                "Sign In to Dashboard"
               )}
             </button>
+            
+            <div className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+              Is your church not registered yet?{" "}
+              <button 
+                type="button" 
+                onClick={() => router.push("/apply")}
+                className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+              >
+                Apply for Registration
+              </button>
+            </div>
           </form>
 
           <div className="mt-8 text-center">

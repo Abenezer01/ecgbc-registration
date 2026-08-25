@@ -18,12 +18,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (hasVerified.current) return;
     hasVerified.current = true;
 
+    const publicRoutes = ["/login", "/apply"];
+
     const verifyToken = async () => {
       const token = localStorage.getItem("church_portal_token");
 
       if (!token) {
         setIsVerifying(false);
-        if (pathname !== "/login") router.push("/login");
+        if (!publicRoutes.includes(pathname)) router.push("/login");
         return;
       }
 
@@ -53,7 +55,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         // Token is invalid — clear everything and go to login
         localStorage.removeItem("church_portal_token");
         logout();
-        if (pathname !== "/login") router.push("/login");
+        if (!publicRoutes.includes(pathname)) router.push("/login");
       } finally {
         setIsVerifying(false);
       }
@@ -63,6 +65,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const publicRoutes = ["/login", "/apply"];
+
   if (isVerifying) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
@@ -71,7 +75,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated && pathname !== "/login") return null;
+  if (!isAuthenticated && !publicRoutes.includes(pathname)) return null;
 
   return <>{children}</>;
 }

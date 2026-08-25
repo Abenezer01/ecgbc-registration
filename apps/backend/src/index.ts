@@ -32,6 +32,7 @@ import financeRouter from "./app/features/finance/finance.route";
 import activityRouter from "./app/features/activity/activity.route";
 import actionStateRouter from "./app/features/action-state/action-state.route";
 import nameReservationRouter from "./app/features/name-reservation/name-reservation.route";
+import registrationRequestRouter from "./app/features/registration-request/registration-request.route";
 
 const env = cleanEnv(process.env, {
   PORT: port(),
@@ -60,6 +61,9 @@ const publicCorsOptions = {
 };
 app.use("/api/v1/name-reservations/public", cors(publicCorsOptions));
 app.options("/api/v1/name-reservations/public/*", cors(publicCorsOptions));
+
+app.use("/api/v1/registration-requests/public", cors(publicCorsOptions));
+app.options("/api/v1/registration-requests/public/*", cors(publicCorsOptions));
 // We map the actual routes for this inside the router later, but doing this applies the open CORS headers first
 
 const corsOptions = {
@@ -95,8 +99,9 @@ app.use("/api/v1/church-users", churchUserRouter);
 app.use("/api/v1/church-portal", churchPortalRouter);
 app.use("/api/v1/finance", financeRouter);
 app.use("/api/v1/logs", activityRouter);
-app.use("/api/v1/action-states", actionStateRouter);
 app.use("/api/v1/name-reservations", nameReservationRouter);
+app.use("/api/v1/registration-requests", registrationRequestRouter);
+app.use("/api/v1/action-states", actionStateRouter);
 
 /**
  * Non existing url middleware
