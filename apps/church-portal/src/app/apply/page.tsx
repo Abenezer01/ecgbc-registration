@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, CheckCircle2, AlertTriangle, FileText, X, UploadCloud } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
 import { clsx } from "clsx";
@@ -15,6 +15,20 @@ const publicApi = axios.create({
 });
 
 const cn = (...inputs: any[]) => twMerge(clsx(inputs));
+
+// ── File validation constants (mirror AddMemberModal) ──
+const MAX_FILES = 10;
+const MAX_PER_FILE_SIZE_MB = 5;
+const MAX_TOTAL_SIZE_MB = 50;
+const MAX_PER_FILE_SIZE_BYTES = MAX_PER_FILE_SIZE_MB * 1024 * 1024;
+const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+const ACCEPTED_TYPES = ".pdf,.doc,.docx,.png,.jpg,.jpeg";
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 interface DataLookup {
   id: string;
@@ -54,9 +68,41 @@ export default function ApplyPage() {
     contactPersonEmail: ""
   });
   const [files, setFiles] = useState<File[]>([]);
-
   const [fileCategories, setFileCategories] = useState<Record<number, string>>({});
   const [documentTypes, setDocumentTypes] = useState<DataLookup[]>([]);
+  const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const [perFileErrors, setPerFileErrors] = useState<Record<number, string>>({});
+
+  const runValidation = (newFiles: File[], newCategories: Record<number, string>, docTypes: DataLookup[]) => {
+    const errors: string[] = [];
+    const perErrors: Record<number, string> = {};
+
+    if (newFiles.length > MAX_FILES) {
+      errors.push(`Maximum of ${MAX_FILES} files allowed. You have ${newFiles.length}.`);
+    }
+    const totalSize = newFiles.reduce((acc, f) => acc + f.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+      errors.push(`Total size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds the ${MAX_TOTAL_SIZE_MB}MB limit.`);
+    }
+    newFiles.forEach((file, idx) => {
+      if (file.size > MAX_PER_FILE_SIZE_BYTES) {
+        perErrors[idx] = `"${file.name}" exceeds the ${MAX_PER_FILE_SIZE_MB}MB per-file limit (${(file.size / 1024 / 1024).toFixed(1)}MB).`;
+      } else if (!newCategories[idx]) {
+        perErrors[idx] = `Please select a document category for "${file.name}".`;
+      }
+    });
+
+    const requiredIds = docTypes.filter(c => c.isRequired).map(c => c.id);
+    const uploadedIds = Object.values(newCategories);
+    const missing = requiredIds.filter(id => !uploadedIds.includes(id));
+    if (missing.length > 0) {
+      errors.push(`${missing.length} required document(s) not yet uploaded. Please check the required list.`);
+    }
+
+    setFileErrors(errors);
+    setPerFileErrors(perErrors);
+    return { hasErrors: Object.keys(perErrors).length > 0 || errors.length > 0 };
+  };
 
   useEffect(() => {
     const fetchLookups = async () => {
@@ -92,21 +138,34 @@ export default function ApplyPage() {
       if (!merged.some((m) => m.name === f.name && m.size === f.size)) merged.push(f);
     }
     setFiles(merged);
+    runValidation(merged, fileCategories, documentTypes);
+    e.target.value = "";
   };
 
   const handleCategoryChange = (idx: number, catId: string) => {
-    setFileCategories(prev => ({ ...prev, [idx]: catId }));
+    const next = { ...fileCategories, [idx]: catId };
+    setFileCategories(next);
+    runValidation(files, next, documentTypes);
   };
 
   const removeFile = (idx: number) => {
-    setFiles(files.filter((_, i) => i !== idx));
+    const next = files.filter((_, i) => i !== idx);
     const nextCats: Record<number, string> = {};
     Object.entries(fileCategories).forEach(([k, v]) => {
       const ki = parseInt(k);
       if (ki < idx) nextCats[ki] = v;
       else if (ki > idx) nextCats[ki - 1] = v;
     });
+    setFiles(next);
     setFileCategories(nextCats);
+    runValidation(next, nextCats, documentTypes);
+  };
+
+  const clearAllFiles = () => {
+    setFiles([]);
+    setFileCategories({});
+    setFileErrors([]);
+    setPerFileErrors({});
   };
 
   const nextStep = () => {
@@ -135,13 +194,10 @@ export default function ApplyPage() {
     
     setIsLoading(true);
 
-    // Validate required documents
-    const requiredCategoryIds = documentTypes.filter(c => c.isRequired).map(c => c.id);
-    const uploadedCategoryIds = Object.values(fileCategories);
-    const missingRequired = requiredCategoryIds.some(id => !uploadedCategoryIds.includes(id));
-
-    if (missingRequired) {
-      toast.error("Please upload all required documents.");
+    // Full file validation
+    const { hasErrors } = runValidation(files, fileCategories, documentTypes);
+    if (hasErrors) {
+      toast.error("Please fix the file errors before submitting.");
       setIsLoading(false);
       return;
     }
@@ -351,21 +407,19 @@ export default function ApplyPage() {
                     <div className="pt-6 border-t border-neutral-200 dark:border-neutral-800">
                       <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-4">Supporting Documents</h3>
                       <div className="space-y-4">
-                        
+
                         {/* Required docs checklist */}
                         {documentTypes.filter((c) => c.isRequired).length > 0 && (
                           <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-100 dark:border-blue-900/50">
                             <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Required Documents:</p>
-                            <ul className="text-xs space-y-1">
+                            <ul className="text-xs space-y-1.5">
                               {documentTypes.filter((c) => c.isRequired).map((c) => {
                                 const isUploaded = Object.values(fileCategories).includes(c.id);
                                 return (
                                   <li key={c.id} className="flex items-center gap-2">
-                                    {isUploaded ? (
-                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                    ) : (
-                                      <div className="h-3.5 w-3.5 rounded-full border-2 border-neutral-300 shrink-0" />
-                                    )}
+                                    {isUploaded
+                                      ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                      : <div className="h-3.5 w-3.5 rounded-full border-2 border-neutral-300 shrink-0" />}
                                     <span className={isUploaded ? "line-through text-neutral-400" : "text-blue-700 dark:text-blue-400"}>
                                       {c.description}
                                     </span>
@@ -376,31 +430,59 @@ export default function ApplyPage() {
                           </div>
                         )}
 
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900/50 border-neutral-300 dark:border-neutral-700">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <p className="mb-2 text-sm text-neutral-500 dark:text-neutral-400"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400">PDF, JPG, PNG (MAX. 5MB)</p>
-                            </div>
-                            <input type="file" className="hidden" multiple onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" />
-                          </label>
+                        {/* Global file errors */}
+                        {fileErrors.length > 0 && (
+                          <div className="space-y-1">
+                            {fileErrors.map((fe, i) => (
+                              <div key={i} className="flex items-start gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 rounded-lg text-xs border border-amber-200 dark:border-amber-800">
+                                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {fe}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Drop zone */}
+                        <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-white dark:bg-neutral-950 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors relative">
+                          <input type="file" multiple accept={ACCEPTED_TYPES} onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          <UploadCloud className="h-9 w-9 text-neutral-400 mb-2" />
+                          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Click or drag & drop files here</p>
+                          <p className="text-xs text-neutral-500 mt-1">PDF, DOC, PNG, JPG · Max {MAX_FILES} files · {MAX_PER_FILE_SIZE_MB}MB per file · {MAX_TOTAL_SIZE_MB}MB total</p>
                         </div>
+
+                        {/* File list */}
                         {files.length > 0 && (
-                          <div className="space-y-3">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs font-semibold text-neutral-500">
+                              <span>Selected Files ({files.length}/{MAX_FILES})</span>
+                              <button type="button" onClick={clearAllFiles} className="hover:text-red-500 transition-colors">Clear All</button>
+                            </div>
                             {files.map((file, idx) => (
-                              <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 text-sm border rounded-lg border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-                                <div className="flex-1 truncate font-medium text-neutral-900 dark:text-neutral-100">{file.name}</div>
-                                <select 
-                                  value={fileCategories[idx] || ""} 
-                                  onChange={e => handleCategoryChange(idx, e.target.value)}
-                                  className="w-full sm:w-48 px-2 py-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500"
-                                >
-                                  <option value="">Select Category...</option>
-                                  {documentTypes.map(type => (
-                                    <option key={type.id} value={type.id}>{type.description}{type.isRequired ? " (Required)" : ""}</option>
-                                  ))}
-                                </select>
-                                <button type="button" onClick={() => removeFile(idx)} className="text-red-500 hover:text-red-700 font-medium text-xs whitespace-nowrap self-end sm:self-auto">Remove</button>
+                              <div key={idx} className={`rounded-lg border text-sm transition-colors ${perFileErrors[idx] ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20" : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50"}`}>
+                                <div className="flex items-center gap-3 p-2.5">
+                                  <FileText className="h-4 w-4 text-amber-500 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="truncate font-medium text-neutral-900 dark:text-white">{file.name}</p>
+                                    <p className="text-xs text-neutral-400">{formatBytes(file.size)}</p>
+                                  </div>
+                                  <select
+                                    value={fileCategories[idx] || ""}
+                                    onChange={e => handleCategoryChange(idx, e.target.value)}
+                                    className="w-40 px-2 py-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                                  >
+                                    <option value="">Select Category...</option>
+                                    {documentTypes.map(type => (
+                                      <option key={type.id} value={type.id}>{type.description}{type.isRequired ? " (Required)" : ""}</option>
+                                    ))}
+                                  </select>
+                                  <button type="button" onClick={() => removeFile(idx)} className="text-neutral-400 hover:text-red-500 transition-colors shrink-0 p-0.5">
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                                {perFileErrors[idx] && (
+                                  <p className="px-3 pb-2 text-xs text-red-500 flex items-center gap-1">
+                                    <AlertTriangle className="h-3 w-3 shrink-0" /> {perFileErrors[idx]}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
