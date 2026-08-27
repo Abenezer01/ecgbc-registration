@@ -9,7 +9,7 @@ import { CommonObjectState } from '../../data-lookup/enums/data-lookup.enum';
 export const submitRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
-      nameAm, nameEn, certificateNo, certificateIssuedDate,
+      nameAm, nameEn, proposedNames, certificateNo, certificateIssuedDate,
       typeId, councilFellowshipId, regionId, isInEthiopia, country,
       city, subcity, zone, district, houseNumber, phoneNumber, email, poBoxNumber,
       contactPersonName, contactPersonPhone, contactPersonEmail
@@ -19,10 +19,20 @@ export const submitRegistration = async (req: Request, res: Response, next: Next
       throw new AppError("Missing required fields. Please ensure Church Name, Type, Region, Phone, and Contact Person details are provided.", 400);
     }
 
+    let parsedProposedNames = null;
+    if (proposedNames) {
+      try {
+        parsedProposedNames = JSON.parse(proposedNames);
+      } catch (e) {
+        // ignore
+      }
+    }
+
     const request = await prisma.registrationRequest.create({
       data: {
         nameAm,
         nameEn,
+        proposedNames: parsedProposedNames,
         certificateNo,
         certificateIssuedDate: certificateIssuedDate ? new Date(certificateIssuedDate) : null,
         typeId,

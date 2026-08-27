@@ -447,6 +447,7 @@ model RegistrationRequest {
   id     String  @id @default(uuid())
   nameAm String
   nameEn String?
+  proposedNames Json? // Array of { nameAm: string, nameEn: string }
 
   // Registration Details
   certificateNo         String? // Optional during application
