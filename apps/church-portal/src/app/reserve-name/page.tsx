@@ -16,34 +16,47 @@ export default function ReserveNamePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [checkingName, setCheckingName] = useState(false);
-  const [nameCheckResult, setNameCheckResult] = useState<{ isAvailable: boolean; matches: any[] } | null>(null);
-  
-  const [success, setSuccess] = useState(false);
+  const [proposedNames, setProposedNames] = useState([
+    { nameAm: "", nameEn: "" },
+    { nameAm: "", nameEn: "" },
+    { nameAm: "", nameEn: "" },
+    { nameAm: "", nameEn: "" },
+    { nameAm: "", nameEn: "" }
+  ]);
   
   const [formData, setFormData] = useState({
-    nameAm: "",
-    nameEn: "",
     publicName: "",
     publicPhone: "",
     publicEmail: "",
   });
+  
+  const [nameCheckResult, setNameCheckResult] = useState<{ isAvailable: boolean; matches: any[]; index?: number } | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [successCode, setSuccessCode] = useState<string | null>(null);
 
-  const checkAvailability = async () => {
-    if (!formData.nameAm.trim()) {
-      toast.error("Please enter a Church Name (Amharic) first.");
+  const handleNameChange = (index: number, field: "nameAm" | "nameEn", value: string) => {
+    const newNames = [...proposedNames];
+    newNames[index][field] = value;
+    setProposedNames(newNames);
+  };
+
+  const checkAvailability = async (index: number) => {
+    const pn = proposedNames[index];
+    if (!pn.nameAm.trim()) {
+      toast.error(`Please enter Church Name (Amharic) for Choice ${index + 1}.`);
       return;
     }
     setCheckingName(true);
-    setNameCheckResult(null);
     try {
       const { data } = await publicApi.post("/name-reservations/check", { 
-        nameAm: formData.nameAm, 
-        nameEn: formData.nameEn 
+        nameAm: pn.nameAm, 
+        nameEn: pn.nameEn 
       });
       const matches = data.data?.matches || [];
       setNameCheckResult({
         isAvailable: matches.length === 0,
-        matches
+        matches,
+        index
       });
     } catch (err: any) {
       toast.error("Failed to check name availability.");
@@ -54,14 +67,28 @@ export default function ReserveNamePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nameAm.trim() || !formData.publicName.trim() || (!formData.publicPhone.trim() && !formData.publicEmail.trim())) {
-      toast.error("Please fill all required fields.");
+    if (proposedNames.some(pn => !pn.nameAm.trim())) {
+      toast.error("Please provide all 5 alternative choices.");
+      return;
+    }
+    if (!formData.publicName.trim() || (!formData.publicPhone.trim() && !formData.publicEmail.trim())) {
+      toast.error("Please fill all required requester fields.");
       return;
     }
 
     try {
       setIsLoading(true);
-      await publicApi.post("/name-reservations/public/request", formData);
+      const validProposed = proposedNames.filter(n => n.nameAm.trim() !== "");
+      
+      const payload = {
+        nameAm: validProposed[0].nameAm,
+        nameEn: validProposed[0].nameEn,
+        proposedNames: validProposed,
+        ...formData
+      };
+      
+      const { data } = await publicApi.post("/name-reservations/public/request", payload);
+      setSuccessCode(data.data?.reservation?.reservationCode || "UNKNOWN");
       setSuccess(true);
     } catch (err: any) {
       const message = err.response?.data?.message || "Failed to submit reservation request.";
@@ -79,9 +106,15 @@ export default function ReserveNamePage() {
             <CheckCircle className="w-8 h-8" />
           </div>
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Request Submitted!</h2>
-          <p className="text-neutral-500 dark:text-neutral-400 mb-8">
-            Your name reservation request has been received. Our administration team will review the proposed name and get back to you shortly.
+          <p className="text-neutral-500 dark:text-neutral-400 mb-6">
+            Your name reservation request has been received. Please keep the following reservation code safe. You will need it to apply for registration once approved.
           </p>
+          
+          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 mb-8">
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-1">Reservation Code</p>
+            <p className="text-3xl font-mono font-black text-amber-600 dark:text-amber-500">{successCode}</p>
+          </div>
+          
           <button
             onClick={() => router.push("/")}
             className="w-full px-6 py-3 rounded-lg font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors"
@@ -140,7 +173,7 @@ export default function ReserveNamePage() {
 
       {/* Right Side: Form */}
       <div className="flex flex-1 flex-col justify-center px-4 py-8 sm:px-6 lg:flex-none lg:w-1/2 lg:px-20 xl:px-24 h-screen overflow-y-auto">
-        <div className="mx-auto w-full max-w-md my-auto pb-8">
+        <div className="mx-auto w-full max-w-lg my-auto pb-8 pt-12">
           
           <button onClick={() => router.push("/login")} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white mb-8 transition-colors">
             <ArrowLeft size={16} /> Back to login
@@ -149,66 +182,79 @@ export default function ReserveNamePage() {
           <div className="mb-8">
             <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">Reserve Name</h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Submit a name to secure it for your future registration.
+              Submit exactly 5 alternative names in order of preference to secure one for your future registration.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-2">Proposed Name</h3>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                  Church Name (Amharic) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none"
-                  value={formData.nameAm}
-                  onChange={(e) => setFormData({ ...formData, nameAm: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                  Church Name (English)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none"
-                    value={formData.nameEn}
-                    onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    onClick={checkAvailability}
-                    disabled={checkingName}
-                    className="px-4 py-2.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50 whitespace-nowrap"
-                  >
-                    {checkingName ? <Loader2 size={16} className="animate-spin" /> : "Check Availability"}
-                  </button>
-                </div>
-              </div>
-              
-              {nameCheckResult && (
-                <div className={`p-4 rounded-lg text-sm border ${nameCheckResult.isAvailable ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-900/50 dark:text-green-300" : "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-300"}`}>
-                  {nameCheckResult.isAvailable ? (
-                    <div className="flex items-center gap-2"><CheckCircle size={16} /> The name looks available!</div>
-                  ) : (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2 font-semibold"><AlertCircle size={16} /> Found similar names:</div>
-                      <ul className="list-disc pl-5 space-y-1 text-xs">
-                        {nameCheckResult.matches.map((m: any, i: number) => (
-                          <li key={i}>{m.nameAm} ({m.score}%)</li>
-                        ))}
-                      </ul>
-                      <p className="mt-3 text-xs opacity-80">You can still submit, but it may be rejected during admin review.</p>
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-2">Proposed Names</h3>
+              <div className="space-y-4">
+                {proposedNames.map((pn, idx) => (
+                  <div key={idx} className={`p-4 rounded-xl border relative overflow-hidden ${idx === 0 ? "border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/10 shadow-sm" : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50"}`}>
+                    
+                    {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>}
+                    
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                        {idx === 0 ? "Primary Choice" : `Alternative Choice ${idx}`} 
+                        <span className="text-amber-500 ml-1">*</span>
+                      </p>
+                      
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => checkAvailability(idx)}
+                          disabled={checkingName}
+                          className="text-xs text-amber-600 hover:text-amber-700 font-medium disabled:opacity-50"
+                        >
+                          Check Availability
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
+                    
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <input 
+                          required={true} 
+                          type="text" 
+                          placeholder="Amharic Name"
+                          value={pn.nameAm} 
+                          onChange={(e) => handleNameChange(idx, "nameAm", e.target.value)} 
+                          className="w-full px-4 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none" 
+                        />
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          placeholder="English Name (Optional)"
+                          value={pn.nameEn} 
+                          onChange={(e) => handleNameChange(idx, "nameEn", e.target.value)} 
+                          className="w-full px-4 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none" 
+                        />
+                      </div>
+                    </div>
+                    
+                    {nameCheckResult && nameCheckResult.index === idx && (
+                      <div className={`mt-3 p-3 rounded-lg text-sm border animate-in fade-in zoom-in-95 duration-300 ${nameCheckResult.isAvailable ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-900/50 dark:text-green-300" : "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-300"}`}>
+                        {nameCheckResult.isAvailable ? (
+                          <div className="flex items-center gap-2"><CheckCircle size={16} /> Name looks available!</div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2 font-semibold"><AlertCircle size={16} /> Found similar names:</div>
+                            <ul className="list-disc pl-5 space-y-1 text-xs">
+                              {nameCheckResult.matches.map((m: any, i: number) => (
+                                <li key={i}>{m.nameAm} ({m.score}%)</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-4 pt-2">

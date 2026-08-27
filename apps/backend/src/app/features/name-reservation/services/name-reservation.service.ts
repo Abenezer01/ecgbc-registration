@@ -62,6 +62,7 @@ export class NameReservationService {
   }
 
   async createReservation(dto: {
+    proposedNames?: Array<{ nameAm: string; nameEn: string }>;
     nameAm: string;
     nameEn?: string;
     staffId?: string;
@@ -69,20 +70,19 @@ export class NameReservationService {
     publicPhone?: string;
     publicEmail?: string;
   }) {
-    const similarityResults = await this.checkNameSimilarity({ nameAm: dto.nameAm, nameEn: dto.nameEn });
-    const topMatches = similarityResults.slice(0, 5);
-    const hasHighSimilarity = topMatches.some((m) => m.score >= 85);
+    // Generate a unique 6-character reservation code
+    const reservationCode = "ECG-" + Math.floor(1000 + Math.random() * 9000).toString();
 
     return await prisma.nameReservation.create({
       data: {
+        reservationCode,
+        proposedNames: dto.proposedNames ? (dto.proposedNames as any) : undefined,
         requestedNameAm: dto.nameAm,
         requestedNameEn: dto.nameEn,
         requestedBy: dto.staffId,
         publicRequesterName: dto.publicName,
         publicRequesterPhone: dto.publicPhone,
         publicRequesterEmail: dto.publicEmail,
-        similarityData: JSON.stringify(topMatches),
-        status: hasHighSimilarity ? 'PENDING' : 'APPROVED',
       },
     });
   }
@@ -106,11 +106,21 @@ export class NameReservationService {
       },
     });
   }
+  
+  async getReservationByCode(code: string) {
+    return await prisma.nameReservation.findUnique({ where: { reservationCode: code } });
+  }
 
-  async updateReservationStatus(id: string, status: string, staffId: string, remark?: string) {
+  async updateReservationStatus(id: string, status: string, staffId: string, remark?: string, finalNameAm?: string, finalNameEn?: string) {
     return await prisma.nameReservation.update({
       where: { id },
-      data: { status, reviewedBy: staffId, reviewedAt: new Date(), remark },
+      data: { 
+        status, 
+        reviewedBy: staffId, 
+        reviewedAt: new Date(), 
+        remark,
+        ...(status === "APPROVED" && finalNameAm ? { requestedNameAm: finalNameAm, requestedNameEn: finalNameEn } : {})
+      },
     });
   }
 }

@@ -30,6 +30,8 @@ export interface NameReservation {
   updatedAt: string;
   requester?: { id: string; firstName: string; lastName: string };
   reviewer?: { id: string; firstName: string; lastName: string };
+  proposedNames?: Array<{ nameAm: string; nameEn?: string }>;
+  reservationCode?: string | null;
 }
 
 export function useNameReservation() {

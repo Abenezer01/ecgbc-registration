@@ -15,7 +15,7 @@ export const checkName = catchAsync(async (req: Request, res: Response, next: Ne
 });
 
 export const createReservation = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { nameAm, nameEn, publicName, publicPhone, publicEmail } = req.body;
+  const { proposedNames, nameAm, nameEn, publicName, publicPhone, publicEmail } = req.body;
   const staffId = (req as any).staff?.id; // will be undefined for public requests
 
   if (!nameAm) return next(new AppError('nameAm is required', 400));
@@ -25,7 +25,7 @@ export const createReservation = catchAsync(async (req: Request, res: Response, 
   }
 
   const reservation = await reservationService.createReservation({
-    nameAm, nameEn, staffId, publicName, publicPhone, publicEmail
+    proposedNames, nameAm, nameEn, staffId, publicName, publicPhone, publicEmail
   });
   sendSuccessResponse(res, { reservation }, 201);
 });
@@ -41,12 +41,18 @@ export const getReservationById = catchAsync(async (req: Request, res: Response,
   sendSuccessResponse(res, { reservation });
 });
 
+export const getReservationByCode = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const reservation = await reservationService.getReservationByCode(req.params.code);
+  if (!reservation) return next(new AppError('Reservation not found', 404));
+  sendSuccessResponse(res, { reservation });
+});
+
 export const updateReservationStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { status, remark } = req.body;
+  const { status, remark, finalNameAm, finalNameEn } = req.body;
   const staffId = (req as any).staff.id;
 
   if (!status) return next(new AppError('status is required', 400));
 
-  const reservation = await reservationService.updateReservationStatus(req.params.id, status, staffId, remark);
+  const reservation = await reservationService.updateReservationStatus(req.params.id, status, staffId, remark, finalNameAm, finalNameEn);
   sendSuccessResponse(res, { reservation });
 });

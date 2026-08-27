@@ -421,6 +421,8 @@ model ContactPerson {
 
 model NameReservation {
   id                   String    @id @default(uuid())
+  reservationCode      String?   @unique
+  proposedNames        Json?     // Array of { nameAm: string, nameEn: string }
   requestedNameAm      String
   requestedNameEn      String?
   status               String    @default("PENDING") // PENDING, APPROVED, REJECTED, USED, EXPIRED
@@ -447,7 +449,7 @@ model RegistrationRequest {
   id     String  @id @default(uuid())
   nameAm String
   nameEn String?
-  proposedNames Json? // Array of { nameAm: string, nameEn: string }
+  reservationCode String? 
 
   // Registration Details
   certificateNo         String? // Optional during application

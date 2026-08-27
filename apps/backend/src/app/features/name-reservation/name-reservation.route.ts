@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { checkName, createReservation, getReservations, getReservationById, updateReservationStatus } from './controllers/name-reservation.controller';
+import { checkName, createReservation, getReservations, getReservationById, updateReservationStatus, getReservationByCode } from './controllers/name-reservation.controller';
 import * as StaffAuthMiddleware from '../auth/middlewares/auth.middleware';
 
 import cors from 'cors';
@@ -16,11 +16,13 @@ const publicCors = cors({
 // Preflight options for public routes
 router.options('/check', publicCors);
 router.options('/public/request', publicCors);
+router.options('/public/code/:code', publicCors);
 
 // Public Routes (Used by public website)
 router.post('/check', publicCors, checkName);
 // Allow public to submit name reservations (requires adjusting the controller to handle optional staffId)
 router.post('/public/request', publicCors, createReservation);
+router.get('/public/code/:code', publicCors, getReservationByCode);
 
 // Protected Routes (Admin Portal)
 router.use(StaffAuthMiddleware.verifyStaff);

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -37,7 +37,7 @@ interface RegistrationRequest {
   reviewer?: { firstName: string; lastName: string };
   remark?: string;
   files?: Array<{ id: string; fileName: string; file: string; category?: { id: string; description: string } }>;
-  proposedNames?: Array<{ nameAm: string; nameEn: string }>;
+  reservationCode?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -117,21 +117,7 @@ export default function ApplicationReviewPage() {
   const [remark, setRemark] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Name checking
-  const [nameChecks, setNameChecks] = useState<Record<number, any[]>>({});
-  const [checkingName, setCheckingName] = useState<number | null>(null);
 
-  const checkNameSimilarity = async (index: number, nameAm: string, nameEn: string = "") => {
-    setCheckingName(index);
-    try {
-      const res = await api.post("/name-reservations/check", { nameAm, nameEn });
-      setNameChecks(prev => ({ ...prev, [index]: res.data?.data?.matches ?? [] }));
-    } catch (error) {
-      toast.error("Failed to check name similarity");
-    } finally {
-      setCheckingName(null);
-    }
-  };
 
   useEffect(() => {
     const load = async () => {
@@ -264,47 +250,9 @@ export default function ApplicationReviewPage() {
             </div>
           </Section>
 
-          {request.proposedNames && request.proposedNames.length > 0 && (
-            <Section title="Proposed Names" icon={<Hash size={15} />}>
-              <div className="space-y-4">
-                {request.proposedNames.map((pn, idx) => (
-                  <div key={idx} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Choice {idx + 1}</span>
-                      <button 
-                        onClick={() => checkNameSimilarity(idx, pn.nameAm, pn.nameEn)}
-                        disabled={checkingName === idx}
-                        className="text-xs px-2.5 py-1 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50"
-                      >
-                        {checkingName === idx ? "Checking..." : "Check Availability"}
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <InfoRow label="Amharic Name" value={pn.nameAm} />
-                      <InfoRow label="English Name" value={pn.nameEn} />
-                    </div>
-                    
-                    {nameChecks[idx] !== undefined && (
-                      <div className={`mt-3 p-3 rounded-lg text-sm border ${nameChecks[idx].length === 0 ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-900/50 dark:text-green-300" : "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-300"}`}>
-                        {nameChecks[idx].length === 0 ? (
-                          <div className="flex items-center gap-2"><CheckCircle size={14} /> Name is available!</div>
-                        ) : (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2 font-medium"><AlertTriangle size={14} /> Found {nameChecks[idx].length} similar names:</div>
-                            <ul className="list-disc pl-5 space-y-1 text-xs">
-                              {nameChecks[idx].map((match: any, mIdx: number) => (
-                                <li key={mIdx}>
-                                  <span className="font-semibold">{match.nameAm}</span> ({match.score}% match) - {match.entityType}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {request.reservationCode && (
+            <Section title="Name Reservation" icon={<Hash size={15} />}>
+              <InfoRow label="Reservation Code" value={request.reservationCode} />
             </Section>
           )}
 
@@ -382,26 +330,6 @@ export default function ApplicationReviewPage() {
                   <div>
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-3">Church Details</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {request.proposedNames && request.proposedNames.length > 0 && (
-                        <div className="col-span-1 sm:col-span-2">
-                          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Select Final Approved Name *</label>
-                          <select
-                            value={formData.nameAm}
-                            onChange={(e) => {
-                              const pn = request.proposedNames?.find(n => n.nameAm === e.target.value);
-                              if (pn) {
-                                setFormData({ ...formData, nameAm: pn.nameAm, nameEn: pn.nameEn || "" });
-                              }
-                            }}
-                            className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500"
-                          >
-                            <option value="">Select a proposed name</option>
-                            {request.proposedNames.map((pn, i) => (
-                              <option key={i} value={pn.nameAm}>Choice {i + 1}: {pn.nameAm} {pn.nameEn ? `(${pn.nameEn})` : ""}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
                       <Field label="Church Name (Amharic) *" value={formData.nameAm} onChange={v => setFormData({ ...formData, nameAm: v })} />
                       <Field label="Church Name (English)" value={formData.nameEn} onChange={v => setFormData({ ...formData, nameEn: v })} />
                       <SelectField label="Organization Type *" value={formData.typeId} onChange={v => setFormData({ ...formData, typeId: v })}
@@ -552,3 +480,5 @@ export default function ApplicationReviewPage() {
     </div>
   );
 }
+
+

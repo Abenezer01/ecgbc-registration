@@ -66,14 +66,34 @@ export default function ApplyPage() {
     contactPersonEmail: ""
   });
   
-  // 5 proposed names
-  const [proposedNames, setProposedNames] = useState([
-    { nameAm: "", nameEn: "" },
-    { nameAm: "", nameEn: "" },
-    { nameAm: "", nameEn: "" },
-    { nameAm: "", nameEn: "" },
-    { nameAm: "", nameEn: "" },
-  ]);
+  // Reservation State
+  const [reservationCode, setReservationCode] = useState("");
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [verifiedReservation, setVerifiedReservation] = useState<{nameAm: string, nameEn?: string} | null>(null);
+
+  const verifyReservationCode = async () => {
+    if (!reservationCode.trim()) {
+      toast.error("Please enter a reservation code.");
+      return;
+    }
+    setIsVerifyingCode(true);
+    try {
+      const { data } = await publicApi.get(`/name-reservations/public/code/${reservationCode.trim()}`);
+      const res = data.data?.reservation;
+      if (!res || res.status !== "APPROVED") {
+        toast.error("This reservation is either invalid or not yet approved.");
+        setVerifiedReservation(null);
+      } else {
+        toast.success("Reservation verified!");
+        setVerifiedReservation({ nameAm: res.requestedNameAm, nameEn: res.requestedNameEn });
+      }
+    } catch (err: any) {
+      toast.error("Failed to verify code. It may be invalid or not approved.");
+      setVerifiedReservation(null);
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
 
   const [files, setFiles] = useState<File[]>([]);
   const [fileCategories, setFileCategories] = useState<Record<number, string>>({});
@@ -138,11 +158,7 @@ export default function ApplyPage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleNameChange = (index: number, field: "nameAm" | "nameEn", value: string) => {
-    const next = [...proposedNames];
-    next[index][field] = value;
-    setProposedNames(next);
-  };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -184,8 +200,8 @@ export default function ApplyPage() {
 
   const nextStep = () => {
     if (step === 1) {
-      if (!proposedNames[0].nameAm || !proposedNames[1].nameAm || !formData.typeId) {
-        toast.error("Please provide at least Choice 1 and Choice 2 Amharic names, and Organization Type");
+      if (!verifiedReservation || !formData.typeId) {
+        toast.error("Please verify your reservation code and select an Organization Type");
         return;
       }
     } else if (step === 2) {
@@ -221,12 +237,8 @@ export default function ApplyPage() {
       Object.entries(formData).forEach(([key, value]) => {
         if (value) payload.append(key, value);
       });
-      // Filter out empty name submissions, but keep the order
-      const validProposed = proposedNames.filter(n => n.nameAm.trim() !== "");
-      payload.append("proposedNames", JSON.stringify(validProposed));
-      // For fallback schema compatibility, use the first choice as main name
-      payload.append("nameAm", validProposed[0].nameAm);
-      if (validProposed[0].nameEn) payload.append("nameEn", validProposed[0].nameEn);
+      
+      payload.append("reservationCode", reservationCode.trim());
 
       files.forEach(f => payload.append('memberFiles', f));
       
@@ -339,41 +351,42 @@ export default function ApplyPage() {
                 
                 {step === 1 && (
                     <div className="space-y-5">
-                      <div>
-                        <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">Proposed Church Names</h3>
-                        <p className="text-xs text-neutral-500 mb-4">Provide up to 5 alternative names in order of preference. We will check availability during review. Choice 1 and Choice 2 are required.</p>
-                        
-                        <div className="space-y-4">
-                          {proposedNames.map((pn, idx) => (
-                            <div key={idx} className="p-3 bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-lg">
-                              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Choice {idx + 1} {idx < 2 && <span className="text-amber-500">*</span>}</p>
-                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <div>
-                                  <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Amharic Name</label>
-                                  <input 
-                                    required={idx < 2} 
-                                    type="text" 
-                                    value={pn.nameAm} 
-                                    onChange={(e) => handleNameChange(idx, "nameAm", e.target.value)} 
-                                    className="w-full px-3 py-1.5 text-sm rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500" 
-                                    placeholder={idx === 0 ? "የቤተክርስቲያን ስም" : ""}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">English Name</label>
-                                  <input 
-                                    type="text" 
-                                    value={pn.nameEn} 
-                                    onChange={(e) => handleNameChange(idx, "nameEn", e.target.value)} 
-                                    className="w-full px-3 py-1.5 text-sm rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500" 
-                                    placeholder={idx === 0 ? "Church Name" : ""}
-                                  />
-                                </div>
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Approved Name Reservation Code *</label>
+                          <p className="text-xs text-neutral-500 mb-4">Enter the code you received when your name was approved (e.g. ECG-1234).</p>
+                          
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="ECG-XXXX"
+                              className="flex-1 px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none uppercase"
+                              value={reservationCode}
+                              onChange={(e) => {
+                                setReservationCode(e.target.value.toUpperCase());
+                                setVerifiedReservation(null);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={verifyReservationCode}
+                              disabled={isVerifyingCode || !reservationCode.trim() || !!verifiedReservation}
+                              className="px-4 py-2.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+                            >
+                              {isVerifyingCode ? <Loader2 size={16} className="animate-spin" /> : verifiedReservation ? "Verified" : "Verify Code"}
+                            </button>
+                          </div>
+                          
+                          {verifiedReservation && (
+                            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50 rounded-lg flex items-start gap-3 animate-in fade-in zoom-in-95 duration-300">
+                              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-1">Approved Church Name</p>
+                                <p className="text-sm text-green-700 dark:text-green-400 font-medium">Amharic: {verifiedReservation.nameAm}</p>
+                                {verifiedReservation.nameEn && <p className="text-sm text-green-700 dark:text-green-400 font-medium">English: {verifiedReservation.nameEn}</p>}
                               </div>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Organization Type *</label>
                       <select required name="typeId" value={formData.typeId} onChange={handleChange} className="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500">

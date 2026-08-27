@@ -9,30 +9,33 @@ import { CommonObjectState } from '../../data-lookup/enums/data-lookup.enum';
 export const submitRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
-      nameAm, nameEn, proposedNames, certificateNo, certificateIssuedDate,
+      reservationCode, certificateNo, certificateIssuedDate,
       typeId, councilFellowshipId, regionId, isInEthiopia, country,
       city, subcity, zone, district, houseNumber, phoneNumber, email, poBoxNumber,
       contactPersonName, contactPersonPhone, contactPersonEmail
     } = req.body;
 
-    if (!nameAm || !typeId || !regionId || !phoneNumber || !contactPersonName || !contactPersonPhone) {
-      throw new AppError("Missing required fields. Please ensure Church Name, Type, Region, Phone, and Contact Person details are provided.", 400);
+    if (!reservationCode || !typeId || !regionId || !phoneNumber || !contactPersonName || !contactPersonPhone) {
+      throw new AppError("Missing required fields. Please ensure Reservation Code, Type, Region, Phone, and Contact Person details are provided.", 400);
     }
 
-    let parsedProposedNames = null;
-    if (proposedNames) {
-      try {
-        parsedProposedNames = JSON.parse(proposedNames);
-      } catch (e) {
-        // ignore
-      }
+    const reservation = await prisma.nameReservation.findUnique({
+      where: { reservationCode }
+    });
+
+    if (!reservation) {
+      throw new AppError("Invalid Reservation Code.", 400);
+    }
+    
+    if (reservation.status !== "APPROVED") {
+      throw new AppError("This Name Reservation has not been approved yet.", 400);
     }
 
     const request = await prisma.registrationRequest.create({
       data: {
-        nameAm,
-        nameEn,
-        proposedNames: parsedProposedNames,
+        nameAm: reservation.requestedNameAm,
+        nameEn: reservation.requestedNameEn,
+        reservationCode,
         certificateNo,
         certificateIssuedDate: certificateIssuedDate ? new Date(certificateIssuedDate) : null,
         typeId,
