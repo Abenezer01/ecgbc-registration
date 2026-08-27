@@ -273,10 +273,15 @@ export default function ApplicationReviewPage() {
               <p className="text-sm text-neutral-400 italic">No documents were uploaded with this application.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {request.files.map((f) => (
+                {request.files.map((f) => {
+                  // Construct static file URL
+                  const baseUrl = apiBase.replace('/api/v1', '');
+                  const downloadUrl = `${baseUrl}/files/file/${encodeURIComponent(f.file)}`;
+                  
+                  return (
                   <a
                     key={f.id}
-                    href={`${apiBase}/files/download/${f.file}`}
+                    href={downloadUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="group flex items-center gap-3 p-3.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 hover:border-amber-400 dark:hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-all"
@@ -290,7 +295,8 @@ export default function ApplicationReviewPage() {
                     </div>
                     <Download size={14} className="text-neutral-300 group-hover:text-amber-500 transition-colors shrink-0" />
                   </a>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Section>
