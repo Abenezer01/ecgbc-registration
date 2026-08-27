@@ -160,17 +160,27 @@ export default function LoginPage() {
                 "Sign In to Dashboard"
               )}
             </button>
-            
-            <div className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              Is your church not registered yet?{" "}
-              <button 
-                type="button" 
-                onClick={() => router.push("/apply")}
-                className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
-              >
-                Apply for Registration
-              </button>
-            </div>
+            <div className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-400">
+                Is your church not registered yet?{" "}
+                <button 
+                  type="button" 
+                  onClick={() => router.push("/apply")}
+                  className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+                >
+                  Apply for Registration
+                </button>
+              </div>
+
+              <div className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
+                Want to secure a church name first?{" "}
+                <button 
+                  type="button" 
+                  onClick={() => router.push("/reserve-name")}
+                  className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+                >
+                  Reserve a Name
+                </button>
+              </div>
           </form>
 
           <div className="mt-8 text-center">
