@@ -14,12 +14,12 @@ const publicCors = cors({
 });
 
 // Preflight options for public routes
-router.options('/check', publicCors);
+router.options('/public/check', publicCors);
 router.options('/public/request', publicCors);
 router.options('/public/code/:code', publicCors);
 
 // Public Routes (Used by public website)
-router.post('/check', publicCors, checkName);
+router.post('/public/check', publicCors, checkName);
 // Allow public to submit name reservations (requires adjusting the controller to handle optional staffId)
 router.post('/public/request', publicCors, createReservation);
 router.get('/public/code/:code', publicCors, getReservationByCode);
