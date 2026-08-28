@@ -2,8 +2,8 @@ import { z } from "zod";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const MAX_FILES = 5;
-export const MAX_TOTAL_SIZE_MB = 50;
-export const MAX_PER_FILE_SIZE_MB = 5;
+export const MAX_TOTAL_SIZE_MB = 100;
+export const MAX_PER_FILE_SIZE_MB = 20;
 export const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 export const MAX_PER_FILE_SIZE_BYTES = MAX_PER_FILE_SIZE_MB * 1024 * 1024;
 export const ACCEPTED_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg";

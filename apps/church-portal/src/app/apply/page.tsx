@@ -18,8 +18,8 @@ const cn = (...inputs: any[]) => twMerge(clsx(inputs));
 
 // ── File validation constants (mirror AddMemberModal) ──
 const MAX_FILES = 10;
-const MAX_PER_FILE_SIZE_MB = 5;
-const MAX_TOTAL_SIZE_MB = 50;
+const MAX_PER_FILE_SIZE_MB = 20;
+const MAX_TOTAL_SIZE_MB = 100;
 const MAX_PER_FILE_SIZE_BYTES = MAX_PER_FILE_SIZE_MB * 1024 * 1024;
 const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 const ACCEPTED_TYPES = ".pdf,.doc,.docx,.png,.jpg,.jpeg";
