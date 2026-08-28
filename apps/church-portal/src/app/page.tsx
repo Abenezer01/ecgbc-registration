@@ -117,6 +117,47 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* HOW IT WORKS SECTION */}
+      <section className="py-24 px-4 bg-white dark:bg-neutral-900 border-y border-neutral-100 dark:border-neutral-800">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-4">How It Works</h2>
+            <p className="text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto">
+              Follow these simple steps to complete your registration and gain access to the ECGBC dashboard.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="relative flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 flex items-center justify-center font-bold text-lg mb-4 z-10 relative">1</div>
+              <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Reserve a Name</h4>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Submit exactly 5 alternative names to receive a unique Reservation Code.</p>
+              <div className="hidden md:block absolute top-6 left-[50%] w-full h-[2px] bg-neutral-100 dark:bg-neutral-800 -z-0" />
+            </div>
+
+            <div className="relative flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 flex items-center justify-center font-bold text-lg mb-4 z-10 relative">2</div>
+              <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Submit Application</h4>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Use your Reservation Code to start the application and upload your documents.</p>
+              <div className="hidden md:block absolute top-6 left-[50%] w-full h-[2px] bg-neutral-100 dark:bg-neutral-800 -z-0" />
+            </div>
+
+            <div className="relative flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 flex items-center justify-center font-bold text-lg mb-4 z-10 relative">3</div>
+              <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Review & Approval</h4>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">ECGBC administrators will review your submitted documents and finalize your church name.</p>
+              <div className="hidden md:block absolute top-6 left-[50%] w-full h-[2px] bg-neutral-100 dark:bg-neutral-800 -z-0" />
+            </div>
+
+            <div className="relative flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-500 flex items-center justify-center font-bold text-lg mb-4 z-10 relative"><CheckCircle2 size={24} /></div>
+              <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Access Dashboard</h4>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Upon approval, you'll receive login credentials to manage your church profile.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* REQUIREMENTS SECTION */}
       <section className="py-24 px-4 max-w-5xl mx-auto w-full">
         <div className="text-center mb-16">
@@ -136,7 +177,7 @@ export default function LandingPage() {
             <div>
               <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">5 Proposed Names</h4>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                You will need to provide up to 5 alternative names in order of preference. We will check availability and assign the highest priority available name.
+                You will need to provide exactly 5 alternative names in order of preference. We will check availability and assign the highest priority available name.
               </p>
             </div>
           </div>
