@@ -137,8 +137,8 @@ export default function LandingPage() {
 
             <div className="relative flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 flex items-center justify-center font-bold text-lg mb-4 z-10 relative">2</div>
-              <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Submit Application</h4>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Use your Reservation Code to start the application and upload your documents.</p>
+              <h4 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Church Registration</h4>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Use your Reservation Code to begin the full church registration process and upload your required documents.</p>
               <div className="hidden md:block absolute top-6 left-[50%] w-full h-[2px] bg-neutral-100 dark:bg-neutral-800 -z-0" />
             </div>
 
