@@ -18,7 +18,8 @@ export interface ReportingFee {
   memberId: string;
   amount: string;
   currency: string;
-  status: "PENDING" | "SENT" | "PAID";
+  currentActionState: "DRAFT" | "ISSUED" | "PROCESSING" | "PAID" | "RECONCILED";
+
   note?: string;
   sentAt?: string;
   paidAt?: string;
@@ -263,13 +264,11 @@ export function useMarkFeePaid() {
     mutationFn: async ({
       feeId,
       note,
-      crv,
     }: {
       feeId: string;
       note?: string;
-      crv?: string;
     }) => {
-      const res = await api.patch(`/finance/fees/${feeId}/pay`, { note, crv });
+      const res = await api.patch(`/finance/fees/${feeId}/pay`, { note });
       return extractData(res) as any;
     },
     onSuccess: () => {

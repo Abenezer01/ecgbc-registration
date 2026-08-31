@@ -62,6 +62,53 @@ async function sendFeeEmail(opts: {
   });
 }
 
+export async function sendReceiptEmail(opts: {
+  to: string;
+  memberName: string;
+  year: number;
+  amount: number;
+  currency: string;
+  feeId: string;
+  crv?: string;
+  bankReference?: string;
+}) {
+  if (!process.env.SMTP_USER) return;
+  const transport = getMailTransport();
+  await transport.sendMail({
+    from: `"ECGBC Finance" <${process.env.SMTP_USER}>`,
+    to: opts.to,
+    subject: `Payment Receipt — ${opts.year} E.C`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+        <h2 style="color:#10b981">ECGBC Payment Receipt</h2>
+        <p>Dear <strong>${opts.memberName}</strong>,</p>
+        <p>Your payment for the <strong>${opts.year} E.C</strong> annual report has been approved and cleared.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <tr>
+            <td style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">Amount Paid</td>
+            <td style="padding:8px;border:1px solid #e5e7eb">${opts.currency || 'ETB'} ${opts.amount.toFixed(2)}</td>
+          </tr>
+          ${opts.crv ? `
+          <tr>
+            <td style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">CRV Number</td>
+            <td style="padding:8px;border:1px solid #e5e7eb;font-family:monospace">${opts.crv}</td>
+          </tr>` : ''}
+          ${opts.bankReference ? `
+          <tr>
+            <td style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">Bank Reference</td>
+            <td style="padding:8px;border:1px solid #e5e7eb;font-family:monospace">${opts.bankReference}</td>
+          </tr>` : ''}
+          <tr>
+            <td style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">Reference ID</td>
+            <td style="padding:8px;border:1px solid #e5e7eb;font-family:monospace">${opts.feeId.slice(0, 8).toUpperCase()}</td>
+          </tr>
+        </table>
+        <p>Thank you for your payment.</p>
+      </div>
+    `,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Category Fee Rates
 // ---------------------------------------------------------------------------
@@ -120,19 +167,19 @@ export const getFinanceSummary = catchAsync(
     const [paid, pending, sent, recentFees] = await Promise.all([
       (prisma as any).reportingFee.groupBy({
         by: ['currency'],
-        where: { status: FeeStatus.PAID },
+        where: { currentActionState: { in: ["PAID", "RECONCILED"] } },
         _sum: { amount: true },
         _count: { id: true },
       }),
       (prisma as any).reportingFee.groupBy({
         by: ['currency'],
-        where: { status: FeeStatus.PENDING },
+        where: { currentActionState: "PROCESSING" },
         _sum: { amount: true },
         _count: { id: true },
       }),
       (prisma as any).reportingFee.groupBy({
         by: ['currency'],
-        where: { status: FeeStatus.SENT },
+        where: { currentActionState: "ISSUED" },
         _sum: { amount: true },
         _count: { id: true },
       }),
@@ -187,7 +234,7 @@ export const getReportingFees = catchAsync(
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (req.query.status) where.status = req.query.status;
+    if (req.query.status) where.currentActionState = req.query.status;
     if (req.query.memberId) where.memberId = req.query.memberId;
 
     const [fees, total] = await Promise.all([
@@ -290,7 +337,7 @@ export const generateFee = catchAsync(
         memberId: report.memberId,
         amount,
         currency,
-        status: FeeStatus.PENDING,
+        currentActionState: "DRAFT",
       },
       include: {
         member: { select: { id: true, name: true, email: true } },
@@ -316,18 +363,31 @@ export const sendFee = catchAsync(
     if (!existing) {
       return next(new AppError(`Fee with ID ${req.params.id} not found`, 404));
     }
-    if (existing.status === FeeStatus.PAID) {
+    if (existing.currentActionState === "PAID" || existing.currentActionState === "RECONCILED") {
       return next(new AppError("Fee is already marked as Paid", 400));
     }
 
     const fee = await (prisma as any).reportingFee.update({
       where: { id: req.params.id },
-      data: { status: FeeStatus.SENT, sentAt: new Date() },
+      data: { currentActionState: "ISSUED", sentAt: new Date() },
       include: {
         member: { select: { id: true, name: true, email: true } },
         report: { select: { id: true, year: true, bankReference: true } },
       },
     });
+
+    const reqAny = req as any;
+    const staffId = reqAny.staff?.id as string | undefined;
+    if (staffId) {
+      await (prisma as any).actionState.create({
+        data: {
+          entityType: "PAYMENT",
+          entityId: fee.id,
+          state: "ISSUED",
+          performedBy: staffId,
+        },
+      });
+    }
 
     // Send email notification (fire-and-forget; don't fail the request if email errors)
     if (existing.member?.email) {
@@ -350,7 +410,7 @@ export const sendFee = catchAsync(
 /** PATCH /finance/fees/:id/pay — mark as PAID and optionally update the linked report */
 export const markFeePaid = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { note, crv } = req.body;
+    const { note } = req.body;
 
     const existing = await (prisma as any).reportingFee.findUnique({
       where: { id: req.params.id },
@@ -360,18 +420,17 @@ export const markFeePaid = catchAsync(
     if (!existing) {
       return next(new AppError(`Fee with ID ${req.params.id} not found`, 404));
     }
-    if (existing.status === FeeStatus.PAID) {
+    if (existing.currentActionState === "PAID" || existing.currentActionState === "RECONCILED") {
       return next(new AppError("Fee is already marked as Paid", 400));
     }
 
-    // Update fee status
+    // Update fee status to PAID
     const fee = await (prisma as any).reportingFee.update({
       where: { id: req.params.id },
       data: {
-        status: FeeStatus.PAID,
+        currentActionState: "PAID",
         paidAt: new Date(),
         ...(note ? { note } : {}),
-        ...(crv ? { crv } : {}),
       },
       include: {
         member: { select: { id: true, name: true, email: true } },
@@ -379,10 +438,16 @@ export const markFeePaid = catchAsync(
       },
     });
 
-    if (crv && existing.report) {
-      await prisma.report.update({
-        where: { id: existing.report.id },
-        data: { crv },
+    const reqAny = req as any;
+    const staffId = reqAny.staff?.id as string | undefined;
+    if (staffId) {
+      await (prisma as any).actionState.create({
+        data: {
+          entityType: "PAYMENT",
+          entityId: fee.id,
+          state: "PAID",
+          performedBy: staffId,
+        },
       });
     }
 

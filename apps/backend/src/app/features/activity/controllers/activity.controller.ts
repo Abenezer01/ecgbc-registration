@@ -13,6 +13,7 @@ export const getActivityLogs = catchAsync(
       _limit = 20, 
       action, 
       entity, 
+      entityId,
       performedBy, 
       startDate, 
       endDate,
@@ -27,6 +28,7 @@ export const getActivityLogs = catchAsync(
     
     if (action) where.action = action as string;
     if (entity) where.entity = entity as string;
+    if (entityId) where.entityId = entityId as string;
     if (performedBy) where.performedBy = performedBy as string;
     
     // Date range filtering

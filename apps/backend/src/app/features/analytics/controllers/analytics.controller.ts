@@ -112,24 +112,24 @@ export const getAnalytics = catchAsync(async (req: Request, res: Response, next:
     reportingFeeWhere.member = { councilFellowshipId: { in: allowedFellowshipIds } };
   }
 
-  const reportingFees = await prisma.reportingFee.findMany({
+  const reportingFees = await (prisma as any).reportingFee.findMany({
     where: reportingFeeWhere,
     select: {
       amount: true,
-      status: true,
+      currentActionState: true,
       report: { select: { status: { select: { value: true } } } },
     },
   });
 
   let totalCollected = 0;
   let inReviewRevenue = 0;
-  reportingFees.forEach((fee) => {
+  reportingFees.forEach((fee: any) => {
     const amt = Number(fee.amount);
-    if (fee.status === "PAID") {
+    if (fee.currentActionState === "PAID" || fee.currentActionState === "RECONCILED") {
       totalCollected += amt;
     } else if (
-      fee.status === "PENDING" ||
-      fee.status === "PENDING_REVIEW" ||
+      fee.currentActionState === "PROCESSING" ||
+      fee.currentActionState === "ISSUED" ||
       (fee.report && fee.report.status.value === "SUBMITTED")
     ) {
       inReviewRevenue += amt;

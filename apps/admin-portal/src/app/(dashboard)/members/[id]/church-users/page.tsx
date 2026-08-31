@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { UserPlus, Key, Shield, Search, RefreshCw, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert } from "lucide-react";
+import { UserPlus, Key, Shield, Search, RefreshCw, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert , History } from "lucide-react";
 import { Button, DataTable, Badge, Modal, ModalFooter, FormField, Input, Select } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useChurchUsersByMember, useCreateChurchUser, useDeleteChurchUser, useResetUserPassword, useToggleUserStatus, type ChurchUser } from "@/hooks/useChurchUsers";
@@ -33,6 +33,7 @@ export default function ChurchUsersPage() {
     { id: "reports", label: "Reports", icon: <FileText />, path: `/members/${id}/reports`, visible: canViewReports },
     { id: "documents", label: "Documents", icon: <FolderOpen />, path: `/members/${id}/documents`, visible: canViewFiles },
     { id: "church-users", label: "Church Users", icon: <UsersIcon />, path: `/members/${id}/church-users`, visible: canManageUsers },
+    { id: "history", label: "History", icon: <History />, path: `/members/${id}/history` },
     { id: "settings", label: "Settings", icon: <ShieldAlert />, path: `/members/${id}/settings`, visible: canDeactivate },
   ];
 

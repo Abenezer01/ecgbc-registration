@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertTriangle, User, FileText, FolderOpen, Users, ShieldAlert } from "lucide-react";
+import { AlertTriangle, User, FileText, FolderOpen, Users, ShieldAlert , History } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useMember } from "@/hooks/useMembers";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,6 +23,7 @@ export default function SettingsPage() {
     { id: "reports", label: "Reports", icon: <FileText />, path: `/members/${id}/reports`, visible: canViewReports },
     { id: "documents", label: "Documents", icon: <FolderOpen />, path: `/members/${id}/documents`, visible: canViewFiles },
     { id: "church-users", label: "Church Users", icon: <Users />, path: `/members/${id}/church-users`, visible: canManageUsers },
+    { id: "history", label: "History", icon: <History />, path: `/members/${id}/history` },
     { id: "settings", label: "Settings", icon: <ShieldAlert />, path: `/members/${id}/settings`, visible: canDeactivate },
   ];
 

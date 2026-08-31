@@ -148,7 +148,7 @@ export const getReportSummary = catchAsync(
       }),
       (prisma as any).reportingFee.aggregate({
         _sum: { amount: true },
-        where: { status: 'PAID' }
+        where: { currentActionState: { in: ["PAID", "RECONCILED"] } }
       }),
       prisma.member.count({ where: { isActive: true } }),
       prisma.report.findMany({
@@ -158,7 +158,7 @@ export const getReportSummary = catchAsync(
         include: {
           member: { select: { id: true, name: true } },
           status: { select: { value: true } },
-          reportingFee: { select: { status: true } }
+          reportingFee: { select: { currentActionState: true } }
         }
       }),
       prisma.member.groupBy({

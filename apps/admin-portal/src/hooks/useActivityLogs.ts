@@ -28,6 +28,7 @@ export function useActivityLogs(params: {
   search?: string;
   action?: string;
   entity?: string;
+  entityId?: string;
   startDate?: string;
   endDate?: string;
 }) {
@@ -41,6 +42,7 @@ export function useActivityLogs(params: {
           search: params.search || undefined,
           action: params.action || undefined,
           entity: params.entity || undefined,
+          entityId: params.entityId || undefined,
           startDate: params.startDate || undefined,
           endDate: params.endDate || undefined,
         },

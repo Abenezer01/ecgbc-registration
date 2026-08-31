@@ -5,10 +5,12 @@ import AppError from "../../shared/errors/app.error";
 import { sendPaginatedResponse, sendSuccessResponse } from "../../shared/helpers/response.helper";
 import { getValidStates, isValidState } from "./action-state.enum";
 import { logActivity, ActivityAction } from "../../shared/services/activity.service";
+import { sendReceiptEmail } from "../finance/controllers/finance.controller";
 
 const ENTITY_TABLE_MAP: Record<string, { model: any; field: string }> = {
   MEMBER:     { model: "member",            field: "currentActionState" },
   FELLOWSHIP: { model: "councilFellowship", field: "currentActionState" },
+  PAYMENT:    { model: "reportingFee",      field: "currentActionState" },
 };
 
 /**
@@ -95,6 +97,63 @@ export const createActionState = catchAsync(
       description: `State advanced to ${state}${note ? `: ${note}` : ""}`,
       metadata: { state, note },
     }, req);
+
+    // If payment is reconciled, generate CRV, set paidAmount, and send receipt email
+    if (entityType === "PAYMENT" && state === "RECONCILED") {
+      let fee = await (prisma as any).reportingFee.findUnique({
+        where: { id: entityId },
+        include: {
+          member: { select: { name: true, email: true } },
+          report: { select: { id: true, year: true, bankReference: true, crv: true } },
+        },
+      });
+
+      if (fee && !fee.crv) {
+        // Auto-generate CRV sequence
+        const year = new Date().getFullYear();
+        const sequence = await (prisma as any).cRVSequence.upsert({
+          where: { year },
+          update: { lastValue: { increment: 1 } },
+          create: { year, lastValue: 1 },
+        });
+        const crvNumber = `CRV-${year}-${String(sequence.lastValue).padStart(4, '0')}`;
+
+        // Update fee with CRV and paidAmount
+        fee = await (prisma as any).reportingFee.update({
+          where: { id: entityId },
+          data: {
+            crv: crvNumber,
+            paidAmount: Number(fee.amount),
+            paidAt: new Date()
+          },
+          include: {
+            member: { select: { name: true, email: true } },
+            report: { select: { id: true, year: true, bankReference: true, crv: true } },
+          },
+        });
+
+        // Sync CRV to report for backward compatibility
+        if (fee.report) {
+          await prisma.report.update({
+            where: { id: fee.report.id },
+            data: { crv: crvNumber }
+          });
+        }
+      }
+
+      if (fee?.member?.email) {
+        sendReceiptEmail({
+          to: fee.member.email,
+          memberName: fee.member.name,
+          year: fee.report.year,
+          amount: Number(fee.paidAmount || fee.amount),
+          currency: fee.currency,
+          feeId: fee.id,
+          crv: fee.crv,
+          bankReference: fee.report.bankReference,
+        }).catch((err) => console.error("[ActionState] Failed to send receipt email:", err));
+      }
+    }
 
     sendSuccessResponse(res, { actionState });
   }

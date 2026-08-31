@@ -4,6 +4,7 @@ import { ReportingFee } from "../../hooks/useFinance";
 import { FeeStatusBadge } from "./FeeStatusBadge";
 import { Send, CheckCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import ActionStateDrawer from "@/components/action-state/ActionStateDrawer";
 
 interface FeeTableProps {
   fees: ReportingFee[];
@@ -63,15 +64,29 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
     {
       key: "status",
       header: "Status",
-      cell: (row: ReportingFee) => <FeeStatusBadge status={row.status} />,
+      cell: (row: ReportingFee) => <FeeStatusBadge status={row.currentActionState || 'DRAFT'} />,
+    },
+    {
+      key: "approval",
+      header: "Approval",
+      cell: (row: ReportingFee) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ActionStateDrawer
+            entityType="PAYMENT"
+            entityId={row.id}
+            currentActionState={row.currentActionState}
+            triggerClassName="h-7 px-2 text-xs"
+          />
+        </div>
+      ),
     },
     {
       key: "actions",
       header: "",
       className: "text-right w-40",
       cell: (row: ReportingFee) => (
-        <div className="flex justify-end gap-2">
-          {canManage && row.status === "PENDING" && (
+        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          {canManage && row.currentActionState === "DRAFT" && (
             <Button
               onClick={() => onSendClick(row)}
               variant="outline"
@@ -91,7 +106,7 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
               Verify
             </Button>
           )}
-          {canManage && (row.status === "SENT" || row.status === "PENDING") && (
+          {canManage && ["DRAFT", "ISSUED", "PROCESSING"].includes(row.currentActionState || "") && (
             <Button
               onClick={() => onPayClick(row)}
               variant="primary"

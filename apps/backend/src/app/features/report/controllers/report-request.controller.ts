@@ -61,7 +61,7 @@ export const getReportRequest = catchAsync(
           },
         },
         reportingFee: {
-          select: { id: true, amount: true, currency: true, status: true },
+          select: { id: true, amount: true, currency: true, currentActionState: true },
         },
       },
     });

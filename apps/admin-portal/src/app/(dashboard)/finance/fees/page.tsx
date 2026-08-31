@@ -53,9 +53,9 @@ export default function FinanceFeesPage() {
     }
   };
 
-  const onConfirmPay = async (feeId: string, note?: string, crv?: string) => {
+  const onConfirmPay = async (feeId: string, note?: string) => {
     try {
-      await markPaid({ feeId, note, crv });
+      await markPaid({ feeId, note });
       setPayOpen(false);
     } catch (err) {
       console.error(err);

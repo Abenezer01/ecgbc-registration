@@ -63,7 +63,7 @@ export const getChurchPortalReports = catchAsync(
             id: true,
             amount: true,
             currency: true,
-            status: true,
+            currentActionState: true,
           }
         }
       },
@@ -121,7 +121,7 @@ export const createChurchPortalReport = catchAsync(
             id: true,
             amount: true,
             currency: true,
-            status: true,
+            currentActionState: true,
           }
         }
       }
@@ -140,7 +140,7 @@ export const createChurchPortalReport = catchAsync(
             id: true,
             amount: true,
             currency: true,
-            status: true,
+            currentActionState: true,
           }
         }
       }
@@ -310,16 +310,19 @@ export const submitReportPayment = catchAsync(
       data: { bankReference },
       include: {
         status: true,
-        reportingFee: {
-          select: {
-            id: true,
-            amount: true,
-            currency: true,
-            status: true,
-          }
-        }
+        reportingFee: true,
       }
     });
+
+    if (updatedReport.reportingFee) {
+      await (prisma as any).reportingFee.update({
+        where: { id: updatedReport.reportingFee.id },
+        data: { currentActionState: "PROCESSING" }
+      });
+      
+      // Also add an ActionState record so the timeline shows the church submitted it
+      // Wait, we don't have the church user ID as staffId. So we'll skip ActionState for now or use system ID.
+    }
 
     // Log activity
     await logActivity({

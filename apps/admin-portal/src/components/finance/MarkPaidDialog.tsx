@@ -8,7 +8,7 @@ interface MarkPaidDialogProps {
   open: boolean;
   onClose: () => void;
   fee: ReportingFee | null;
-  onConfirm: (feeId: string, note?: string, crv?: string) => void;
+  onConfirm: (feeId: string, note?: string) => void;
   isPending: boolean;
 }
 
@@ -20,18 +20,16 @@ export function MarkPaidDialog({
   isPending,
 }: MarkPaidDialogProps) {
   const [note, setNote] = useState("");
-  const [crv, setCrv] = useState("");
 
   React.useEffect(() => {
     if (open) {
       setNote("");
-      setCrv("");
     }
   }, [open, fee]);
 
   if (!fee) return null;
 
-  const canConfirm = crv.trim().length > 0;
+  const canConfirm = true;
 
   return (
     <Modal open={open} onClose={onClose} title="Record Fee Payment" size="sm">
@@ -55,17 +53,9 @@ export function MarkPaidDialog({
           </div>
         </div>
 
-        <FormField id="crv" label="CRV Number" required>
-          <Input
-            id="crv"
-            placeholder="e.g. CRV-12345"
-            value={crv}
-            onChange={(e) => setCrv(e.target.value)}
-          />
-          <p className="text-xs text-zinc-500 mt-1">
-            Cash Receipt Voucher number assigned by the finance office.
-          </p>
-        </FormField>
+        <div className="text-xs text-zinc-500 bg-zinc-50 border border-zinc-200 rounded-lg p-3">
+          Note: The Cash Receipt Voucher (CRV) will be automatically generated and assigned once this payment is fully approved (Reconciled) via the Approval state.
+        </div>
 
         <FormField id="note" label="Internal Notes (Optional)">
           <Input
@@ -83,7 +73,7 @@ export function MarkPaidDialog({
         </Button>
         <Button
           type="button"
-          onClick={() => onConfirm(fee.id, note || undefined, crv)}
+          onClick={() => onConfirm(fee.id, note || undefined)}
           disabled={isPending || !canConfirm}
           className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
         >

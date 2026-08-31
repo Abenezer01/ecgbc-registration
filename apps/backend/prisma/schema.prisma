@@ -163,19 +163,19 @@ model Report {
 }
 
 model File {
-  id                    String              @id @default(uuid())
+  id                    String               @id @default(uuid())
   fileName              String?
   file                  String?
   memberId              String?
   councilFellowshipId   String?
   categoryId            String?
   registrationRequestId String?
-  isFromSelamMinster    Boolean?            @default(false)
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
-  councilFellowship     CouncilFellowship?  @relation(fields: [councilFellowshipId], references: [id])
-  member                Member?             @relation("MemberFiles", fields: [memberId], references: [id])
-  category              DataLookup?         @relation("FileCategoryLookup", fields: [categoryId], references: [id])
+  isFromSelamMinster    Boolean?             @default(false)
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  councilFellowship     CouncilFellowship?   @relation(fields: [councilFellowshipId], references: [id])
+  member                Member?              @relation("MemberFiles", fields: [memberId], references: [id])
+  category              DataLookup?          @relation("FileCategoryLookup", fields: [categoryId], references: [id])
   registrationRequest   RegistrationRequest? @relation("RegistrationRequestFiles", fields: [registrationRequestId], references: [id])
 
   @@index([councilFellowshipId], map: "File_councilFellowshipId_fkey")
@@ -289,30 +289,31 @@ model CategoryFeeRate {
 }
 
 model ReportingFee {
-  id              String      @id @default(uuid())
-  reportId        String      @unique
-  memberId        String
-  amount          Decimal     @db.Decimal(10, 2)
-  baseAmount      Decimal?    @db.Decimal(10, 2)
-  currency        String      @default("ETB")
-  status          String      @default("PENDING")
-  isLate          Boolean     @default(false)
-  isOverridden    Boolean     @default(false)
-  feeRuleId       String?
-  paymentMethodId String?
-  note            String?     @db.Text
-  crv             String? // Cash Receipt Voucher number — assigned by finance
-  sentAt          DateTime?
-  paidAt          DateTime?
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  report          Report      @relation(fields: [reportId], references: [id])
-  member          Member      @relation(fields: [memberId], references: [id])
-  feeRule         FeeRule?    @relation(fields: [feeRuleId], references: [id])
-  paymentMethod   DataLookup? @relation("FeePaymentMethod", fields: [paymentMethodId], references: [id])
+  id                 String      @id @default(uuid())
+  reportId           String      @unique
+  memberId           String
+  amount             Decimal     @db.Decimal(10, 2)
+  paidAmount         Float       @default(0)
+  baseAmount         Decimal?    @db.Decimal(10, 2)
+  currency           String      @default("ETB")
+  currentActionState String?     @default("DRAFT")
+  isLate             Boolean     @default(false)
+  isOverridden       Boolean     @default(false)
+  feeRuleId          String?
+  paymentMethodId    String?
+  note               String?     @db.Text
+  crv                String? // Cash Receipt Voucher number — assigned by finance
+  sentAt             DateTime?
+  paidAt             DateTime?
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  report             Report      @relation(fields: [reportId], references: [id])
+  member             Member      @relation(fields: [memberId], references: [id])
+  feeRule            FeeRule?    @relation(fields: [feeRuleId], references: [id])
+  paymentMethod      DataLookup? @relation("FeePaymentMethod", fields: [paymentMethodId], references: [id])
 
   @@index([memberId])
-  @@index([status])
+  @@index([currentActionState])
   @@index([feeRuleId])
   @@index([paymentMethodId])
 }
@@ -422,7 +423,7 @@ model ContactPerson {
 model NameReservation {
   id                   String    @id @default(uuid())
   reservationCode      String?   @unique
-  proposedNames        Json?     // Array of { nameAm: string, nameEn: string }
+  proposedNames        Json? // Array of { nameAm: string, nameEn: string }
   requestedNameAm      String
   requestedNameEn      String?
   status               String    @default("PENDING") // PENDING, APPROVED, REJECTED, USED, EXPIRED
@@ -446,10 +447,10 @@ model NameReservation {
 }
 
 model RegistrationRequest {
-  id     String  @id @default(uuid())
-  nameAm String
-  nameEn String?
-  reservationCode String? 
+  id              String  @id @default(uuid())
+  nameAm          String
+  nameEn          String?
+  reservationCode String?
 
   // Registration Details
   certificateNo         String? // Optional during application
@@ -494,4 +495,12 @@ model RegistrationRequest {
   files             File[]             @relation("RegistrationRequestFiles")
 
   @@index([status])
+}
+
+model CRVSequence {
+  id        String   @id @default(uuid())
+  year      Int      @unique
+  lastValue Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

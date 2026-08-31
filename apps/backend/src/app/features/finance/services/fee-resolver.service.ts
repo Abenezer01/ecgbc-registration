@@ -150,7 +150,7 @@ export async function resolveFeeAndCreate(
 
   if (!member) return;
 
-  const initialStatus = report?.crv ? "PAID" : "PENDING";
+  const initialActionState = report?.crv ? "PAID" : "DRAFT";
 
   let feeMode = "AUTO";
   let dueDate: Date | null = null;
@@ -177,9 +177,9 @@ export async function resolveFeeAndCreate(
         memberId,
         amount: new Decimal(0),
         currency: "ETB",
-        status: initialStatus,
+        currentActionState: initialActionState,
         isOverridden: false,
-        ...(initialStatus === "PAID" ? { paidAt: new Date() } : {}),
+        ...(initialActionState === "PAID" ? { paidAt: new Date() } : {}),
       },
     });
     return;
@@ -230,9 +230,9 @@ export async function resolveFeeAndCreate(
       currency: bestRule.currency,
       feeRuleId: bestRule.id,
       isLate,
-      status: initialStatus,
+      currentActionState: initialActionState,
       isOverridden: false,
-      ...(initialStatus === "PAID" ? { paidAt: new Date() } : {}),
+      ...(initialActionState === "PAID" ? { paidAt: new Date() } : {}),
     },
   });
 }
