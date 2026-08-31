@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Phone, Users, User, FileText, FolderOpen, ShieldAlert,
-  AlertTriangle, Plus,,
+  AlertTriangle, Plus,
   History
 } from "lucide-react";
 import {
