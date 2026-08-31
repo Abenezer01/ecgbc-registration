@@ -8,6 +8,7 @@ import { usePaymentMethods, useVerifyPayment } from "@/hooks/useFinance";
 import { useAuth } from "@/hooks/useAuth";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
+import ActionStateDrawer from "@/components/action-state/ActionStateDrawer";
 
 interface ReportsTabProps {
   member: any;
@@ -210,6 +211,22 @@ export function ReportsTab({ member }: ReportsTabProps) {
       cell: (row: any) => {
         if (!row.reportingFee?.crv) return <span className="text-zinc-400 text-xs">—</span>;
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">{row.reportingFee.crv}</span>;
+      }
+    },
+    {
+      key: "approval",
+      header: "Payment Approval",
+      cell: (row: any) => {
+        if (!row.reportingFee) return <span className="text-zinc-400 text-xs">—</span>;
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <ActionStateDrawer
+              entityType="PAYMENT"
+              entityId={row.reportingFee.id}
+              currentActionState={row.reportingFee.currentActionState}
+            />
+          </div>
+        );
       }
     },
     {
