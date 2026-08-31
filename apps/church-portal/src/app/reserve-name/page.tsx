@@ -48,7 +48,7 @@ export default function ReserveNamePage() {
     }
     setCheckingName(true);
     try {
-      const { data } = await publicApi.post("/name-reservations/public/check", { 
+      const { data } = await publicApi.post("/name-reservations/check", { 
         nameAm: pn.nameAm, 
         nameEn: pn.nameEn 
       });

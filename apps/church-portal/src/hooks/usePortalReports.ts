@@ -18,7 +18,7 @@ export interface Report {
     id: string;
     amount: string;
     currency: string;
-    status: "PENDING" | "SENT" | "PAID";
+    currentActionState: "DRAFT" | "ISSUED" | "PROCESSING" | "PAID" | "RECONCILED";
   };
 }
 
@@ -112,24 +112,7 @@ export function useCreatePortalReport() {
   });
 }
 
-export function useSubmitReportPayment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      reportId,
-      crv,
-    }: {
-      reportId: string;
-      crv: string;
-    }) => {
-      const res = await api.patch(`/church-portal/reports/${reportId}/payment`, { crv });
-      return res.data.data.report;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["portal-reports"] });
-    },
-  });
-}
+
 
 export interface PaymentMethod {
   id: string;

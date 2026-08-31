@@ -147,13 +147,19 @@ export default function ReportsPage() {
 
   const feeStatusBadge = (fee: Report["reportingFee"]) => {
     if (!fee) return null;
-    if (fee.status === "PAID")
+    if (fee.currentActionState === "PAID" || fee.currentActionState === "RECONCILED")
       return (
         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
-          <CheckCircle2 className="h-3 w-3" /> Paid
+          <CheckCircle2 className="h-3 w-3" /> {fee.currentActionState === "RECONCILED" ? "Reconciled" : "Paid"}
         </span>
       );
-    if (fee.status === "SENT")
+    if (fee.currentActionState === "PROCESSING")
+      return (
+        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+          <Clock className="h-3 w-3" /> Processing
+        </span>
+      );
+    if (fee.currentActionState === "ISSUED")
       return (
         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
           <Banknote className="h-3 w-3" /> Invoiced
@@ -161,7 +167,7 @@ export default function ReportsPage() {
       );
     return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-        <Clock className="h-3 w-3" /> Pending
+        <Clock className="h-3 w-3" /> Draft
       </span>
     );
   };
@@ -201,7 +207,7 @@ export default function ReportsPage() {
               {formatCurrency(row.reportingFee.amount, row.reportingFee.currency)}
             </p>
             {feeStatusBadge(row.reportingFee)}
-            {row.reportingFee.status !== "PAID" && (
+            {row.reportingFee.currentActionState !== "PAID" && row.reportingFee.currentActionState !== "RECONCILED" && (
               <p className="text-[10px] text-zinc-400 leading-tight">
                 Please visit the finance office to complete payment.
               </p>
@@ -254,7 +260,7 @@ export default function ReportsPage() {
               <FileDown className="h-3.5 w-3.5" /> Invoice
             </Button>
           )}
-          {row.reportingFee && row.reportingFee.status === "PAID" && (
+          {row.reportingFee && row.reportingFee.currentActionState === "RECONCILED" && (
             <Button
               onClick={() => {
                 setSelectedReport(row);

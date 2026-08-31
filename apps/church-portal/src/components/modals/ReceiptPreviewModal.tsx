@@ -19,8 +19,8 @@ export function ReceiptPreviewModal({ open, onClose, report, churchProfile }: Re
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleDownload = async () => {
-    if (!report.reportingFee || report.reportingFee.status !== "PAID") {
-      setError("No paid reporting fee found for this report");
+    if (!report.reportingFee || report.reportingFee.currentActionState !== "RECONCILED") {
+      setError("No cleared reporting fee found for this report");
       return;
     }
 
@@ -38,7 +38,7 @@ export function ReceiptPreviewModal({ open, onClose, report, churchProfile }: Re
   };
 
   const generatePreviewContent = (): string => {
-    if (!report || !report.reportingFee || report.reportingFee.status !== "PAID") return "";
+    if (!report || !report.reportingFee || report.reportingFee.currentActionState !== "RECONCILED") return "";
 
     const paidDate = formatDate(report.reportingFee.paidAt || new Date(), "medium");
     const reference = report.crv || report.bankReference || "N/A";
