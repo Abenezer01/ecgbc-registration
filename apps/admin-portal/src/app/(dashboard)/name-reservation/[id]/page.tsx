@@ -38,7 +38,7 @@ export default function NameReservationReviewPage() {
   const checkNameSimilarity = async (index: number, nameAm: string, nameEn: string = "") => {
     setCheckingName(index);
     try {
-      const res = await api.post("/name-reservations/check", { nameAm, nameEn });
+      const res = await api.post("/name-reservations/public/check", { nameAm, nameEn });
       setNameChecks(prev => ({ ...prev, [index]: res.data?.data?.matches ?? [] }));
     } catch (error) {
       toast.error("Failed to check name similarity");

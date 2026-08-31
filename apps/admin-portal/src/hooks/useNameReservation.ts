@@ -41,7 +41,7 @@ export function useNameReservation() {
 
   const checkNameMutation = useMutation({
     mutationFn: async (data: { nameAm: string; nameEn?: string }) => {
-      const response = await api.post("/name-reservations/check", data);
+      const response = await api.post("/name-reservations/public/check", data);
       return (response.data as any).data.matches as NameCheckMatch[];
     },
     onError: (error: any) => {
