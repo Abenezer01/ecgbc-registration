@@ -7,6 +7,7 @@ import { DataLookup } from "@prisma/client";
 import { CommonObjectState, MemberType } from "../../data-lookup/enums/data-lookup.enum";
 import { sendSuccessResponse, sendPaginatedResponse } from "../../../shared/helpers/response.helper";
 import { logActivity, ActivityAction, ActivityEntity } from "../../../shared/services/activity.service";
+import { CertificateService } from "../../../shared/services/certificate.service";
 
 // Helper to get allowed ministry fellowship IDs for current staff by email
 async function getAllowedMinistryIdsByEmail(email: string): Promise<string[]> {
@@ -1053,5 +1054,25 @@ export const toggleBoardMemberStatus = catchAsync(
     });
 
     sendSuccessResponse(res, { boardMember: updated });
+  }
+);
+
+export const regenerateCertificate = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const memberId = req.params.id;
+    
+    // RBAC: Check if current staff can access this member
+    await assertAccessToMemberId(req, memberId);
+
+    const file = await CertificateService.generateMemberCertificate(memberId);
+    
+    if (!file) {
+      return next(new AppError('Failed to generate certificate', 500));
+    }
+
+    sendSuccessResponse(res, { 
+      message: 'Certificate regenerated successfully',
+      file 
+    });
   }
 );

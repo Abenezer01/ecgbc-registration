@@ -160,4 +160,12 @@ router.patch(
   MemberController.toggleBoardMemberStatus
 );
 
+// Regenerate certificate PDF
+router.post(
+  '/:id/regenerate-certificate',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE), // Requires edit permission
+  MemberController.regenerateCertificate
+);
+
 export default router;

@@ -4,6 +4,7 @@ import prisma from '../../../config/db.config';
 import AppError from '../../../shared/errors/app.error';
 import { logActivity, ActivityAction, ActivityEntity } from "../../../shared/services/activity.service";
 import { CommonObjectState } from '../../data-lookup/enums/data-lookup.enum';
+import { CertificateService } from '../../../shared/services/certificate.service';
 
 // POST /api/v1/registration-requests/public/apply
 export const submitRegistration = async (req: Request, res: Response, next: NextFunction) => {
@@ -305,6 +306,11 @@ export const approveRegistration = async (req: Request, res: Response, next: Nex
         metadata: { source: 'RegistrationRequest', requestId: id },
       }, req);
     }
+
+    // Trigger certificate generation asynchronously
+    CertificateService.generateMemberCertificate(result.member.id).catch(err => {
+      console.error(`Failed to generate certificate for member ${result.member.id}:`, err);
+    });
 
     res.json({
       success: true,
