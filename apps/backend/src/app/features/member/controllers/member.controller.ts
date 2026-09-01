@@ -1062,7 +1062,7 @@ export const regenerateCertificate = catchAsync(
     const memberId = req.params.id;
     
     // RBAC: Check if current staff can access this member
-    await assertAccessToMemberId(req, memberId);
+    await assertAccessToMember(req, memberId);
 
     const file = await CertificateService.generateMemberCertificate(memberId);
     
