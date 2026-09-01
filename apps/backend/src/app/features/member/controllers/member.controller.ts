@@ -478,44 +478,6 @@ export const createMember = catchAsync(
       });
     }
 
-
-    const changes: Record<string, { old: any, new: any }> = {};
-
-    const trackChange = (field: string, oldVal: any, newVal: any) => {
-      if (newVal !== undefined && oldVal !== newVal) {
-        changes[field] = { old: oldVal || null, new: newVal || null };
-      }
-    };
-    
-    // Core fields
-    trackChange("phoneNumber", currentMember.phoneNumber, phoneNumber);
-    trackChange("regionId", currentMember.regionId, regionId);
-    trackChange("stateId", currentMember.stateId, stateId);
-    trackChange("city", currentMember.city, city);
-    trackChange("subcity", currentMember.subcity, subcity);
-    trackChange("zone", currentMember.zone, zone);
-    trackChange("district", currentMember.district, district);
-    trackChange("houseNumber", currentMember.houseNumber, houseNumber);
-    trackChange("poBoxNumber", currentMember.poBoxNumber, poBoxNumber);
-    trackChange("typeId", currentMember.typeId, typeId);
-    trackChange("memberCategoryId", currentMember.memberCategoryId, memberCategoryId);
-    
-    if (contactPersonFullName && contactPersonPhoneNumber) {
-       const cpOldName = currentMember.contactPerson?.fullName;
-       const cpOldPhone = currentMember.contactPerson?.phoneNumber;
-       if (cpOldName !== contactPersonFullName || cpOldPhone !== contactPersonPhoneNumber) {
-           changes["contactPerson"] = {
-               old: currentMember.contactPerson ? `${cpOldName} (${cpOldPhone})` : null,
-               new: `${contactPersonFullName} (${contactPersonPhoneNumber})`
-           };
-       }
-    } else if (updatedData.contactPerson?.delete) {
-       changes["contactPerson"] = {
-           old: currentMember.contactPerson ? `${currentMember.contactPerson.fullName} (${currentMember.contactPerson.phoneNumber})` : null,
-           new: null
-       };
-    }
-
     // Log activity
     await logActivity({
       action: ActivityAction.CREATE,
@@ -714,7 +676,6 @@ export const updateMember = catchAsync(
       },
     });
 
-
     const changes: Record<string, { old: any, new: any }> = {};
 
     const trackChange = (field: string, oldVal: any, newVal: any) => {
@@ -758,7 +719,12 @@ export const updateMember = catchAsync(
       entity: ActivityEntity.MEMBER,
       entityId: member.id,
       description: `Updated member ${member.name}`,
-      metadata: { memberId: member.id, name: member.name, certificateNo: member.certificateNo, changes: Object.keys(changes).length > 0 ? changes : undefined },
+      metadata: { 
+        memberId: member.id, 
+        name: member.name, 
+        certificateNo: member.certificateNo, 
+        changes: Object.keys(changes).length > 0 ? changes : undefined 
+      },
     }, req);
 
     sendSuccessResponse(res, { member });
@@ -798,44 +764,6 @@ export const activeMember = catchAsync(
         reports: true,
       },
     });
-
-
-    const changes: Record<string, { old: any, new: any }> = {};
-
-    const trackChange = (field: string, oldVal: any, newVal: any) => {
-      if (newVal !== undefined && oldVal !== newVal) {
-        changes[field] = { old: oldVal || null, new: newVal || null };
-      }
-    };
-    
-    // Core fields
-    trackChange("phoneNumber", currentMember.phoneNumber, phoneNumber);
-    trackChange("regionId", currentMember.regionId, regionId);
-    trackChange("stateId", currentMember.stateId, stateId);
-    trackChange("city", currentMember.city, city);
-    trackChange("subcity", currentMember.subcity, subcity);
-    trackChange("zone", currentMember.zone, zone);
-    trackChange("district", currentMember.district, district);
-    trackChange("houseNumber", currentMember.houseNumber, houseNumber);
-    trackChange("poBoxNumber", currentMember.poBoxNumber, poBoxNumber);
-    trackChange("typeId", currentMember.typeId, typeId);
-    trackChange("memberCategoryId", currentMember.memberCategoryId, memberCategoryId);
-    
-    if (contactPersonFullName && contactPersonPhoneNumber) {
-       const cpOldName = currentMember.contactPerson?.fullName;
-       const cpOldPhone = currentMember.contactPerson?.phoneNumber;
-       if (cpOldName !== contactPersonFullName || cpOldPhone !== contactPersonPhoneNumber) {
-           changes["contactPerson"] = {
-               old: currentMember.contactPerson ? `${cpOldName} (${cpOldPhone})` : null,
-               new: `${contactPersonFullName} (${contactPersonPhoneNumber})`
-           };
-       }
-    } else if (updatedData.contactPerson?.delete) {
-       changes["contactPerson"] = {
-           old: currentMember.contactPerson ? `${currentMember.contactPerson.fullName} (${currentMember.contactPerson.phoneNumber})` : null,
-           new: null
-       };
-    }
 
     // Log activity
     await logActivity({
@@ -884,44 +812,6 @@ export const inactiveMember = catchAsync(
         reports: true,
       },
     });
-
-
-    const changes: Record<string, { old: any, new: any }> = {};
-
-    const trackChange = (field: string, oldVal: any, newVal: any) => {
-      if (newVal !== undefined && oldVal !== newVal) {
-        changes[field] = { old: oldVal || null, new: newVal || null };
-      }
-    };
-    
-    // Core fields
-    trackChange("phoneNumber", currentMember.phoneNumber, phoneNumber);
-    trackChange("regionId", currentMember.regionId, regionId);
-    trackChange("stateId", currentMember.stateId, stateId);
-    trackChange("city", currentMember.city, city);
-    trackChange("subcity", currentMember.subcity, subcity);
-    trackChange("zone", currentMember.zone, zone);
-    trackChange("district", currentMember.district, district);
-    trackChange("houseNumber", currentMember.houseNumber, houseNumber);
-    trackChange("poBoxNumber", currentMember.poBoxNumber, poBoxNumber);
-    trackChange("typeId", currentMember.typeId, typeId);
-    trackChange("memberCategoryId", currentMember.memberCategoryId, memberCategoryId);
-    
-    if (contactPersonFullName && contactPersonPhoneNumber) {
-       const cpOldName = currentMember.contactPerson?.fullName;
-       const cpOldPhone = currentMember.contactPerson?.phoneNumber;
-       if (cpOldName !== contactPersonFullName || cpOldPhone !== contactPersonPhoneNumber) {
-           changes["contactPerson"] = {
-               old: currentMember.contactPerson ? `${cpOldName} (${cpOldPhone})` : null,
-               new: `${contactPersonFullName} (${contactPersonPhoneNumber})`
-           };
-       }
-    } else if (updatedData.contactPerson?.delete) {
-       changes["contactPerson"] = {
-           old: currentMember.contactPerson ? `${currentMember.contactPerson.fullName} (${currentMember.contactPerson.phoneNumber})` : null,
-           new: null
-       };
-    }
 
     // Log activity
     await logActivity({
@@ -1131,44 +1021,6 @@ export const hardDeleteMember = catchAsync(async (req: Request, res: Response, n
     await prisma.member.delete({
       where: { id },
     });
-
-
-    const changes: Record<string, { old: any, new: any }> = {};
-
-    const trackChange = (field: string, oldVal: any, newVal: any) => {
-      if (newVal !== undefined && oldVal !== newVal) {
-        changes[field] = { old: oldVal || null, new: newVal || null };
-      }
-    };
-    
-    // Core fields
-    trackChange("phoneNumber", currentMember.phoneNumber, phoneNumber);
-    trackChange("regionId", currentMember.regionId, regionId);
-    trackChange("stateId", currentMember.stateId, stateId);
-    trackChange("city", currentMember.city, city);
-    trackChange("subcity", currentMember.subcity, subcity);
-    trackChange("zone", currentMember.zone, zone);
-    trackChange("district", currentMember.district, district);
-    trackChange("houseNumber", currentMember.houseNumber, houseNumber);
-    trackChange("poBoxNumber", currentMember.poBoxNumber, poBoxNumber);
-    trackChange("typeId", currentMember.typeId, typeId);
-    trackChange("memberCategoryId", currentMember.memberCategoryId, memberCategoryId);
-    
-    if (contactPersonFullName && contactPersonPhoneNumber) {
-       const cpOldName = currentMember.contactPerson?.fullName;
-       const cpOldPhone = currentMember.contactPerson?.phoneNumber;
-       if (cpOldName !== contactPersonFullName || cpOldPhone !== contactPersonPhoneNumber) {
-           changes["contactPerson"] = {
-               old: currentMember.contactPerson ? `${cpOldName} (${cpOldPhone})` : null,
-               new: `${contactPersonFullName} (${contactPersonPhoneNumber})`
-           };
-       }
-    } else if (updatedData.contactPerson?.delete) {
-       changes["contactPerson"] = {
-           old: currentMember.contactPerson ? `${currentMember.contactPerson.fullName} (${currentMember.contactPerson.phoneNumber})` : null,
-           new: null
-       };
-    }
 
     // Log activity
     await logActivity({
