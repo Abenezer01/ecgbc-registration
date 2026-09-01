@@ -75,7 +75,6 @@ export function FeeTable({ fees, isLoading, onSendClick, onPayClick, onVerifyCli
             entityType="PAYMENT"
             entityId={row.id}
             currentActionState={row.currentActionState}
-            triggerClassName="h-7 px-2 text-xs"
           />
         </div>
       ),

@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Eye, History, RefreshCw, AlertTriangle, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert } from "lucide-react";
-import { Button, DataTable, Badge, Modal, FormField, Pagination } from "@/components/ui";
+import { Button, DataTable, Badge, Modal, ModalFooter, FormField, Pagination } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useMember } from "@/hooks/useMembers";
 import { useAuth } from "@/hooks/useAuth";
@@ -172,17 +172,19 @@ export default function MemberHistoryPage() {
             </Button>
           </div>
           
-          <DataTable
+          <DataTable<ActivityLog>
             columns={COLUMNS}
             data={logs}
             isLoading={isLoading}
-            emptyMessage="No activity logs found for this member."
+            rowKey={(row) => row.id}
+            emptyTitle="No activity logs found for this member."
           />
           {total > PAGE_SIZE && (
             <div className="mt-4">
               <Pagination
-                currentPage={page}
-                totalPages={Math.ceil(total / PAGE_SIZE)}
+                page={page}
+                pageSize={PAGE_SIZE}
+                total={total}
                 onPageChange={setPage}
               />
             </div>
