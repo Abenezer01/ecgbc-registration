@@ -20,7 +20,7 @@ import { useDataLookups } from "@/hooks/useDataLookups";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { useRequiredDocumentTypes, useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
-import { useMember } from "@/hooks/useMembers";
+import { useMember, useRegenerateCertificate } from "@/hooks/useMembers";
 
 interface EditingFile {
   id: string;
@@ -81,6 +81,7 @@ export default function DocumentsPage() {
   const { mutateAsync: uploadFiles, isPending: uploading }     = useUploadMemberFiles();
   const { mutateAsync: updateFile,  isPending: updatingFile }  = useUpdateMemberFile();
   const { mutateAsync: deleteFile }                            = useDeleteMemberFile();
+  const { mutateAsync: regenerateCert, isPending: regeneratingCert } = useRegenerateCertificate();
 
   const fileCategoryOptions = lookups.filter((l) => l.type === "Document Type");
 
@@ -239,11 +240,24 @@ export default function DocumentsPage() {
                 <FolderOpen className="h-4 w-4 text-zinc-400" />
                 Attached Files
               </h3>
-              {canAdd && (
-                <Button size="sm" onClick={() => setUploadOpen(true)} className="gap-1.5">
-                  <Plus className="h-4 w-4" /> Add File
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {canEdit && (
+                  <Button size="sm" variant="outline" loading={regeneratingCert} onClick={async () => {
+                    try {
+                      await regenerateCert(memberId);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }} className="gap-1.5">
+                    <History className="h-4 w-4" /> Regenerate Certificate
+                  </Button>
+                )}
+                {canAdd && (
+                  <Button size="sm" onClick={() => setUploadOpen(true)} className="gap-1.5">
+                    <Plus className="h-4 w-4" /> Add File
+                  </Button>
+                )}
+              </div>
             </div>
 
             {isLoading ? (

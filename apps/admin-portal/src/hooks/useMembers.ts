@@ -151,3 +151,21 @@ export function useUpdateMember() {
     },
   });
 }
+
+export function useRegenerateCertificate() {
+  const { post } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (memberId: string) => {
+      const res = await post(`/members/${memberId}/regenerate-certificate`, {});
+      return extractData(res);
+    },
+    onSuccess: (_, memberId) => {
+      // Invalidate both member details and their files
+      queryClient.invalidateQueries({ queryKey: ["member", memberId] });
+      queryClient.invalidateQueries({ queryKey: ["memberFiles", memberId] });
+      queryClient.invalidateQueries({ queryKey: ["documentCompleteness", memberId] });
+    },
+  });
+}
