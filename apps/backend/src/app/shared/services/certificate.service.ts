@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, degrees } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import QRCode from 'qrcode';
 import fs from 'fs/promises';
@@ -8,7 +8,7 @@ import { DESTINANTIONS } from '../../config/multer.config';
 import { v4 as uuidv4 } from "uuid";
 
 export class CertificateService {
-  static async generateMemberCertificate(memberId: string, useImageFallback = true): Promise<any> {
+  static async generateMemberCertificate(memberId: string): Promise<any> {
     try {
       const member = await prisma.member.findUnique({
         where: { id: memberId },
@@ -16,49 +16,14 @@ export class CertificateService {
       });
       if (!member) throw new Error(`Member with ID ${memberId} not found.`);
 
-      const templatePath = path.join(__dirname, '../../../../public/templates/certificate-template.pdf');
-      const fallbackImagePath = path.join(__dirname, '../../../../public/templates/certificate-bg.jpg');
       const fontPath = path.join(__dirname, '../../../../public/fonts/AmharicFont.ttf');
 
-      let pdfDoc: PDFDocument;
-      let isFallback = false;
-
-      // Try loading the PDF template
-      try {
-        const templateBytes = await fs.readFile(templatePath);
-        pdfDoc = await PDFDocument.load(templateBytes);
-      } catch (err) {
-        if (!useImageFallback) {
-          console.warn(`Template not found at ${templatePath}.`);
-          return null;
-        }
-        
-        // Fallback: create PDF from image
-        try {
-          const imageBytes = await fs.readFile(fallbackImagePath);
-          pdfDoc = await PDFDocument.create();
-          const image = await pdfDoc.embedJpg(imageBytes);
-          
-          // The image is portrait but the certificate is landscape.
-          // Let's create a landscape page and draw the image rotated.
-          const page = pdfDoc.addPage([image.height, image.width]);
-          
-          page.drawImage(image, {
-            x: 0,
-            y: image.width,
-            width: image.width,
-            height: image.height,
-            rotate: degrees(-90)
-          });
-          
-          isFallback = true;
-        } catch (imgErr) {
-          console.warn(`Neither PDF template nor fallback image found.`);
-          return null;
-        }
-      }
-
-      // Font
+      // Create a new PDF document (A4 Landscape)
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([841.89, 595.28]);
+      const { width, height } = page.getSize();
+      
+      // Fonts
       let fontBytes: Buffer;
       try {
         fontBytes = await fs.readFile(fontPath);
@@ -70,62 +35,109 @@ export class CertificateService {
       pdfDoc.registerFontkit(fontkit);
       const customFont = await pdfDoc.embedFont(fontBytes);
 
-      const firstPage = pdfDoc.getPages()[0];
-      const { width, height } = firstPage.getSize();
-      const textColor = rgb(0, 0, 0);
-      const whiteColor = rgb(1, 1, 1);
+      // Colors
+      const goldColor = rgb(0.85, 0.65, 0.13); // Goldenrod
+      const darkBlueColor = rgb(0.0, 0.2, 0.4); // Dark blue text
+      const blackColor = rgb(0, 0, 0);
 
-      // Coordinates specific to the fallback image provided (roughly estimated)
-      // If we use the fallback image, we need to blank out the handwritten parts.
-      if (isFallback) {
-        // Blank out Church Name (Amharic & English)
-        firstPage.drawRectangle({ x: width * 0.25, y: height * 0.65, width: width * 0.5, height: height * 0.1, color: whiteColor });
-        // Blank out Date
-        firstPage.drawRectangle({ x: width * 0.55, y: height * 0.56, width: width * 0.2, height: height * 0.05, color: whiteColor });
-        // Blank out Certificate No
-        firstPage.drawRectangle({ x: width * 0.55, y: height * 0.51, width: width * 0.2, height: height * 0.05, color: whiteColor });
-        
-        // Draw new text
-        firstPage.drawText(member.name, { x: width * 0.3, y: height * 0.70, size: 28, font: customFont, color: textColor });
-        if (member.nameEn) {
-          firstPage.drawText(member.nameEn, { x: width * 0.3, y: height * 0.66, size: 20, font: customFont, color: textColor });
-        }
-        firstPage.drawText(member.certificateNo, { x: width * 0.6, y: height * 0.52, size: 18, font: customFont, color: textColor });
-        
-        const issuedDate = member.certificateIssuedDate ? new Date(member.certificateIssuedDate).toLocaleDateString() : new Date().toLocaleDateString();
-        firstPage.drawText(issuedDate, { x: width * 0.6, y: height * 0.57, size: 18, font: customFont, color: textColor });
-      } else {
-        // Standard PDF Template coordinate logic
-        firstPage.drawText(member.name, { x: width / 2 - 100, y: height - 350, size: 24, font: customFont, color: textColor });
-        if (member.nameEn) {
-          firstPage.drawText(member.nameEn, { x: width / 2 - 100, y: height - 390, size: 20, font: customFont, color: textColor });
-        }
-        firstPage.drawText(`No: ${member.certificateNo}`, { x: width / 2 - 100, y: height - 440, size: 16, font: customFont, color: textColor });
-        const issuedDate = member.certificateIssuedDate ? new Date(member.certificateIssuedDate).toLocaleDateString() : new Date().toLocaleDateString();
-        firstPage.drawText(`Date: ${issuedDate}`, { x: width / 2 - 100, y: height - 470, size: 16, font: customFont, color: textColor });
+      // ── Borders ─────────────────────────────────────────────────────────────
+      // Outer Gold Border
+      page.drawRectangle({
+        x: 30, y: 30, width: width - 60, height: height - 60,
+        borderColor: goldColor, borderWidth: 4,
+      });
+
+      // Inner Dark Blue Border
+      page.drawRectangle({
+        x: 38, y: 38, width: width - 76, height: height - 76,
+        borderColor: darkBlueColor, borderWidth: 1,
+      });
+      
+      // Inner Gold Border
+      page.drawRectangle({
+        x: 42, y: 42, width: width - 84, height: height - 84,
+        borderColor: goldColor, borderWidth: 2,
+      });
+
+      // ── Helper to center text ───────────────────────────────────────────────
+      const drawCenteredText = (text: string, y: number, size: number, color: any) => {
+        const textWidth = customFont.widthOfTextAtSize(text, size);
+        page.drawText(text, { x: (width - textWidth) / 2, y, size, font: customFont, color });
+      };
+
+      // ── Headers ─────────────────────────────────────────────────────────────
+      const titleAmh = "የኢትዮጵያ ክርስቲያን ወንጌል አማኞች አብያተ ክርስቲያናት ካውንስል";
+      const titleEng = "Ethiopian Christian Gospel Believers Churches Council";
+      const certTitleAmh = "የምዝገባ ምስክር ወረቀት";
+      const certTitleEng = "CERTIFICATE OF REGISTRATION";
+
+      drawCenteredText(titleAmh, height - 100, 24, darkBlueColor);
+      drawCenteredText(titleEng, height - 130, 18, darkBlueColor);
+      
+      // Decorative Divider
+      page.drawLine({
+        start: { x: width / 2 - 150, y: height - 150 },
+        end: { x: width / 2 + 150, y: height - 150 },
+        thickness: 2, color: goldColor,
+      });
+
+      drawCenteredText(certTitleAmh, height - 200, 32, goldColor);
+      drawCenteredText(certTitleEng, height - 235, 22, goldColor);
+
+      // ── Member Details ──────────────────────────────────────────────────────
+      const nameAmh = member.name;
+      const nameEng = member.nameEn || "";
+      const certNo = member.certificateNo;
+      const issuedDate = member.certificateIssuedDate ? new Date(member.certificateIssuedDate).toLocaleDateString() : new Date().toLocaleDateString();
+
+      const labelX = 120;
+      const valueX = 300;
+
+      page.drawText("ስም / Name:", { x: labelX, y: height - 310, size: 16, font: customFont, color: blackColor });
+      page.drawText(nameAmh, { x: valueX, y: height - 310, size: 20, font: customFont, color: darkBlueColor });
+      
+      if (nameEng) {
+        page.drawText(nameEng, { x: valueX, y: height - 340, size: 16, font: customFont, color: darkBlueColor });
       }
 
-      // QR Code
+      page.drawText("የምስክር ወረቀት ቁጥር /", { x: labelX, y: height - 390, size: 16, font: customFont, color: blackColor });
+      page.drawText("Certificate No:", { x: labelX, y: height - 410, size: 16, font: customFont, color: blackColor });
+      page.drawText(certNo, { x: valueX, y: height - 400, size: 18, font: customFont, color: darkBlueColor });
+
+      page.drawText("የተሰጠበት ቀን / Date:", { x: labelX, y: height - 450, size: 16, font: customFont, color: blackColor });
+      page.drawText(issuedDate, { x: valueX, y: height - 450, size: 18, font: customFont, color: darkBlueColor });
+
+      // ── Signatures ──────────────────────────────────────────────────────────
+      // President Signature
+      page.drawLine({ start: { x: 150, y: 100 }, end: { x: 350, y: 100 }, thickness: 1, color: blackColor });
+      page.drawText("ፕሬዝዳንት / President", { x: 200, y: 75, size: 12, font: customFont, color: blackColor });
+
+      // General Secretary Signature
+      page.drawLine({ start: { x: 490, y: 100 }, end: { x: 690, y: 100 }, thickness: 1, color: blackColor });
+      page.drawText("ዋና ፀሀፊ / General Secretary", { x: 520, y: 75, size: 12, font: customFont, color: blackColor });
+
+      // ── QR Code ─────────────────────────────────────────────────────────────
       const verificationUrl = `https://ecgbc.org/verify/${member.certificateNo}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1 });
+      const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#003366', light: '#FFFFFF' } });
       const qrImageBytes = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
       const qrImage = await pdfDoc.embedPng(qrImageBytes);
       const qrDims = qrImage.scale(0.5);
       
-      firstPage.drawImage(qrImage, {
-        x: isFallback ? width * 0.75 : width - 200,
-        y: isFallback ? height * 0.2 : 100,
+      page.drawImage(qrImage, {
+        x: width - 150,
+        y: height - 170,
         width: qrDims.width,
         height: qrDims.height,
       });
 
-      // Save
+      // ── Save ────────────────────────────────────────────────────────────────
       const pdfBytes = await pdfDoc.save();
       const fileName = `Certificate_${member.certificateNo}_${uuidv4()}.pdf`;
       const saveDir = path.join(__dirname, '../../config', DESTINANTIONS.FILE.FILE);
       await fs.mkdir(saveDir, { recursive: true });
       await fs.writeFile(path.join(saveDir, fileName), pdfBytes);
 
+      // Save to DB
       const category = await prisma.dataLookup.findFirst({
         where: { value: 'CERTIFICATE_AND_LETTER', category: 'FILE_TYPE' },
       });
