@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "@/lib/useApi";
+import api from "@/lib/api";
 import type { Member } from "../types";
 import { buildQueryString } from "../lib/query-builder";
 import { extractData, extractPaginatedData } from "../lib/response-parser";
@@ -174,16 +175,10 @@ export function usePreviewCertificate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (memberId: string) => {
-      const token = localStorage.getItem("staff_token");
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-      const res = await fetch(`${baseURL}/members/${memberId}/preview-certificate`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+      const res = await api.get(`/members/${memberId}/preview-certificate`, {
+        responseType: "blob"
       });
-      if (!res.ok) throw new Error("Failed to preview certificate");
-      const blob = await res.blob();
-      return URL.createObjectURL(blob);
+      return URL.createObjectURL(res.data);
     },
   });
 }
