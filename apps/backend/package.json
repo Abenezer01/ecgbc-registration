@@ -9,7 +9,7 @@
     "prisma:generate": "npx prisma generate",
     "serve": "node dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
-    "build": "tsc",
+    "build": "npx puppeteer browsers install chrome && tsc",
     "reset": "tsx ./src/seeders/reset/reset.runner.ts",
     "seed:datalookup": "tsx ./src/seeders/data-lookup/create.runner.ts",
     "seed:board-titles": "tsx ./src/seeders/data-lookup/seed-board-titles.runner.ts",
