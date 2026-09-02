@@ -110,9 +110,9 @@ export class CertificateService {
       });
 
       return newFile;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating certificate with Puppeteer:', error);
-      return null;
+      throw new Error(`PDF Generation failed: ${error.message || String(error)}`);
     } finally {
       if (browser) {
         await browser.close();

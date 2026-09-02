@@ -1064,16 +1064,15 @@ export const regenerateCertificate = catchAsync(
     // RBAC: Check if current staff can access this member
     await assertAccessToMember(req, memberId);
 
-    const file = await CertificateService.generateMemberCertificate(memberId);
-    
-    if (!file) {
-      return next(new AppError('Failed to generate certificate', 500));
+    try {
+      const file = await CertificateService.generateMemberCertificate(memberId);
+      sendSuccessResponse(res, { 
+        message: 'Certificate regenerated successfully',
+        file 
+      });
+    } catch (err: any) {
+      return next(new AppError(err.message || 'Failed to generate certificate', 500));
     }
-
-    sendSuccessResponse(res, { 
-      message: 'Certificate regenerated successfully',
-      file 
-    });
   }
 );
 
@@ -1084,14 +1083,13 @@ export const previewCertificate = catchAsync(
     // RBAC: Check if current staff can access this member
     await assertAccessToMember(req, memberId);
 
-    const pdfBuffer = await CertificateService.generateMemberCertificate(memberId, true);
-    
-    if (!pdfBuffer) {
-      return next(new AppError('Failed to generate certificate preview', 500));
+    try {
+      const pdfBuffer = await CertificateService.generateMemberCertificate(memberId, true);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
+      res.send(pdfBuffer);
+    } catch (err: any) {
+      return next(new AppError(err.message || 'Failed to generate certificate preview', 500));
     }
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
-    res.send(pdfBuffer);
   }
 );
