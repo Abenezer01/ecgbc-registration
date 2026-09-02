@@ -385,7 +385,7 @@ export default function DocumentsPage() {
       </Modal>
 
       {/* Preview Certificate Modal */}
-      <Modal open={previewModalOpen} onOpenChange={setPreviewModalOpen} title="Preview Certificate">
+      <Modal open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} title="Preview Certificate">
         <div className="space-y-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             This is a preview of the certificate that will be generated.
