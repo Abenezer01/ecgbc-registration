@@ -385,17 +385,17 @@ export default function DocumentsPage() {
       </Modal>
 
       {/* Preview Certificate Modal */}
-      <Modal open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} title="Preview Certificate">
+      <Modal open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} title="Preview Certificate" size="2xl">
         <div className="space-y-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             This is a preview of the certificate that will be generated.
           </p>
           {previewBlobUrl ? (
-            <div className="w-full h-[60vh] bg-zinc-100 dark:bg-zinc-900 border rounded-xl overflow-hidden">
+            <div className="w-full h-[75vh] bg-zinc-100 dark:bg-zinc-900 border rounded-xl overflow-hidden">
               <iframe src={previewBlobUrl} className="w-full h-full" title="Certificate Preview" />
             </div>
           ) : (
-            <div className="w-full h-[60vh] flex items-center justify-center text-zinc-500">
+            <div className="w-full h-[75vh] flex items-center justify-center text-zinc-500">
               Loading preview...
             </div>
           )}
