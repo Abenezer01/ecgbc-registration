@@ -160,6 +160,14 @@ router.patch(
   MemberController.toggleBoardMemberStatus
 );
 
+// Preview certificate PDF
+router.get(
+  '/:id/preview-certificate',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW), // Requires view permission
+  MemberController.previewCertificate
+);
+
 // Regenerate certificate PDF
 router.post(
   '/:id/regenerate-certificate',

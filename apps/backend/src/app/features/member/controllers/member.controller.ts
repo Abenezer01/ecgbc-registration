@@ -1076,3 +1076,22 @@ export const regenerateCertificate = catchAsync(
     });
   }
 );
+
+export const previewCertificate = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const memberId = req.params.id;
+    
+    // RBAC: Check if current staff can access this member
+    await assertAccessToMember(req, memberId);
+
+    const pdfBuffer = await CertificateService.generateMemberCertificate(memberId, true);
+    
+    if (!pdfBuffer) {
+      return next(new AppError('Failed to generate certificate preview', 500));
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
+    res.send(pdfBuffer);
+  }
+);

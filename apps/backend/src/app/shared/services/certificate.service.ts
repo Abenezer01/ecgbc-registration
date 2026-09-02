@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import { certificateTemplate } from '../templates/certificate.template';
 
 export class CertificateService {
-  static async generateMemberCertificate(memberId: string): Promise<any> {
+  static async generateMemberCertificate(memberId: string, previewOnly: boolean = false): Promise<any> {
     let browser = null;
     try {
       const member = await prisma.member.findUnique({
@@ -83,6 +83,10 @@ export class CertificateService {
         printBackground: true,
         margin: { top: '0', right: '0', bottom: '0', left: '0' }
       });
+
+      if (previewOnly) {
+        return pdfBytes;
+      }
 
       // Save to disk
       const fileName = `Certificate_${member.certificateNo}_${uuidv4()}.pdf`;

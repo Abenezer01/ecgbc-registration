@@ -169,3 +169,21 @@ export function useRegenerateCertificate() {
     },
   });
 }
+
+export function usePreviewCertificate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (memberId: string) => {
+      const token = localStorage.getItem("staff_token");
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await fetch(`${baseURL}/members/${memberId}/preview-certificate`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error("Failed to preview certificate");
+      const blob = await res.blob();
+      return URL.createObjectURL(blob);
+    },
+  });
+}

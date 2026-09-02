@@ -20,7 +20,7 @@ import { useDataLookups } from "@/hooks/useDataLookups";
 import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { useRequiredDocumentTypes, useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
-import { useMember, useRegenerateCertificate } from "@/hooks/useMembers";
+import { useMember, useRegenerateCertificate, usePreviewCertificate } from "@/hooks/useMembers";
 
 interface EditingFile {
   id: string;
@@ -82,6 +82,10 @@ export default function DocumentsPage() {
   const { mutateAsync: updateFile,  isPending: updatingFile }  = useUpdateMemberFile();
   const { mutateAsync: deleteFile }                            = useDeleteMemberFile();
   const { mutateAsync: regenerateCert, isPending: regeneratingCert } = useRegenerateCertificate();
+  const { mutateAsync: previewCert, isPending: loadingPreview } = usePreviewCertificate();
+
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 
   const fileCategoryOptions = lookups.filter((l) => l.type === "Document Type");
 
@@ -242,14 +246,16 @@ export default function DocumentsPage() {
               </h3>
               <div className="flex gap-2">
                 {canEdit && (
-                  <Button size="sm" variant="outline" loading={regeneratingCert} onClick={async () => {
+                  <Button size="sm" variant="outline" loading={loadingPreview} onClick={async () => {
                     try {
-                      await regenerateCert(memberId);
+                      const blobUrl = await previewCert(memberId);
+                      setPreviewBlobUrl(blobUrl);
+                      setPreviewModalOpen(true);
                     } catch (err) {
                       console.error(err);
                     }
                   }} className="gap-1.5">
-                    <History className="h-4 w-4" /> Regenerate Certificate
+                    <Eye className="h-4 w-4" /> Preview & Regenerate Certificate
                   </Button>
                 )}
                 {canAdd && (
@@ -376,6 +382,42 @@ export default function DocumentsPage() {
             <Button type="submit" disabled={uploading}>{uploading ? "Uploading..." : "Upload Files"}</Button>
           </ModalFooter>
         </form>
+      </Modal>
+
+      {/* Preview Certificate Modal */}
+      <Modal open={previewModalOpen} onOpenChange={setPreviewModalOpen} title="Preview Certificate">
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            This is a preview of the certificate that will be generated.
+          </p>
+          {previewBlobUrl ? (
+            <div className="w-full h-[60vh] bg-zinc-100 dark:bg-zinc-900 border rounded-xl overflow-hidden">
+              <iframe src={previewBlobUrl} className="w-full h-full" title="Certificate Preview" />
+            </div>
+          ) : (
+            <div className="w-full h-[60vh] flex items-center justify-center text-zinc-500">
+              Loading preview...
+            </div>
+          )}
+        </div>
+        <ModalFooter className="mt-6 flex justify-end gap-3">
+          <Button variant="outline" onClick={() => setPreviewModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            loading={regeneratingCert} 
+            onClick={async () => {
+              try {
+                await regenerateCert(memberId);
+                setPreviewModalOpen(false);
+              } catch (err) {
+                console.error(err);
+              }
+            }}
+          >
+            Confirm & Save to Documents
+          </Button>
+        </ModalFooter>
       </Modal>
 
       {/* File Viewer */}
