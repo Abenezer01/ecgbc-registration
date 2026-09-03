@@ -9,6 +9,7 @@ import {
 import { verifyPaymentWithGateway } from "../services/verification.service";
 import { FeeStatus } from "../enums/fee-status.enum";
 import nodemailer from "nodemailer";
+import QRCode from "qrcode";
 import { previewFee } from "../services/fee-resolver.service";
 
 // ---------------------------------------------------------------------------
@@ -35,6 +36,11 @@ async function sendFeeEmail(opts: {
   feeId: string;
 }) {
   if (!process.env.SMTP_USER) return; // skip if email not configured
+  
+  const baseUrl = process.env.CHURCH_PORTAL_URL || 'https://mychurch.ecgbc.org';
+  const verificationUrl = `${baseUrl}/verify-fee/${opts.feeId}`;
+  const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#1d4ed8', light: '#FFFFFF' } });
+
   const transport = getMailTransport();
   await transport.sendMail({
     from: `"ECGBC Finance" <${process.env.SMTP_USER}>`,
@@ -55,6 +61,10 @@ async function sendFeeEmail(opts: {
             <td style="padding:8px;border:1px solid #e5e7eb;font-family:monospace">${opts.feeId.slice(0, 8).toUpperCase()}</td>
           </tr>
         </table>
+        <div style="margin: 20px 0; text-align: center;">
+          <p style="font-size: 14px; color: #4b5563;">Scan to Verify Invoice Authenticity</p>
+          <img src="${qrCodeDataUrl}" alt="Verification QR Code" style="width: 120px; height: 120px; border: 1px solid #e5e7eb; border-radius: 4px;" />
+        </div>
         <p>Please log in to the <strong>ECGBC Church Portal</strong> to view your outstanding fee.</p>
         <p style="color:#6b7280;font-size:12px">If you believe this was sent in error, contact your fellowship coordinator.</p>
       </div>
@@ -73,6 +83,11 @@ export async function sendReceiptEmail(opts: {
   bankReference?: string;
 }) {
   if (!process.env.SMTP_USER) return;
+
+  const baseUrl = process.env.CHURCH_PORTAL_URL || 'https://mychurch.ecgbc.org';
+  const verificationUrl = `${baseUrl}/verify-fee/${opts.feeId}`;
+  const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#10b981', light: '#FFFFFF' } });
+
   const transport = getMailTransport();
   await transport.sendMail({
     from: `"ECGBC Finance" <${process.env.SMTP_USER}>`,
@@ -103,6 +118,10 @@ export async function sendReceiptEmail(opts: {
             <td style="padding:8px;border:1px solid #e5e7eb;font-family:monospace">${opts.feeId.slice(0, 8).toUpperCase()}</td>
           </tr>
         </table>
+        <div style="margin: 20px 0; text-align: center;">
+          <p style="font-size: 14px; color: #4b5563;">Scan to Verify Receipt Authenticity</p>
+          <img src="${qrCodeDataUrl}" alt="Verification QR Code" style="width: 120px; height: 120px; border: 1px solid #e5e7eb; border-radius: 4px;" />
+        </div>
         <p>Thank you for your payment.</p>
       </div>
     `,
@@ -270,6 +289,43 @@ export const getFeePreview = catchAsync(
     );
 
     sendSuccessResponse(res, { preview });
+  }
+);
+
+/** GET /finance/public/verify/:feeId — verify fee legitimacy */
+export const verifyFeePublic = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { feeId } = req.params;
+
+    if (!feeId) {
+      return next(new AppError("Fee ID is required", 400));
+    }
+
+    const fee = await (prisma as any).reportingFee.findUnique({
+      where: { id: feeId },
+      include: {
+        member: { select: { name: true, nameEn: true, certificateNo: true } },
+        report: { select: { year: true, crv: true, bankReference: true } },
+      },
+    });
+
+    if (!fee) {
+      return sendSuccessResponse(res, { isValid: false, message: "Receipt/Invoice not found" });
+    }
+
+    sendSuccessResponse(res, {
+      isValid: true,
+      fee: {
+        id: fee.id,
+        amount: fee.amount,
+        currency: fee.currency,
+        status: fee.currentActionState,
+        paidAt: fee.paidAt,
+        createdAt: fee.createdAt,
+        member: fee.member,
+        report: fee.report,
+      }
+    });
   }
 );
 

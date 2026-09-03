@@ -17,6 +17,15 @@ router
     FilesFilter.getFiles,
     FileController.getFiles
   );
+
+router
+  .route("/expiring")
+  .get(
+    StaffAuthMiddleware.verifyStaff,
+    StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+    FileController.getExpiringFiles
+  );
+
 router
   .route("/member")
   .post(

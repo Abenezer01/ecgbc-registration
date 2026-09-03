@@ -102,9 +102,13 @@ export function InvoicePreviewModal({ open, onClose, report, churchProfile }: In
           </table>
         </div>
 
-        <!-- Total Section -->
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
-          <div style="background: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; padding: 20px 24px; min-width: 200px;">
+        <!-- Total Section and QR Code -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+          <div>
+            <p style="font-size: 14px; color: #4b5563; font-weight: 500; margin-bottom: 8px;">Scan to Verify</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent((process.env.NEXT_PUBLIC_APP_URL || 'https://mychurch.ecgbc.org') + '/verify-fee/' + report.reportingFee.id)}" alt="Verification QR Code" style="width: 100px; height: 100px; border: 1px solid #e5e7eb; border-radius: 4px;" />
+          </div>
+          <div style="background: #fafafa; border: 1px solid #e4e4e7; border-radius: 8px; padding: 20px 24px; min-width: 200px; text-align: right;">
             <p style="color: #71717a; font-size: 13px; margin: 0 0 8px 0; font-weight: 500;">Total Due</p>
             <p style="color: #18181b; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">${formatCurrency(report.reportingFee.amount, report.reportingFee.currency)}</p>
           </div>

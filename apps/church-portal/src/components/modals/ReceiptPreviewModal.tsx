@@ -19,7 +19,7 @@ export function ReceiptPreviewModal({ open, onClose, report, churchProfile }: Re
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleDownload = async () => {
-    if (!report.reportingFee || report.reportingFee.currentActionState !== "RECONCILED") {
+    if (!report.reportingFee || (report.reportingFee.currentActionState !== "RECONCILED" && report.reportingFee.currentActionState !== "PAID")) {
       setError("No cleared reporting fee found for this report");
       return;
     }
@@ -38,7 +38,7 @@ export function ReceiptPreviewModal({ open, onClose, report, churchProfile }: Re
   };
 
   const generatePreviewContent = (): string => {
-    if (!report || !report.reportingFee || report.reportingFee.currentActionState !== "RECONCILED") return "";
+    if (!report || !report.reportingFee || (report.reportingFee.currentActionState !== "RECONCILED" && report.reportingFee.currentActionState !== "PAID")) return "";
 
     const paidDate = formatDate(report.reportingFee.paidAt || new Date(), "medium");
     const reference = report.crv || report.bankReference || "N/A";
@@ -120,8 +120,12 @@ export function ReceiptPreviewModal({ open, onClose, report, churchProfile }: Re
           </table>
         </div>
 
-        <!-- Status Badge -->
-        <div style="display: flex; justify-content: center; margin-bottom: 32px;">
+        <!-- Status Badge and QR Code -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <div>
+            <p style="font-size: 14px; color: #4b5563; font-weight: 500; margin-bottom: 8px;">Scan to Verify</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent((process.env.NEXT_PUBLIC_APP_URL || 'https://mychurch.ecgbc.org') + '/verify-fee/' + report.reportingFee.id)}" alt="Verification QR Code" style="width: 100px; height: 100px; border: 1px solid #e5e7eb; border-radius: 4px;" />
+          </div>
           <div style="background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 16px 32px;">
             <p style="color: #166534; font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">STATUS: PAID IN FULL</p>
           </div>

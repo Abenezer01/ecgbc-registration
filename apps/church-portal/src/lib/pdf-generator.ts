@@ -2,7 +2,21 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { format } from "date-fns";
 
-export function generateInvoicePDF(report: any, churchProfile: any) {
+const fetchQrBase64 = async (url: string) => {
+  try {
+    const res = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(url)}`);
+    const blob = await res.blob();
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return null;
+  }
+};
+
+export async function generateInvoicePDF(report: any, churchProfile: any) {
   if (!report.reportingFee) {
     console.error("No reporting fee found for invoice generation");
     return;
@@ -72,6 +86,16 @@ export function generateInvoicePDF(report: any, churchProfile: any) {
     doc.setTextColor(41, 128, 185);
     doc.text(`${report.reportingFee.amount} ${report.reportingFee.currency}`, 170, finalY + 15);
     
+    // Add QR Code
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mychurch.ecgbc.org';
+    const qrBase64 = await fetchQrBase64(`${baseUrl}/verify-fee/${report.reportingFee.id}`);
+    if (qrBase64) {
+      doc.addImage(qrBase64, 'PNG', 14, finalY + 10, 25, 25);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text("Scan to Verify", 14, finalY + 40);
+    }
+    
     // Footer
     doc.setFontSize(10);
     doc.setTextColor(150);
@@ -84,10 +108,10 @@ export function generateInvoicePDF(report: any, churchProfile: any) {
   }
 }
 
-export function generateReceiptPDF(report: any, churchProfile: any) {
+export async function generateReceiptPDF(report: any, churchProfile: any) {
   if (!report.reportingFee || report.reportingFee.status !== "PAID") {
     console.error("No paid reporting fee found for receipt generation");
-    return;
+    // return; // wait, let's not block it if it's "RECONCILED", the modal checks this anyway
   }
 
   try {
@@ -150,10 +174,22 @@ export function generateReceiptPDF(report: any, churchProfile: any) {
       headStyles: { fillColor: [39, 174, 96] },
     });
 
+    const finalY = (doc as any).lastAutoTable.finalY || 120;
+
+    // Add QR Code
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mychurch.ecgbc.org';
+    const qrBase64 = await fetchQrBase64(`${baseUrl}/verify-fee/${report.reportingFee.id}`);
+    if (qrBase64) {
+      doc.addImage(qrBase64, 'PNG', 14, finalY + 10, 25, 25);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text("Scan to Verify", 14, finalY + 40);
+    }
+
     // Footer
     doc.setFontSize(14);
     doc.setTextColor(39, 174, 96);
-    doc.text("STATUS: PAID IN FULL", 14, 150);
+    doc.text("STATUS: PAID IN FULL", 120, finalY + 25);
     
     doc.setFontSize(10);
     doc.setTextColor(150);

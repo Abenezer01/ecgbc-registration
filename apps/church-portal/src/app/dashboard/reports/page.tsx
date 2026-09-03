@@ -260,7 +260,7 @@ export default function ReportsPage() {
               <FileDown className="h-3.5 w-3.5" /> Invoice
             </Button>
           )}
-          {row.reportingFee && row.reportingFee.currentActionState === "RECONCILED" && (
+          {row.reportingFee && (row.reportingFee.currentActionState === "RECONCILED" || row.reportingFee.currentActionState === "PAID") && (
             <Button
               onClick={() => {
                 setSelectedReport(row);

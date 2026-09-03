@@ -153,6 +153,48 @@ export const getFiles = catchAsync(
   }
 );
 
+export const getExpiringFiles = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const days = Number(req.query.days) || 30;
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + days);
+
+    const whereFilters: any = {
+      expiryDate: {
+        lte: futureDate,
+      },
+    };
+
+    // RBAC
+    const reqAny = req as any;
+    if (!reqAny.isAdminRole) {
+      const allowedFellowshipIds = await getAllowedFellowshipIdsFromReq(req);
+      if (Array.isArray(allowedFellowshipIds) && allowedFellowshipIds.length > 0) {
+        whereFilters.OR = [
+          { councilFellowshipId: { in: allowedFellowshipIds } },
+          { member: { councilFellowshipId: { in: allowedFellowshipIds } } }
+        ];
+      } else {
+        whereFilters.id = { in: [] };
+      }
+    }
+
+    const files = await prisma.file.findMany({
+      where: whereFilters,
+      include: {
+        member: true,
+        councilFellowship: true,
+        category: true,
+      },
+      orderBy: {
+        expiryDate: 'asc',
+      }
+    });
+
+    sendSuccessResponse(res, { files });
+  }
+);
+
 export const getFile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const file = await prisma.file.findUnique({
@@ -183,7 +225,7 @@ export const createMemberFile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
 
-    let { member, file, fileName } = req.body;
+    let { member, file, fileName, expiryDate } = req.body;
 
     // RBAC: ensure staff can access the member
     await assertAccessToMemberId(req, member);
@@ -193,6 +235,7 @@ export const createMemberFile = catchAsync(
         memberId: member,
         fileName: fileName,
         file: file ? file : "",
+        ...(expiryDate ? { expiryDate: new Date(expiryDate) } : {}),
       },
       include: { member: true, councilFellowship: true },
     });
@@ -276,7 +319,7 @@ export const createFellowshipFile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
 
-    let { file, fileName, fellowship } = req.body;
+    let { file, fileName, fellowship, expiryDate } = req.body;
 
     // RBAC: ensure staff can access the fellowship
     await assertAccessToFellowshipId(req, fellowship);
@@ -286,6 +329,7 @@ export const createFellowshipFile = catchAsync(
         councilFellowshipId: fellowship ?? undefined,
         fileName: fileName ?? file ?? "uploaded",
         file: file ? file : "",
+        ...(expiryDate ? { expiryDate: new Date(expiryDate) } : {}),
       },
       include: { member: true, councilFellowship: true },
     });
@@ -308,7 +352,7 @@ export const updateFile = catchAsync(
       await assertAccessToFellowshipId(req, existing.councilFellowshipId);
     }
 
-    const { fileName, categoryId } = req.body;
+    const { fileName, categoryId, expiryDate } = req.body;
 
     // If a new file was uploaded, delete the old one from disk first
     if (req.body.file && existing.file) {
@@ -325,6 +369,7 @@ export const updateFile = catchAsync(
       data: {
         ...(fileName    !== undefined ? { fileName }                  : {}),
         ...(categoryId  !== undefined ? { categoryId: categoryId || null } : {}),
+        ...(expiryDate  !== undefined ? { expiryDate: expiryDate ? new Date(expiryDate) : null } : {}),
         ...(req.body.file             ? { file: req.body.file }       : {}),
       },
       include: {

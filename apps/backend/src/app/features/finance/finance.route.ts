@@ -8,6 +8,8 @@ import { restrictStaff } from "../auth/middlewares/auth.middleware";
 
 const router = express.Router();
 
+router.get("/public/verify/:feeId", FinanceController.verifyFeePublic);
+
 router.use(StaffAuthMiddleware.verifyStaff);
 
 // Dashboard summary
