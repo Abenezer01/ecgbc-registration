@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui";
 
 interface VerifyFeeResponse {
   isValid: boolean;
@@ -15,12 +15,12 @@ interface VerifyFeeResponse {
     status: string;
     paidAt: string | null;
     createdAt: string;
-    member: {
+    member?: {
       name: string;
       nameEn: string | null;
       certificateNo: string;
     };
-    report: {
+    report?: {
       year: number;
       crv: string | null;
       bankReference: string | null;
@@ -30,14 +30,16 @@ interface VerifyFeeResponse {
 
 export default function VerifyFeePage() {
   const params = useParams();
-  const feeId = params.feeId as string;
+  const feeId = params?.feeId as string;
   const [result, setResult] = useState<VerifyFeeResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!feeId) return;
+    if (!feeId) {
+      setLoading(false);
+      return;
+    }
     
-    // We fetch from the backend public endpoint
     const url = process.env.NEXT_PUBLIC_API_URL || "https://api.registration.ecgbc.org/api/v1";
     
     fetch(`${url}/finance/public/verify/${feeId}`)
@@ -81,10 +83,12 @@ export default function VerifyFeePage() {
             </div>
             
             <div className="text-left space-y-4 border-t pt-4">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Member Name</p>
-                <p className="text-gray-900 font-semibold">{result.fee.member.name} {result.fee.member.nameEn && `(${result.fee.member.nameEn})`}</p>
-              </div>
+              {result.fee.member && (
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Member Name</p>
+                  <p className="text-gray-900 font-semibold">{result.fee.member.name} {result.fee.member.nameEn && `(${result.fee.member.nameEn})`}</p>
+                </div>
+              )}
               
               <div>
                 <p className="text-sm text-gray-500 font-medium">Fee Amount</p>
