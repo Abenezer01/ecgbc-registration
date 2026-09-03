@@ -13,7 +13,7 @@ export interface ModalProps {
   children: React.ReactNode;
   className?: string;
   /** Max width of the modal panel. Defaults to "max-w-lg" */
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
 }
 
 const sizeMap = {
@@ -22,6 +22,7 @@ const sizeMap = {
   lg: "max-w-2xl",
   xl: "max-w-4xl",
   "2xl": "max-w-6xl",
+  full: "max-w-[95vw]",
 };
 
 export function Modal({ open, onClose, title, description, children, className, size = "md" }: ModalProps) {
