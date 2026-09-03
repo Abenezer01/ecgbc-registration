@@ -183,8 +183,8 @@ export class CertificateService {
     
     page.drawLine({ start: { x: width / 2 - 150, y: height - 180 }, end: { x: width / 2 + 150, y: height - 180 }, thickness: 2, color: goldColor });
 
-    drawCenteredText("የምዝገባ የምስክር ወረቀት", height - 230, 32, goldColor, customFont);
-    drawCenteredText("CERTIFICATE OF REGISTRATION", height - 265, 22, goldColor, englishFontBold);
+
+
 
     // Layout Constants
     const leftColX = 60;
@@ -198,6 +198,8 @@ export class CertificateService {
     const issueDate = member.certificateIssuedDate ? new Date(member.certificateIssuedDate) : new Date();
 
     // Left Column - Amharic
+    page.drawText("የምዝገባ የምስክር ወረቀት", { x: leftColX, y: colStartY + 50, size: 22, font: customFont, color: goldColor });
+
     page.drawText("በኢትዮጵያ ወንጌል አማኞች አብያተ ክርስቲያናት ካውንስል", { x: leftColX, y: colStartY, size: 12, font: customFont, color: darkBlueColor });
     page.drawText("አባላት ሕጋዊ ሰውነት ለመስጠት በወጣው", { x: leftColX, y: colStartY - lineSpacing, size: 12, font: customFont, color: darkBlueColor });
     
@@ -250,6 +252,8 @@ export class CertificateService {
 
 
     // Right Column - English
+    page.drawText("CERTIFICATE OF REGISTRATION", { x: rightColX, y: colStartY + 50, size: 16, font: englishFontBold, color: goldColor });
+
     const engL1Text = "This certificate is conferred to ";
     const engL1W = englishFont.widthOfTextAtSize(engL1Text, 12);
     page.drawText(engL1Text, { x: rightColX, y: colStartY, size: 12, font: englishFont, color: darkBlueColor });
@@ -285,6 +289,11 @@ export class CertificateService {
     page.drawText(s1, { x: 520, y: 100, size: 12, font: customFont, color: darkBlueColor });
     page.drawText("General Secretary", { x: 520 + s1W, y: 100, size: 12, font: englishFont, color: darkBlueColor });
 
+
+
+    // Contact Info Footer
+    const footerText = "Phone: +251 11 550 5555   |   Email: info@ecgbc.org   |   Website: www.ecgbc.org";
+    drawCenteredText(footerText, 50, 10, darkBlueColor, englishFont);
 
     // QR Code Header right corner
     const verificationUrl = `https://ecgbc.org/verify/${member.certificateNo}`;
