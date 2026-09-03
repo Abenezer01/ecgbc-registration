@@ -37,7 +37,8 @@ export class CertificateService {
       }
 
       // Generate QR Code
-      const verificationUrl = `https://ecgbc.org/verify/${member.certificateNo}`;
+        const baseUrl = process.env.CHURCH_PORTAL_URL || 'https://church.registration.ecgbc.org';
+        const verificationUrl = `${baseUrl}/verify/${member.certificateNo}`;
       const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#51779E', light: '#FFFFFF' } });
 
       // Compile Handlebars template
@@ -333,7 +334,8 @@ export class CertificateService {
     }
 
     // QR Code Header right corner
-    const verificationUrl = `https://ecgbc.org/verify/${member.certificateNo}`;
+    const baseUrl = process.env.CHURCH_PORTAL_URL || "https://church.registration.ecgbc.org";
+    const verificationUrl = `${baseUrl}/verify/${member.certificateNo}`;
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#51779E', light: '#FFFFFF' } });
     const qrImageBytes = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
     const qrImage = await pdfDoc.embedPng(qrImageBytes);
