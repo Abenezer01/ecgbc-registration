@@ -22,6 +22,10 @@ export class CertificateService {
 
       // Paths
       const fontPath = path.join(__dirname, '../../../../public/fonts/AmharicFont.ttf');
+    const logoUrl = 'https://res.cloudinary.com/duijvdn0m/image/upload/v1766689161/logo_wzaui5.png';
+    const axios = (await import('axios')).default;
+    const logoRes = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+    const logoImageBytes = Buffer.from(logoRes.data);
 
       // Load Font as Base64 for the HTML template
       let base64Font = '';
@@ -133,6 +137,10 @@ export class CertificateService {
     if (!member) throw new Error(`Member with ID ${memberId} not found.`);
 
     const fontPath = path.join(__dirname, '../../../../public/fonts/AmharicFont.ttf');
+    const logoUrl = 'https://res.cloudinary.com/duijvdn0m/image/upload/v1766689161/logo_wzaui5.png';
+    const axios = (await import('axios')).default;
+    const logoRes = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+    const logoImageBytes = Buffer.from(logoRes.data);
 
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([841.89, 595.28]);
@@ -164,14 +172,19 @@ export class CertificateService {
       page.drawText(text, { x: (width - textWidth) / 2, y, size, font, color });
     };
 
-    // Header
-    drawCenteredText("የኢትዮጵያ ወንጌል አማኞች አብያተ ክርስቲያናት ካውንስል", height - 100, 24, darkBlueColor, customFont);
-    drawCenteredText("Ethiopian Council of Gospel believers' Churches", height - 130, 18, darkBlueColor, englishFontBold);
-    
-    page.drawLine({ start: { x: width / 2 - 150, y: height - 150 }, end: { x: width / 2 + 150, y: height - 150 }, thickness: 2, color: goldColor });
+    // Logo
+    const logoImage = await pdfDoc.embedPng(logoImageBytes);
+    const logoSize = 65;
+    page.drawImage(logoImage, { x: (width - logoSize) / 2, y: height - 100, width: logoSize, height: logoSize });
 
-    drawCenteredText("የምዝገባ የምስክር ወረቀት", height - 200, 32, goldColor, customFont);
-    drawCenteredText("CERTIFICATE OF REGISTRATION", height - 235, 22, goldColor, englishFontBold);
+    // Header
+    drawCenteredText("የኢትዮጵያ ወንጌል አማኞች አብያተ ክርስቲያናት ካውንስል", height - 130, 24, darkBlueColor, customFont);
+    drawCenteredText("Ethiopian Council of Gospel believers' Churches", height - 160, 18, darkBlueColor, englishFontBold);
+    
+    page.drawLine({ start: { x: width / 2 - 150, y: height - 180 }, end: { x: width / 2 + 150, y: height - 180 }, thickness: 2, color: goldColor });
+
+    drawCenteredText("የምዝገባ የምስክር ወረቀት", height - 230, 32, goldColor, customFont);
+    drawCenteredText("CERTIFICATE OF REGISTRATION", height - 265, 22, goldColor, englishFontBold);
 
     // Layout Constants
     const leftColX = 60;

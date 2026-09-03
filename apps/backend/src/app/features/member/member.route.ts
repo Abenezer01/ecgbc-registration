@@ -13,6 +13,9 @@ import { seedMembers } from "../../../seeders/members/selam/create.seeder";
 
 const router = express.Router();
 
+router.get('/public/verify/:certificateNo', MemberController.verifyCertificatePublic);
+
+
 // Add the new routes for soft delete functionality
 // Route to mark a member as inactive (soft delete)
 router.patch('/:id/inactive', 

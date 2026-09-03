@@ -827,6 +827,37 @@ export const inactiveMember = catchAsync(
   }
 );
 
+
+export const verifyCertificatePublic = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { certificateNo } = req.params;
+
+    if (!certificateNo) {
+      return next(new AppError("Certificate number is required", 400));
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { certificateNo },
+      include: { councilFellowship: true },
+    });
+
+    if (!member) {
+      return sendSuccessResponse(res, { isValid: false, message: "Certificate not found" });
+    }
+
+    sendSuccessResponse(res, {
+      isValid: true,
+      member: {
+        name: member.name,
+        nameEn: member.nameEn,
+        certificateNo: member.certificateNo,
+        certificateIssuedDate: member.certificateIssuedDate,
+        councilFellowshipName: member.councilFellowship?.name,
+      }
+    });
+  }
+);
+
 export const checkCertificateNumber = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { certificateNo } = req.params;
