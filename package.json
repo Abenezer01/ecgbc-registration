@@ -7,8 +7,7 @@
     "dev:admin": "pnpm --filter @ecgbc/admin-portal run dev",
     "dev:church": "pnpm --filter @ecgbc/church-portal run dev",
     "build": "pnpm --filter @ecgbc/backend run build && pnpm --filter @ecgbc/admin-portal run build && pnpm --filter @ecgbc/church-portal run build",
-    "lint": "pnpm -r run lint",
-    "postinstall": "npx puppeteer browsers install chrome"
+    "lint": "pnpm -r run lint"
   },
   "engines": {
     "node": ">=18",
