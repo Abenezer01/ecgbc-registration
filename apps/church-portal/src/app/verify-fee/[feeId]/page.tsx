@@ -92,7 +92,7 @@ export default function VerifyFeePage() {
               
               <div>
                 <p className="text-sm text-gray-500 font-medium">Fee Amount</p>
-                <p className="text-gray-900 font-semibold">{result.fee.currency} {result.fee.amount.toFixed(2)}</p>
+                <p className="text-gray-900 font-semibold">{result.fee.currency} {Number(result.fee.amount).toFixed(2)}</p>
               </div>
               
               <div>
