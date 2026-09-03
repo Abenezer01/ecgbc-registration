@@ -37,7 +37,7 @@ export class CertificateService {
       }
 
       // Generate QR Code
-        const baseUrl = process.env.CHURCH_PORTAL_URL || 'https://church.registration.ecgbc.org';
+        const baseUrl = process.env.CHURCH_PORTAL_URL || 'https://mychurch.ecgbc.org';
         const verificationUrl = `${baseUrl}/verify/${member.certificateNo}`;
       const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#51779E', light: '#FFFFFF' } });
 
@@ -334,7 +334,7 @@ export class CertificateService {
     }
 
     // QR Code Header right corner
-    const baseUrl = process.env.CHURCH_PORTAL_URL || "https://church.registration.ecgbc.org";
+    const baseUrl = process.env.CHURCH_PORTAL_URL || "https://mychurch.ecgbc.org";
     const verificationUrl = `${baseUrl}/verify/${member.certificateNo}`;
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, color: { dark: '#51779E', light: '#FFFFFF' } });
     const qrImageBytes = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
