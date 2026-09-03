@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { certificateTemplate } from '../templates/certificate.template';
 
 export class CertificateService {
-  static async generateMemberCertificate(memberId: string, previewOnly: boolean = false): Promise<any> {
+  static async generateMemberCertificate(memberId: string, previewOnly: boolean = false, layout: "standard" | "preprinted" = "standard"): Promise<any> {
     let browser = null;
     try {
       const member = await prisma.member.findUnique({
@@ -122,11 +122,11 @@ export class CertificateService {
       if (browser) {
         await browser.close().catch(() => {});
       }
-      return this.generateWithPdfLibFallback(memberId, previewOnly);
+      return this.generateWithPdfLibFallback(memberId, previewOnly, layout);
     }
   }
 
-  private static async generateWithPdfLibFallback(memberId: string, previewOnly: boolean): Promise<any> {
+  private static async generateWithPdfLibFallback(memberId: string, previewOnly: boolean, layout: "standard" | "preprinted"): Promise<any> {
     const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
     const fontkit = (await import('@pdf-lib/fontkit')).default;
     
@@ -162,15 +162,30 @@ export class CertificateService {
     const darkBlueColor = rgb(0.317, 0.466, 0.619); 
     const blackColor = rgb(0, 0, 0);
 
-    // Borders
-    page.drawRectangle({ x: 30, y: 30, width: width - 60, height: height - 60, borderColor: goldColor, borderWidth: 4 });
-    page.drawRectangle({ x: 38, y: 38, width: width - 76, height: height - 76, borderColor: darkBlueColor, borderWidth: 1 });
-    page.drawRectangle({ x: 42, y: 42, width: width - 84, height: height - 84, borderColor: goldColor, borderWidth: 2 });
-
     const drawCenteredText = (text: string, y: number, size: number, color: any, font: any) => {
       const textWidth = font.widthOfTextAtSize(text, size);
       page.drawText(text, { x: (width - textWidth) / 2, y, size, font, color });
     };
+
+
+    if (layout === 'preprinted') {
+      try {
+        const bgPath = path.join(__dirname, '../../../../public/images/certificate_bg.jpg');
+        const bgBytes = await fs.readFile(bgPath);
+        const bgImage = await pdfDoc.embedJpg(bgBytes);
+        page.drawImage(bgImage, { x: 0, y: 0, width, height });
+      } catch (err) {
+        console.warn('Background image not found, falling back to drawing borders.');
+      }
+    }
+
+    if (layout !== 'preprinted') {
+      // Borders
+    page.drawRectangle({ x: 30, y: 30, width: width - 60, height: height - 60, borderColor: goldColor, borderWidth: 4 });
+    page.drawRectangle({ x: 38, y: 38, width: width - 76, height: height - 76, borderColor: darkBlueColor, borderWidth: 1 });
+    page.drawRectangle({ x: 42, y: 42, width: width - 84, height: height - 84, borderColor: goldColor, borderWidth: 2 });
+
+    
 
     // Logo
     const logoImage = await pdfDoc.embedPng(logoImageBytes);
@@ -198,6 +213,8 @@ export class CertificateService {
 
 
 
+
+    }
 
     // Layout Constants
     const leftColX = 60;
@@ -289,7 +306,8 @@ export class CertificateService {
     page.drawText("Believers' Churches and its members.", { x: rightColX, y: colStartY - (lineSpacing * 4), size: 11, font: englishFont, color: darkBlueColor });
 
 
-    // Footer Signatures
+    if (layout !== 'preprinted') {
+      // Footer Signatures
     page.drawLine({ start: { x: 180, y: 120 }, end: { x: 350, y: 120 }, thickness: 1, color: darkBlueColor });
     const p1 = "ፕሬዝዳንት / ";
     const p1W = customFont.widthOfTextAtSize(p1, 12);
@@ -307,6 +325,8 @@ export class CertificateService {
     // Contact Info Footer
     const footerText = "+251-116-662044   |   E-Mail: info@ecgbc.org   |   www.ecgbc.org";
     drawCenteredText(footerText, 50, 10, darkBlueColor, englishFont);
+
+    }
 
     // QR Code Header right corner
     const verificationUrl = `https://ecgbc.org/verify/${member.certificateNo}`;

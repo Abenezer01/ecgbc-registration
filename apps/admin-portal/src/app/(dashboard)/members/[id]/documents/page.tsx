@@ -86,6 +86,7 @@ export default function DocumentsPage() {
 
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [layoutOption, setLayoutOption] = useState<"standard" | "preprinted">("standard");
 
   const fileCategoryOptions = lookups.filter((l) => l.type === "Document Type");
 
@@ -246,9 +247,18 @@ export default function DocumentsPage() {
               </h3>
               <div className="flex gap-2">
                 {canEdit && (
-                  <Button size="sm" variant="outline" loading={loadingPreview} onClick={async () => {
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      value={layoutOption} 
+                      onChange={(e) => setLayoutOption(e.target.value as any)}
+                      className="w-48"
+                    >
+                      <option value="standard">Standard Template</option>
+                      <option value="preprinted">Gold Background</option>
+                    </Select>
+                    <Button size="sm" variant="outline" loading={loadingPreview} onClick={async () => {
                     try {
-                      const blobUrl = await previewCert(memberId);
+                      const blobUrl = await previewCert({ memberId, layout: layoutOption });
                       setPreviewBlobUrl(blobUrl);
                       setPreviewModalOpen(true);
                     } catch (err) {
@@ -257,6 +267,7 @@ export default function DocumentsPage() {
                   }} className="gap-1.5">
                     <Eye className="h-4 w-4" /> Preview & Regenerate Certificate
                   </Button>
+                  </div>
                 )}
                 {canAdd && (
                   <Button size="sm" onClick={() => setUploadOpen(true)} className="gap-1.5">
@@ -408,7 +419,7 @@ export default function DocumentsPage() {
             loading={regeneratingCert} 
             onClick={async () => {
               try {
-                await regenerateCert(memberId);
+                await regenerateCert({ memberId, layout: layoutOption });
                 setPreviewModalOpen(false);
               } catch (err) {
                 console.error(err);

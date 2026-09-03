@@ -1096,7 +1096,8 @@ export const regenerateCertificate = catchAsync(
     await assertAccessToMember(req, memberId);
 
     try {
-      const file = await CertificateService.generateMemberCertificate(memberId);
+      const layout = req.query.layout === 'preprinted' ? 'preprinted' : 'standard';
+    const file = await CertificateService.generateMemberCertificate(memberId, false, layout);
       sendSuccessResponse(res, { 
         message: 'Certificate regenerated successfully',
         file 
@@ -1115,7 +1116,8 @@ export const previewCertificate = catchAsync(
     await assertAccessToMember(req, memberId);
 
     try {
-      const pdfBuffer = await CertificateService.generateMemberCertificate(memberId, true);
+      const layout = req.query.layout === 'preprinted' ? 'preprinted' : 'standard';
+    const pdfBuffer = await CertificateService.generateMemberCertificate(memberId, true, layout);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
       res.send(pdfBuffer);

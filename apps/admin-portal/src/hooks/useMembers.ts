@@ -158,11 +158,11 @@ export function useRegenerateCertificate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (memberId: string) => {
-      const res = await post(`/members/${memberId}/regenerate-certificate`, {});
+    mutationFn: async ({ memberId, layout = 'standard' }: { memberId: string, layout?: 'standard' | 'preprinted' }) => {
+      const res = await post(`/members/${memberId}/regenerate-certificate?layout=${layout}`, {});
       return extractData(res);
     },
-    onSuccess: (_, memberId) => {
+    onSuccess: (_, { memberId }) => {
       // Invalidate both member details and their files
       queryClient.invalidateQueries({ queryKey: ["member", memberId] });
       queryClient.invalidateQueries({ queryKey: ["memberFiles", memberId] });
@@ -171,11 +171,10 @@ export function useRegenerateCertificate() {
   });
 }
 
-export function usePreviewCertificate() {
-  const queryClient = useQueryClient();
+export const usePreviewCertificate = () => {
   return useMutation({
-    mutationFn: async (memberId: string) => {
-      const res = await api.get(`/members/${memberId}/preview-certificate`, {
+    mutationFn: async ({ memberId, layout = 'standard' }: { memberId: string, layout?: 'standard' | 'preprinted' }) => {
+      const res = await api.get(`/members/${memberId}/preview-certificate?layout=${layout}`, {
         responseType: "blob"
       });
       return URL.createObjectURL(res.data);
