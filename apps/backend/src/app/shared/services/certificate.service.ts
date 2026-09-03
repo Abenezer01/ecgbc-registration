@@ -174,6 +174,17 @@ export class CertificateService {
 
     // Logo
     const logoImage = await pdfDoc.embedPng(logoImageBytes);
+
+    // Watermark
+    const watermarkSize = 400;
+    page.drawImage(logoImage, { 
+      x: (width - watermarkSize) / 2, 
+      y: (height - watermarkSize) / 2, 
+      width: watermarkSize, 
+      height: watermarkSize, 
+      opacity: 0.08 
+    });
+
     const logoSize = 65;
     page.drawImage(logoImage, { x: (width - logoSize) / 2, y: height - 100, width: logoSize, height: logoSize });
 
@@ -182,6 +193,8 @@ export class CertificateService {
     drawCenteredText("Ethiopian Council of Gospel believers' Churches", height - 160, 18, darkBlueColor, englishFontBold);
     
     page.drawLine({ start: { x: width / 2 - 150, y: height - 180 }, end: { x: width / 2 + 150, y: height - 180 }, thickness: 2, color: goldColor });
+
+    drawCenteredText("የምዝገባ የምስክር ወረቀት", height - 230, 32, goldColor, customFont);
 
 
 
@@ -198,7 +211,7 @@ export class CertificateService {
     const issueDate = member.certificateIssuedDate ? new Date(member.certificateIssuedDate) : new Date();
 
     // Left Column - Amharic
-    page.drawText("የምዝገባ የምስክር ወረቀት", { x: leftColX, y: colStartY + 50, size: 22, font: customFont, color: goldColor });
+
 
     page.drawText("በኢትዮጵያ ወንጌል አማኞች አብያተ ክርስቲያናት ካውንስል", { x: leftColX, y: colStartY, size: 12, font: customFont, color: darkBlueColor });
     page.drawText("አባላት ሕጋዊ ሰውነት ለመስጠት በወጣው", { x: leftColX, y: colStartY - lineSpacing, size: 12, font: customFont, color: darkBlueColor });
@@ -292,7 +305,7 @@ export class CertificateService {
 
 
     // Contact Info Footer
-    const footerText = "Phone: +251 11 550 5555   |   Email: info@ecgbc.org   |   Website: www.ecgbc.org";
+    const footerText = "+251-116-662044   |   E-Mail: info@ecgbc.org   |   www.ecgbc.org";
     drawCenteredText(footerText, 50, 10, darkBlueColor, englishFont);
 
     // QR Code Header right corner
