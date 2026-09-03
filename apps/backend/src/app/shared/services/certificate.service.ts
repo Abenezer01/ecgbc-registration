@@ -209,7 +209,7 @@ export class CertificateService {
     
     page.drawLine({ start: { x: width / 2 - 150, y: height - 180 }, end: { x: width / 2 + 150, y: height - 180 }, thickness: 2, color: goldColor });
 
-    drawCenteredText("የምዝገባ የምስክር ወረቀት", height - 230, 32, goldColor, customFont);
+
 
 
 
@@ -226,6 +226,11 @@ export class CertificateService {
     const nameEng = member.nameEn || "";
     const certNo = member.certificateNo || "";
     const issueDate = member.certificateIssuedDate ? new Date(member.certificateIssuedDate) : new Date();
+
+    if (layout !== 'preprinted') {
+      page.drawText("የምዝገባ የምስክር ወረቀት", { x: leftColX, y: colStartY + 50, size: 22, font: customFont, color: goldColor });
+      page.drawText("CERTIFICATE OF REGISTRATION", { x: rightColX, y: colStartY + 50, size: 16, font: englishFontBold, color: goldColor });
+    }
 
     // Left Column - Amharic
 
@@ -281,8 +286,7 @@ export class CertificateService {
     page.drawText(" ዓ.ም ተሰጥቷል።", { x: leftColX + amhL5_1_W + certNoW + amhL5_2_W + amhDayW + kenW + amhYearW, y: colStartY - (lineSpacing * 4), size: 12, font: customFont, color: darkBlueColor });
 
 
-    // Right Column - English
-    page.drawText("CERTIFICATE OF REGISTRATION", { x: rightColX, y: colStartY + 50, size: 16, font: englishFontBold, color: goldColor });
+
 
     const engL1Text = "This certificate is conferred to ";
     const engL1W = englishFont.widthOfTextAtSize(engL1Text, 12);
