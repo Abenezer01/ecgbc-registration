@@ -122,7 +122,19 @@ app.use(errorController);
  * Start the server
  */
 
+import cron from "node-cron";
+import { runExpiringFilesNotificationJob } from "./scripts/notify-expiring-files";
+
 const PORT = env.PORT;
 app.listen(PORT, '0.0.0.0', () => {
   consola.success(`Server running on port ${PORT} and listening on 0.0.0.0`);
+  
+  // Schedule the expiring files notification job to run every day at 8:00 AM
+  cron.schedule("0 8 * * *", () => {
+    consola.info("Cron Triggered: Running expiring files notification job...");
+    runExpiringFilesNotificationJob().catch((err) => {
+      consola.error("Error running expiring files notification job:", err);
+    });
+  });
+  consola.info("Cron scheduled: Expiring files notification job will run daily at 8:00 AM.");
 });

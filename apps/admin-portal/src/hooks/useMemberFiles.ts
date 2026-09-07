@@ -9,6 +9,7 @@ export interface MemberFile {
   file: string;
   isFromSelamMinster: boolean;
   createdAt: string;
+  expiryDate?: string | null;
   categoryId?: string | null;
   /** Populated when the backend includes the category relation */
   category?: {
@@ -40,6 +41,18 @@ export function useMemberFiles({ memberId, isFromSelamMinster = false }: { membe
       return (data as any).files || [];
     },
     enabled: !!memberId,
+  });
+}
+
+export function useExpiringFiles(days: number = 30) {
+  return useQuery<MemberFile[]>({
+    queryKey: ["expiring-files", days],
+    queryFn: async () => {
+      const res = await api.get(`/files/expiring`, {
+        params: { days },
+      });
+      return res.data?.data?.files || [];
+    },
   });
 }
 
@@ -95,12 +108,14 @@ export function useUpdateMemberFile() {
       memberId,
       fileName,
       categoryId,
+      expiryDate,
       newFile,
     }: {
       fileId: string;
       memberId: string;
       fileName?: string;
       categoryId?: string | null;
+      expiryDate?: string | null;
       /** Optional replacement file binary */
       newFile?: File | null;
     }) => {
@@ -108,6 +123,7 @@ export function useUpdateMemberFile() {
       const formData = new FormData();
       if (fileName   !== undefined) formData.append("fileName",   fileName);
       if (categoryId !== undefined) formData.append("categoryId", categoryId ?? "");
+      if (expiryDate !== undefined) formData.append("expiryDate", expiryDate ?? "");
       if (newFile)                  formData.append("file",        newFile);
 
       const res = await api.patch(`/files/${fileId}`, formData, {

@@ -18,6 +18,7 @@ interface EditingFile {
   id: string;
   fileName: string;
   categoryId: string;
+  expiryDate: string;
 }
 
 export function DocumentsTab({ member }: DocumentsTabProps) {
@@ -79,6 +80,7 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
       id: file.id,
       fileName: file.fileName || "",
       categoryId: file.categoryId || file.category?.id || "",
+      expiryDate: file.expiryDate ? new Date(file.expiryDate).toISOString().split('T')[0] : "",
     });
     setEditError(null);
   };
@@ -92,6 +94,7 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
         memberId,
         fileName: editingFile.fileName.trim(),
         categoryId: editingFile.categoryId || null,
+        expiryDate: editingFile.expiryDate || null,
       });
       setEditingFile(null);
     } catch (err: any) {
@@ -232,6 +235,15 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
                       </Select>
                     </div>
                   )}
+                  <div>
+                    <label className="text-[11px] font-medium text-zinc-500 mb-1 block">Expiry Date</label>
+                    <Input
+                      type="date"
+                      value={editingFile.expiryDate}
+                      onChange={(e) => setEditingFile((p) => p ? { ...p, expiryDate: e.target.value } : p)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
                   <div className="flex justify-end gap-2 pt-1">
                     <Button type="button" variant="ghost" size="sm" onClick={() => setEditingFile(null)} className="h-7 px-3 text-xs" disabled={updatingFile}>
                       <X className="h-3.5 w-3.5 mr-1" /> Cancel
@@ -265,6 +277,13 @@ export function DocumentsTab({ member }: DocumentsTabProps) {
                     <p className="text-xs text-zinc-400 font-mono mt-0.5">
                       {file.createdAt ? new Date(file.createdAt).toLocaleDateString() : ""}
                     </p>
+                    {file.expiryDate && (
+                      <div className="mt-1">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium ${new Date(file.expiryDate) < new Date() ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>
+                          Expires: {new Date(file.expiryDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <RowActions
                     className="opacity-0 group-hover:opacity-100 transition-opacity"

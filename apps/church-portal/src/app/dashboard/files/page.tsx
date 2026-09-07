@@ -70,6 +70,11 @@ export default function FilesPage() {
                   <p className="text-xs text-neutral-500">
                     Uploaded on {new Date(file.createdAt).toLocaleDateString()}
                   </p>
+                  {file.expiryDate && (
+                    <p className={`text-xs mt-1 font-medium ${new Date(file.expiryDate) < new Date() ? 'text-red-600' : 'text-amber-600'}`}>
+                      Expires: {new Date(file.expiryDate).toLocaleDateString()}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="outline"

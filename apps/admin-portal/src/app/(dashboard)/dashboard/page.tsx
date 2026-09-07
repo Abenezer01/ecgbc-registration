@@ -18,6 +18,9 @@ import {
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EthiopiaMap } from "@/components/ui/EthiopiaMap";
 import { formatNumber, formatCurrency, formatPercentage } from "@/lib/utils";
+import { useExpiringFiles } from "@/hooks/useMemberFiles";
+import { FileWarning, Download, Eye } from "lucide-react";
+import { fileUrl } from "@/lib/file-url";
 
 const CHART_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#10b981", "#f59e0b"];
 
@@ -40,6 +43,8 @@ export default function DashboardPage() {
       return res.data.data.analytics;
     },
   });
+
+  const { data: expiringFiles = [], isLoading: isLoadingExpiring } = useExpiringFiles(30);
 
   return (
     <div className="space-y-8">
@@ -329,6 +334,43 @@ export default function DashboardPage() {
                       <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
                   </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle>Expiring Documents</CardTitle>
+              <FileWarning className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingExpiring ? (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+              ) : (
+                <div className="space-y-4 pt-2">
+                  {expiringFiles.length > 0 ? expiringFiles.map((file: any) => {
+                    const daysLeft = Math.ceil((new Date(file.expiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+                    return (
+                      <div key={file.id} className="flex flex-col space-y-1 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30">
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm font-medium leading-none text-amber-900 dark:text-amber-100 truncate flex-1 pr-2">
+                            {file.fileName || file.category?.description || "Document"}
+                          </p>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap ${daysLeft < 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {daysLeft < 0 ? `Expired ${Math.abs(daysLeft)}d ago` : `Expires in ${daysLeft}d`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-700/70 dark:text-amber-400/70">
+                          {file.member?.name || file.councilFellowship?.name || "Unknown Entity"}
+                        </p>
+                      </div>
+                    );
+                  }) : (
+                    <p className="text-sm text-zinc-500 text-center py-4">No documents expiring soon.</p>
+                  )}
                 </div>
               )}
             </CardContent>

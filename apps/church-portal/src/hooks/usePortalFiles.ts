@@ -7,6 +7,7 @@ export interface PortalFile {
   fileName: string;
   file: string;
   createdAt: string;
+  expiryDate?: string | null;
   fileType?: {
     id: string;
     description: string;

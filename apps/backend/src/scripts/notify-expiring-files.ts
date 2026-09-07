@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import prisma from '../app/config/db.config';
 
-async function notifyExpiringFiles() {
+export async function runExpiringFilesNotificationJob() {
   const daysThresholds = [30, 60, 90]; // Remind 30, 60, and 90 days before expiry
 
   console.log('Running expiring files notification job...');
@@ -43,14 +43,6 @@ async function notifyExpiringFiles() {
         console.log(`Document expiring: ${file.fileName} (Category: ${file.category?.value}) on ${file.expiryDate}`);
         
         // TODO: integrate with actual email sending service
-        // e.g., send to church users
-        /*
-        if (file.member) {
-           for (const user of file.member.churchUsers) {
-               sendEmail(user.email, 'Document Expiring Soon', `Your document ${file.fileName} is expiring on ${file.expiryDate}. Please renew it.`);
-           }
-        }
-        */
       }
     }
   }
@@ -58,6 +50,8 @@ async function notifyExpiringFiles() {
   console.log('Finished expiring files notification job.');
 }
 
-notifyExpiringFiles()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+if (require.main === module) {
+  runExpiringFilesNotificationJob()
+    .catch(console.error)
+    .finally(() => prisma.$disconnect());
+}
