@@ -11,7 +11,7 @@ export interface DuplicateDetectionPayload {
   subcity?: string;
   district?: string;
   houseNumber?: string;
-  boardMembers?: { fullName: string; phoneNumber: string }[];
+  boardMembers?: { fullName: string; phoneNumber?: string }[];
 }
 
 export interface DuplicateMatch {
@@ -48,15 +48,15 @@ export class DuplicateDetectionService {
   private static readonly SCORE_PARTIAL_NAME = 40;
   private static readonly SCORE_PHONE = 50;
   private static readonly SCORE_BOARD_MEMBER_PHONE = 50;
-  private static readonly SCORE_BOARD_MEMBER_NAME = 30;
+  private static readonly SCORE_BOARD_MEMBER_NAME = 40; // High enough on its own to trigger duplicate threshold
   private static readonly SCORE_EXACT_LOCATION = 40;
   private static readonly SCORE_PARTIAL_LOCATION = 15;
   private static readonly THRESHOLD = 40;
 
   static async findPotentialDuplicates(payload: DuplicateDetectionPayload): Promise<DuplicateMatch[]> {
     const phoneNumbers = [payload.phoneNumber, payload.contactPersonPhone].filter(Boolean) as string[];
-    const boardMemberPhones = payload.boardMembers?.map(b => b.phoneNumber).filter(Boolean) || [];
-    const boardMemberNames = payload.boardMembers?.map(b => b.fullName).filter(Boolean) || [];
+    const boardMemberPhones = payload.boardMembers?.map(b => b.phoneNumber).filter(Boolean) as string[] || [];
+    const boardMemberNames = payload.boardMembers?.map(b => b.fullName).filter(Boolean) as string[] || [];
     const allPhones = [...phoneNumbers, ...boardMemberPhones];
 
     // Build the OR conditions to fetch candidates
@@ -73,8 +73,15 @@ export class DuplicateDetectionService {
       orConditions.push({ contactPerson: { phoneNumber: { in: allPhones } } });
       orConditions.push({ boardMembers: { some: { phoneNumber: { in: allPhones } } } });
     }
+    // Board member name matching (with or without phone)
     if (boardMemberNames.length > 0) {
-      orConditions.push({ boardMembers: { some: { fullName: { in: boardMemberNames } } } });
+      for (const bName of boardMemberNames) {
+        const clean = bName.trim();
+        if (clean.length >= 3) {
+          orConditions.push({ boardMembers: { some: { fullName: { contains: clean } } } });
+          orConditions.push({ boardMembers: { some: { fullNameEn: { contains: clean } } } });
+        }
+      }
     }
     if (payload.regionId && payload.city && payload.subcity) {
       orConditions.push({
@@ -143,16 +150,34 @@ export class DuplicateDetectionService {
         }
       }
 
-      // Board Member Match
+      // Board Member Match: Supports WITH phone, WITHOUT phone (by name), or BOTH
       if (payload.boardMembers && payload.boardMembers.length > 0) {
         for (const inputBm of payload.boardMembers) {
+          const inputName = inputBm.fullName?.trim().toLowerCase();
+          const inputPhone = inputBm.phoneNumber?.trim().replace(/\s+/g, '');
+
           for (const candBm of candidate.boardMembers) {
-            if (inputBm.phoneNumber && candBm.phoneNumber === inputBm.phoneNumber) {
+            const candName = candBm.fullName?.trim().toLowerCase();
+            const candNameEn = candBm.fullNameEn?.trim().toLowerCase();
+            const candPhone = candBm.phoneNumber?.trim().replace(/\s+/g, '');
+
+            const phoneMatches = Boolean(inputPhone && candPhone && inputPhone === candPhone);
+            const nameMatches = Boolean(
+              inputName &&
+              (inputName === candName ||
+                (candNameEn && inputName === candNameEn) ||
+                (inputName.length >= 4 && (candName?.includes(inputName) || inputName.includes(candName || ''))))
+            );
+
+            if (phoneMatches && nameMatches) {
+              score += this.SCORE_BOARD_MEMBER_PHONE + this.SCORE_BOARD_MEMBER_NAME;
+              reasons.push(`Board member match (Name & Phone): ${candBm.fullName} (${candBm.phoneNumber})`);
+            } else if (phoneMatches) {
               score += this.SCORE_BOARD_MEMBER_PHONE;
-              reasons.push(`Board member phone match: ${inputBm.phoneNumber}`);
-            } else if (inputBm.fullName && candBm.fullName === inputBm.fullName) {
+              reasons.push(`Board member phone match: ${candBm.phoneNumber} (Leader: ${candBm.fullName})`);
+            } else if (nameMatches) {
               score += this.SCORE_BOARD_MEMBER_NAME;
-              reasons.push(`Board member name match: ${inputBm.fullName}`);
+              reasons.push(`Board member name overlap (without phone): ${candBm.fullName}`);
             }
           }
         }
@@ -173,7 +198,7 @@ export class DuplicateDetectionService {
 
   /**
    * Scans all existing registered members to find collision clusters
-   * across phone numbers, board members, and exact addresses.
+   * across phone numbers, board members (with and without phone), and exact addresses.
    */
   static async auditExistingDuplicates(): Promise<DuplicateCluster[]> {
     const clusters: DuplicateCluster[] = [];
@@ -245,7 +270,7 @@ export class DuplicateDetectionService {
       }
     }
 
-    // 2. Board member overlap
+    // 2. Board member overlap: BOTH with phone AND without phone (by name)
     const boardMembers = await prisma.boardMember.findMany({
       where: {
         memberId: { not: null }
@@ -253,6 +278,7 @@ export class DuplicateDetectionService {
       select: {
         id: true,
         fullName: true,
+        fullNameEn: true,
         phoneNumber: true,
         memberId: true,
         member: {
@@ -273,10 +299,11 @@ export class DuplicateDetectionService {
     });
 
     const bmPhoneToMembers = new Map<string, Map<string, DuplicateMemberSummary>>();
-    const bmNameToMembers = new Map<string, Map<string, DuplicateMemberSummary>>();
+    const bmNameToMembers = new Map<string, { displayName: string; members: Map<string, DuplicateMemberSummary> }>();
 
     for (const bm of boardMembers) {
       if (!bm.member || !bm.memberId) continue;
+      const phoneLabel = bm.phoneNumber?.trim() ? bm.phoneNumber.trim() : 'No phone';
       const summary: DuplicateMemberSummary = {
         id: bm.member.id,
         name: bm.member.name,
@@ -288,22 +315,30 @@ export class DuplicateDetectionService {
         district: bm.member.district,
         houseNumber: bm.member.houseNumber,
         isActive: bm.member.isActive,
-        roleOrNote: `Board Member: ${bm.fullName}`
+        roleOrNote: `Board Member: ${bm.fullName} (${phoneLabel})`
       };
 
+      // Group by phone (when phone is provided)
       if (bm.phoneNumber && bm.phoneNumber.trim().length >= 7) {
         const cleanPhone = bm.phoneNumber.trim().replace(/\s+/g, '');
         if (!bmPhoneToMembers.has(cleanPhone)) bmPhoneToMembers.set(cleanPhone, new Map());
         bmPhoneToMembers.get(cleanPhone)!.set(bm.memberId, summary);
       }
 
-      if (bm.fullName && bm.fullName.trim().length >= 4) {
+      // Group by name (without requiring phone)
+      if (bm.fullName && bm.fullName.trim().length >= 3) {
         const cleanName = bm.fullName.trim().toLowerCase();
-        if (!bmNameToMembers.has(cleanName)) bmNameToMembers.set(cleanName, new Map());
-        bmNameToMembers.get(cleanName)!.set(bm.memberId, summary);
+        if (!bmNameToMembers.has(cleanName)) {
+          bmNameToMembers.set(cleanName, {
+            displayName: bm.fullName.trim(),
+            members: new Map()
+          });
+        }
+        bmNameToMembers.get(cleanName)!.members.set(bm.memberId, summary);
       }
     }
 
+    // A. Clusters for Board Member Phone Overlap
     for (const [phone, memberMap] of bmPhoneToMembers.entries()) {
       if (memberMap.size > 1) {
         clusters.push({
@@ -316,23 +351,16 @@ export class DuplicateDetectionService {
       }
     }
 
-    for (const [name, memberMap] of bmNameToMembers.entries()) {
-      if (memberMap.size > 1) {
-        // Avoid duplicate cluster if phone already covered it
-        const alreadyCovered = clusters.some(c =>
-          c.type === 'BOARD_MEMBER' &&
-          c.members.length === memberMap.size &&
-          c.members.every(m => memberMap.has(m.id))
-        );
-        if (!alreadyCovered) {
-          clusters.push({
-            id: `bm-name-${name}`,
-            type: 'BOARD_MEMBER',
-            matchField: 'Board Member Name',
-            matchValue: name,
-            members: Array.from(memberMap.values())
-          });
-        }
+    // B. Clusters for Board Member Name Overlap (Without Phone Requirement)
+    for (const [nameKey, group] of bmNameToMembers.entries()) {
+      if (group.members.size > 1) {
+        clusters.push({
+          id: `bm-name-${nameKey}`,
+          type: 'BOARD_MEMBER',
+          matchField: 'Board Member Name (Without Phone)',
+          matchValue: group.displayName,
+          members: Array.from(group.members.values())
+        });
       }
     }
 

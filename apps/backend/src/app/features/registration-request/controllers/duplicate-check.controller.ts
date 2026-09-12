@@ -15,6 +15,14 @@ export const checkRegistrationDuplicates = async (req: Request, res: Response, n
       throw new AppError('Registration request not found', 404);
     }
 
+    const boardMembers: { fullName: string; phoneNumber?: string }[] = [];
+    if (request.contactPersonName) {
+      boardMembers.push({
+        fullName: request.contactPersonName,
+        phoneNumber: request.contactPersonPhone || undefined,
+      });
+    }
+
     const payload: DuplicateDetectionPayload = {
       nameAm: request.nameAm,
       nameEn: request.nameEn || undefined,
@@ -25,8 +33,7 @@ export const checkRegistrationDuplicates = async (req: Request, res: Response, n
       subcity: request.subcity || undefined,
       district: request.district || undefined,
       houseNumber: request.houseNumber || undefined,
-      // Note: Registration requests currently do not explicitly store board members
-      // If they are added in the future, they can be mapped here
+      boardMembers: boardMembers.length > 0 ? boardMembers : undefined,
     };
 
     const duplicates = await DuplicateDetectionService.findPotentialDuplicates(payload);

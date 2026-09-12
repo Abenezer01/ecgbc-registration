@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Search,
 } from "lucide-react";
-import { PageHeader, Button, Badge, Spinner } from "@/components/ui";
+import { PageHeader, Button, Badge, Spinner, Pagination } from "@/components/ui";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 
@@ -39,6 +39,8 @@ interface DuplicateCluster {
   members: DuplicateMemberSummary[];
 }
 
+const PAGE_SIZE = 10;
+
 export default function DuplicateAuditPage() {
   const router = useRouter();
   const [clusters, setClusters] = useState<DuplicateCluster[]>([]);
@@ -46,6 +48,7 @@ export default function DuplicateAuditPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"ALL" | "PHONE" | "BOARD_MEMBER" | "LOCATION">("ALL");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const fetchAudit = async (showToast = false) => {
     try {
@@ -96,6 +99,11 @@ export default function DuplicateAuditPage() {
       return matchesValue || matchesMember;
     });
   }, [clusters, activeTab, search]);
+
+  const paginatedClusters = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredClusters.slice(start, start + PAGE_SIZE);
+  }, [filteredClusters, page]);
 
   const getClusterIcon = (type: DuplicateCluster["type"]) => {
     switch (type) {
@@ -152,7 +160,7 @@ export default function DuplicateAuditPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
-          onClick={() => setActiveTab("ALL")}
+          onClick={() => { setActiveTab("ALL"); setPage(1); }}
           className={`cursor-pointer p-4 rounded-xl border transition-all ${
             activeTab === "ALL"
               ? "bg-amber-50 dark:bg-amber-950/20 border-amber-400 dark:border-amber-600 shadow-sm"
@@ -170,7 +178,7 @@ export default function DuplicateAuditPage() {
         </div>
 
         <div
-          onClick={() => setActiveTab("PHONE")}
+          onClick={() => { setActiveTab("PHONE"); setPage(1); }}
           className={`cursor-pointer p-4 rounded-xl border transition-all ${
             activeTab === "PHONE"
               ? "bg-blue-50 dark:bg-blue-950/20 border-blue-400 dark:border-blue-600 shadow-sm"
@@ -188,7 +196,7 @@ export default function DuplicateAuditPage() {
         </div>
 
         <div
-          onClick={() => setActiveTab("BOARD_MEMBER")}
+          onClick={() => { setActiveTab("BOARD_MEMBER"); setPage(1); }}
           className={`cursor-pointer p-4 rounded-xl border transition-all ${
             activeTab === "BOARD_MEMBER"
               ? "bg-purple-50 dark:bg-purple-950/20 border-purple-400 dark:border-purple-600 shadow-sm"
@@ -206,7 +214,7 @@ export default function DuplicateAuditPage() {
         </div>
 
         <div
-          onClick={() => setActiveTab("LOCATION")}
+          onClick={() => { setActiveTab("LOCATION"); setPage(1); }}
           className={`cursor-pointer p-4 rounded-xl border transition-all ${
             activeTab === "LOCATION"
               ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-400 dark:border-emerald-600 shadow-sm"
@@ -230,7 +238,7 @@ export default function DuplicateAuditPage() {
           {(["ALL", "PHONE", "BOARD_MEMBER", "LOCATION"] as const).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => { setActiveTab(tab); setPage(1); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                 activeTab === tab
                   ? "bg-amber-600 text-white shadow-sm"
@@ -250,7 +258,7 @@ export default function DuplicateAuditPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search church or value..."
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-amber-500"
           />
@@ -279,7 +287,7 @@ export default function DuplicateAuditPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredClusters.map((cluster) => (
+          {paginatedClusters.map((cluster) => (
             <div
               key={cluster.id}
               className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-sm"
@@ -371,6 +379,21 @@ export default function DuplicateAuditPage() {
               </div>
             </div>
           ))}
+
+          {/* Pagination */}
+          {filteredClusters.length > PAGE_SIZE && (
+            <div className="pt-2">
+              <Pagination
+                page={page}
+                pageSize={PAGE_SIZE}
+                total={filteredClusters.length}
+                onPageChange={(newPage) => {
+                  setPage(newPage);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
