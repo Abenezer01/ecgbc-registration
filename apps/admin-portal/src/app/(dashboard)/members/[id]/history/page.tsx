@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Eye, History, RefreshCw, AlertTriangle, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert } from "lucide-react";
+import { Eye, History, RefreshCw, AlertTriangle, User, FileText, FolderOpen, Users as UsersIcon, ShieldAlert, GitFork } from "lucide-react";
 import { Button, DataTable, Badge, Modal, ModalFooter, FormField, Pagination } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { useMember } from "@/hooks/useMembers";
@@ -36,6 +36,7 @@ export default function MemberHistoryPage() {
     { id: "documents", label: "Documents", icon: <FolderOpen />, path: `/members/${id}/documents`, visible: canViewFiles },
     { id: "church-users", label: "Church Users", icon: <UsersIcon />, path: `/members/${id}/church-users`, visible: canManageUsers },
     { id: "history", label: "History", icon: <History />, path: `/members/${id}/history` },
+    { id: "lineage", label: "Lineage", icon: <GitFork />, path: `/members/${id}/lineage` },
     { id: "settings", label: "Settings", icon: <ShieldAlert />, path: `/members/${id}/settings`, visible: canDeactivate },
   ];
 

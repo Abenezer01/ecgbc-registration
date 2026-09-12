@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Phone, Users, User, FileText, FolderOpen, ShieldAlert,
   AlertTriangle, Plus,
-  History
+  History, GitFork
 } from "lucide-react";
 import {
   Card, CardContent, Button, Input, Select, FormField,
@@ -75,6 +75,7 @@ export default function OverviewPage() {
     { id: "documents",    label: "Documents",    icon: <FolderOpen />,  path: `/members/${id}/documents`,    visible: canViewFiles },
     { id: "church-users", label: "Church Users", icon: <Users />,       path: `/members/${id}/church-users`, visible: canManageUsers },
     { id: "history", label: "History", icon: <History />, path: `/members/${id}/history` },
+    { id: "lineage", label: "Lineage", icon: <GitFork />, path: `/members/${id}/lineage` },
     { id: "settings",     label: "Settings",     icon: <ShieldAlert />, path: `/members/${id}/settings`,     visible: canDeactivate },
   ];
   const visibleTabs = tabs.filter((t) => t.visible !== false);

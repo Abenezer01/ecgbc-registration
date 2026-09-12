@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, Plus, Eye, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign , History } from "lucide-react";
+import { FileText, Plus, Eye, FileDown, User, FolderOpen, Users, ShieldAlert, DollarSign, History, GitFork } from "lucide-react";
 import { Badge, DataTable, Button, DateInput, Modal, ModalFooter, FormField, RowActions, presets, Input } from "@/components/ui";
 import { useMemberReports, useCreateMemberReport, useUpdateMemberReport, useDeleteMemberReport } from "@/hooks/useMemberReports";
 import { useReportRequests } from "@/hooks/useReportRequests";
@@ -33,6 +33,7 @@ export default function ReportsPage() {
     { id: "documents", label: "Documents", icon: <FolderOpen />, path: `/members/${id}/documents`, visible: canViewFiles },
     { id: "church-users", label: "Church Users", icon: <Users />, path: `/members/${id}/church-users`, visible: canManageUsers },
     { id: "history", label: "History", icon: <History />, path: `/members/${id}/history` },
+    { id: "lineage", label: "Lineage", icon: <GitFork />, path: `/members/${id}/lineage` },
     { id: "settings", label: "Settings", icon: <ShieldAlert />, path: `/members/${id}/settings`, visible: canDeactivate },
   ];
 

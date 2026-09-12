@@ -106,6 +106,8 @@ model Member {
   memberCategory        DataLookup?       @relation("MemberCategoryLookup", fields: [memberCategoryId], references: [id])
   churchUsers           ChurchUser[]
   contactPerson         ContactPerson?
+  lineageAsParent       MemberLineage[]   @relation("LineageAsParent")
+  lineageAsChild        MemberLineage[]   @relation("LineageAsChild")
 
   @@index([city])
   @@index([councilFellowshipId])
@@ -207,6 +209,7 @@ model Staff {
   requestedNameReservations    NameReservation[]     @relation("NameReservationRequester")
   reviewedNameReservations     NameReservation[]     @relation("NameReservationReviewer")
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewer")
+  lineagesCreated              MemberLineage[]       @relation("LineageStaff")
 
   @@index([roleId], map: "Staff_roleId_fkey")
   @@index([stateId], map: "Staff_stateId_fkey")
@@ -504,4 +507,25 @@ model CRVSequence {
   lastValue Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MemberLineage {
+  id             String   @id @default(uuid())
+  type           String   // "MERGE" | "SPLIT"
+  parentMemberId String
+  childMemberId  String
+  effectiveDate  DateTime @default(now())
+  reason         String?  @db.Text
+  notes          String?  @db.Text
+  performedBy    String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  parentMember   Member   @relation("LineageAsParent", fields: [parentMemberId], references: [id])
+  childMember    Member   @relation("LineageAsChild", fields: [childMemberId], references: [id])
+  staff          Staff?   @relation("LineageStaff", fields: [performedBy], references: [id])
+
+  @@index([parentMemberId])
+  @@index([childMemberId])
+  @@index([type])
 }

@@ -6,7 +6,7 @@ import {
   FolderOpen, FileText, Download, Trash2, Eye, Plus,
   CheckCircle2, AlertTriangle, User, Users, ShieldAlert,
   Pencil, UploadCloud, X,
-  History
+  History, GitFork
 } from "lucide-react";
 import { Button, Modal, ModalFooter, FormField, Input, Select, Drawer, RowActions, presets } from "@/components/ui";
 import {
@@ -53,6 +53,7 @@ export default function DocumentsPage() {
     { id: "documents",    label: "Documents",      icon: <FolderOpen />,  path: `/members/${id}/documents`,    visible: canViewFiles },
     { id: "church-users", label: "Church Users",   icon: <Users />,       path: `/members/${id}/church-users`, visible: canManageUsers },
     { id: "history", label: "History", icon: <History />, path: `/members/${id}/history` },
+    { id: "lineage", label: "Lineage", icon: <GitFork />, path: `/members/${id}/lineage` },
     { id: "settings",     label: "Settings",       icon: <ShieldAlert />, path: `/members/${id}/settings`,     visible: canDeactivate },
   ];
   const visibleTabs = tabs.filter((t) => t.visible !== false);

@@ -39,6 +39,16 @@ export function HeroSection({ member, canEdit, canDeactivate, onEdit, onDeactiva
             <Badge variant={m.isActive ? "success" : "danger"} className="bg-white/20 text-white border-white/30 hover:bg-white/30">
               {m.isActive ? "Active" : "Inactive"}
             </Badge>
+            {m.currentActionState === "MERGED" && (
+              <Badge className="bg-amber-500/30 text-amber-200 border-amber-300/40">
+                MERGED
+              </Badge>
+            )}
+            {m.currentActionState === "SPLIT" && (
+              <Badge className="bg-purple-500/30 text-purple-200 border-purple-300/40">
+                SPLIT
+              </Badge>
+            )}
           </div>
           {m.nameEn && (
             <p className="text-white/70 text-base mb-2 tracking-wide">{m.nameEn}</p>

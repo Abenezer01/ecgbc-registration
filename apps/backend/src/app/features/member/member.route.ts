@@ -159,6 +159,25 @@ router
     MemberController.activeMember
   );
 
+// Lineage (Merger & Split)
+router.get('/:id/lineage',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+  require('./controllers/member-lineage.controller').getMemberLineage
+);
+
+router.post('/:id/merge',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE),
+  require('./controllers/member-lineage.controller').mergeIntoMember
+);
+
+router.post('/:id/split',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE),
+  require('./controllers/member-lineage.controller').splitMember
+);
+
 router.get('/check-certificate/:certificateNo', 
   StaffAuthMiddleware.verifyStaff,
   StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_ADD),
