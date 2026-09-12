@@ -1,5 +1,3 @@
-import { GeoJsonProps } from "geojson";
-
 // Simulate the data that would come from the API
 const mockRegionalDistribution = [
   { name: "Addis Ababa", value: 45 },

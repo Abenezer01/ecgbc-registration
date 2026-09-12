@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, RefreshCw, Download } from "lucide-react";
+import { UserPlus, RefreshCw, Download, ShieldAlert } from "lucide-react";
 import { useMembers, MembersFilters } from "@/hooks/useMembers";
 import { useMemberStats } from "@/hooks/useMemberStats";
 import { useFellowships } from "@/hooks/useFellowships";
@@ -276,6 +276,14 @@ export default function MembersPage() {
           <>
             <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} aria-label="Refresh">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/members/duplicates")}
+              className="text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+            >
+              <ShieldAlert className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
+              Duplicate Audit
             </Button>
             {canExport && (
               <Button variant="outline" onClick={handleExportAll} disabled={downloading}>

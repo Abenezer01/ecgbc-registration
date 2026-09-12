@@ -24,6 +24,7 @@ router.post('/public/apply', publicCors, FileController.uploadMemberFiles.pre, F
 router.use(StaffAuthMiddleware.verifyStaff);
 router.get('/', getRegistrations);
 router.get('/:id', getRegistrationById);
+router.get('/:id/duplicates', require('./controllers/duplicate-check.controller').checkRegistrationDuplicates);
 router.post('/:id/approve', approveRegistration);
 router.post('/:id/reject', rejectRegistration);
 

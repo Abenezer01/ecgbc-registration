@@ -94,6 +94,16 @@ router.delete(
   MemberController.hardDeleteMember
 );
 
+router.post('/check-duplicates',
+  StaffAuthMiddleware.verifyStaff,
+  require('./controllers/duplicate-check.controller').checkMemberDuplicates
+);
+
+router.get('/duplicates/audit',
+  StaffAuthMiddleware.verifyStaff,
+  require('./controllers/duplicate-check.controller').auditMemberDuplicates
+);
+
 router
   .route("/")
   .get(

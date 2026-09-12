@@ -1,14 +1,21 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle, XCircle, FileText, Download, Clock,
   Building2, MapPin, User, Hash, ChevronDown, ChevronUp,
-  Loader2, AlertTriangle, FileImage, FileBadge,
+  Loader2, AlertTriangle, FileImage, FileBadge, ExternalLink, ShieldCheck,
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
+
+interface DuplicateMatch {
+  memberId: string;
+  memberName: string;
+  score: number;
+  reasons: string[];
+}
 
 interface RegistrationRequest {
   id: string;
@@ -117,19 +124,23 @@ export default function ApplicationReviewPage() {
   const [remark, setRemark] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [duplicatesLoading, setDuplicatesLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [reqRes, fellowRes, typesRes, regionsRes] = await Promise.all([
+        const [reqRes, fellowRes, typesRes, regionsRes, dupRes] = await Promise.all([
           api.get(`/registration-requests/${id}`),
           api.get("/council-fellowship-list"),
           api.get("/data-lookups", { params: { type: "MEMBER_TYPE" } }),
           api.get("/data-lookups", { params: { type: "REGION" } }),
+          api.get(`/registration-requests/${id}/duplicates`).catch(() => ({ data: { data: [] } })),
         ]);
         const req = reqRes.data?.data;
         setRequest(req);
+        setDuplicates(dupRes.data?.data || []);
+        setDuplicatesLoading(false);
         setFormData({
           councilFellowshipId: req?.councilFellowship?.id ?? "",
           certificateNo: req?.certificateNo ?? "",
@@ -238,6 +249,76 @@ export default function ApplicationReviewPage() {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* LEFT: main content */}
         <div className="flex-1 space-y-5 min-w-0">
+
+          {/* Duplicate Analysis Panel */}
+          {duplicates.length > 0 ? (
+            <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-400 dark:border-amber-600 rounded-xl p-5 shadow-sm space-y-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5 text-amber-950 dark:text-amber-200">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider">
+                      Potential Duplicate Churches Detected ({duplicates.length})
+                    </h3>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                      Matches existing registered churches by phone number, location, or church name.
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 shrink-0">
+                  Needs Review
+                </span>
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {duplicates.map((dup) => (
+                  <div
+                    key={dup.memberId}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-white dark:bg-neutral-900 border border-amber-200 dark:border-amber-800 shadow-sm"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-neutral-900 dark:text-white text-sm">
+                          {dup.memberName}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                          dup.score >= 80
+                            ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                        }`}>
+                          Match Score: {dup.score}%
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dup.reasons.map((reason, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center text-[11px] px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium"
+                          >
+                            • {reason}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <a
+                      href={`/members/${dup.memberId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 text-xs font-semibold transition-colors shrink-0"
+                    >
+                      View Church <ExternalLink size={13} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : !duplicatesLoading && (
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 text-xs font-medium">
+              <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Duplicate Check Clean: No matching churches found for this phone number, address, or name.</span>
+            </div>
+          )}
 
           <Section title="Church Information" icon={<Building2 size={15} />}>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
