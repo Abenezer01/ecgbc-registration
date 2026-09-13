@@ -54,6 +54,11 @@ export function HeroSection({ member, canEdit, canDeactivate, onEdit, onDeactiva
                 TRANSFERRED
               </Badge>
             )}
+            {m.currentActionState === "VOLUNTARILY_CLOSED" && (
+              <Badge className="bg-rose-500/30 text-rose-200 border-rose-300/40">
+                VOLUNTARILY CLOSED
+              </Badge>
+            )}
           </div>
           {m.nameEn && (
             <p className="text-white/70 text-base mb-2 tracking-wide">{m.nameEn}</p>

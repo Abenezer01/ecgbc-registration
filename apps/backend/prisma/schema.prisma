@@ -111,6 +111,7 @@ model Member {
   lineageAsParent       MemberLineage[]   @relation("LineageAsParent")
   lineageAsChild        MemberLineage[]   @relation("LineageAsChild")
   transfers             MemberTransfer[]  @relation("MemberTransfers")
+  closureRequests       MemberClosureRequest[] @relation("MemberClosureRequests")
 
   @@index([city])
   @@index([councilFellowshipId])
@@ -214,6 +215,7 @@ model Staff {
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewer")
   lineagesCreated              MemberLineage[]       @relation("LineageStaff")
   transfersPerformed           MemberTransfer[]      @relation("TransferStaff")
+  closureRequestsReviewed      MemberClosureRequest[] @relation("ClosureRequestReviewer")
 
   @@index([roleId], map: "Staff_roleId_fkey")
   @@index([stateId], map: "Staff_stateId_fkey")
@@ -576,4 +578,35 @@ model MemberTransfer {
   @@index([toRegionId])
   @@index([effectiveDate])
 }
+
+model MemberClosureRequest {
+  id                    String    @id @default(uuid())
+  memberId              String
+  closureType           String    @default("DISSOLUTION") // "DISSOLUTION" | "LOW_MEMBERSHIP" | "FINANCIAL_HARDSHIP" | "LEADERSHIP_VACANCY" | "EXTERNAL_AMALGAMATION" | "OTHER"
+  reason                String    @db.Text
+  resolutionDate        DateTime? // Date congregation / board voted to close
+  effectiveDate         DateTime  @default(now()) // Requested effective closure date
+  contactPersonName     String?
+  contactPersonPhone    String?
+  contactPersonEmail    String?
+  recordsLocation       String?   @db.Text // Physical/administrative custody location for registers, archives, property
+  resolutionDocumentUrl String?   // Attachment link / path
+  status                String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
+  submittedByType       String    @default("STAFF") // "CHURCH_USER" | "STAFF"
+  submittedById         String?   // User ID
+  reviewedBy            String?   // Staff ID
+  reviewedAt            DateTime?
+  reviewRemarks         String?   @db.Text // Approver or rejector notes/resolution reference code
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  member                Member    @relation("MemberClosureRequests", fields: [memberId], references: [id])
+  reviewer              Staff?    @relation("ClosureRequestReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([memberId])
+  @@index([status])
+  @@index([reviewedBy])
+  @@index([effectiveDate])
+}
+
 

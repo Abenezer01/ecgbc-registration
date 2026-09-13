@@ -107,4 +107,23 @@ router.get(
   ChurchPortalController.getDashboardStats
 );
 
+// Voluntary closure request
+router.post(
+  "/closure-request",
+  ChurchAuthMiddleware.verifyChurchUser,
+  require("../member/controllers/member-closure.controller").submitChurchPortalClosure
+);
+
+router.get(
+  "/closure-request",
+  ChurchAuthMiddleware.verifyChurchUser,
+  require("../member/controllers/member-closure.controller").getChurchPortalClosure
+);
+
+router.post(
+  "/closure-request/cancel",
+  ChurchAuthMiddleware.verifyChurchUser,
+  require("../member/controllers/member-closure.controller").cancelChurchPortalClosure
+);
+
 export default router;

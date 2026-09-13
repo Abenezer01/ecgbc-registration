@@ -191,6 +191,48 @@ router.post('/:id/transfer',
   require('./controllers/member-transfer.controller').transferMember
 );
 
+// Voluntary Closure Requests
+router.post('/:id/closure-request',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE),
+  require('./controllers/member-closure.controller').submitMemberClosure
+);
+
+router.get('/:id/closure-requests',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+  require('./controllers/member-closure.controller').getMemberClosures
+);
+
+router.get('/closure-requests/all',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+  require('./controllers/member-closure.controller').getAllClosureRequests
+);
+
+router.get('/closure-requests/:id',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+  require('./controllers/member-closure.controller').getClosureRequestById
+);
+
+router.post('/closure-requests/:id/approve',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_DEACTIVATE),
+  require('./controllers/member-closure.controller').approveClosureRequest
+);
+
+router.post('/closure-requests/:id/reject',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_DEACTIVATE),
+  require('./controllers/member-closure.controller').rejectClosureRequest
+);
+
+router.post('/closure-requests/:id/cancel',
+  StaffAuthMiddleware.verifyStaff,
+  require('./controllers/member-closure.controller').cancelClosureRequest
+);
+
 router.get('/check-certificate/:certificateNo', 
   StaffAuthMiddleware.verifyStaff,
   StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_ADD),

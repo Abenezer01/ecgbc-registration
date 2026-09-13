@@ -98,6 +98,9 @@ export interface Staff {
 
 export interface Member {
   id: string;
+  name?: string;
+  nameAm?: string;
+  nameEn?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -105,6 +108,8 @@ export interface Member {
   dateOfBirth?: string;
   gender?: string;
   isActive: boolean;
+  currentActionState?: string;
+  reasonForInactive?: string;
   category?: Category;
   fellowship?: Fellowship;
   boardMembers?: BoardMember[];
