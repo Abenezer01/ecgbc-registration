@@ -38,6 +38,8 @@ model DataLookup {
   files                      File[]                @relation("FileCategoryLookup")
   registrationRequestTypes   RegistrationRequest[] @relation("RegistrationRequestType")
   registrationRequestRegions RegistrationRequest[] @relation("RegistrationRequestRegion")
+  transfersFromRegion        MemberTransfer[]      @relation("TransfersFromRegion")
+  transfersToRegion          MemberTransfer[]      @relation("TransfersToRegion")
 }
 
 model Permission {
@@ -108,6 +110,7 @@ model Member {
   contactPerson         ContactPerson?
   lineageAsParent       MemberLineage[]   @relation("LineageAsParent")
   lineageAsChild        MemberLineage[]   @relation("LineageAsChild")
+  transfers             MemberTransfer[]  @relation("MemberTransfers")
 
   @@index([city])
   @@index([councilFellowshipId])
@@ -210,6 +213,7 @@ model Staff {
   reviewedNameReservations     NameReservation[]     @relation("NameReservationReviewer")
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationRequestReviewer")
   lineagesCreated              MemberLineage[]       @relation("LineageStaff")
+  transfersPerformed           MemberTransfer[]      @relation("TransferStaff")
 
   @@index([roleId], map: "Staff_roleId_fkey")
   @@index([stateId], map: "Staff_stateId_fkey")
@@ -245,6 +249,8 @@ model CouncilFellowship {
   feeRules              FeeRule[]
   contactPerson         ContactPerson?
   registrationRequests  RegistrationRequest[] @relation("RegistrationRequestFellowship")
+  transfersFrom         MemberTransfer[]      @relation("TransfersFromFellowship")
+  transfersTo           MemberTransfer[]      @relation("TransfersToFellowship")
 
   @@index([regionId], map: "CouncilFellowship_regionId_fkey")
 }
@@ -529,3 +535,45 @@ model MemberLineage {
   @@index([childMemberId])
   @@index([type])
 }
+
+model MemberTransfer {
+  id               String            @id @default(uuid())
+  memberId         String
+  fromFellowshipId String
+  toFellowshipId   String
+  fromRegionId     String?
+  toRegionId       String?
+  fromCity         String?
+  fromSubcity      String?
+  fromZone         String?
+  fromDistrict     String?
+  fromHouseNumber  String?
+  toCity           String?
+  toSubcity        String?
+  toZone           String?
+  toDistrict       String?
+  toHouseNumber    String?
+  transferType     String            @default("REDISTRICTING") // "REDISTRICTING" | "RELOCATION" | "ADMINISTRATIVE" | "OTHER"
+  reason           String?           @db.Text
+  referenceNumber  String?
+  documentUrl      String?
+  effectiveDate    DateTime          @default(now())
+  performedBy      String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  member           Member            @relation("MemberTransfers", fields: [memberId], references: [id])
+  fromFellowship   CouncilFellowship @relation("TransfersFromFellowship", fields: [fromFellowshipId], references: [id])
+  toFellowship     CouncilFellowship @relation("TransfersToFellowship", fields: [toFellowshipId], references: [id])
+  fromRegion       DataLookup?       @relation("TransfersFromRegion", fields: [fromRegionId], references: [id])
+  toRegion         DataLookup?       @relation("TransfersToRegion", fields: [toRegionId], references: [id])
+  staff            Staff?            @relation("TransferStaff", fields: [performedBy], references: [id])
+
+  @@index([memberId])
+  @@index([fromFellowshipId])
+  @@index([toFellowshipId])
+  @@index([fromRegionId])
+  @@index([toRegionId])
+  @@index([effectiveDate])
+}
+

@@ -17,15 +17,20 @@ import {
   Calendar,
   Layers,
   AlertCircle,
-  Building2
+  Building2,
+  ArrowRightLeft,
+  MapPin,
+  CheckCircle2
 } from "lucide-react";
 import { Button, Spinner } from "@/components/ui";
 import { useMember } from "@/hooks/useMembers";
 import { useAuth } from "@/hooks/useAuth";
+import { useMemberTransfers } from "@/hooks/useMemberTransfers";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { MergeChurchModal } from "../../components/MergeChurchModal";
 import { SplitChurchModal } from "../../components/SplitChurchModal";
+import { TransferChurchModal } from "../../components/TransferChurchModal";
 
 interface LineageItem {
   lineageId: string;
@@ -74,6 +79,10 @@ export default function MemberLineagePage() {
   const [loading, setLoading] = useState(true);
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [splitModalOpen, setSplitModalOpen] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+
+  const { data: transfersData, refetch: refetchTransfers } = useMemberTransfers(id);
+  const transfers = transfersData?.transfers || [];
 
   const canEdit = hasPermission("change_member");
   const canViewFiles = hasPermission("view_file") || hasPermission("view_member");
@@ -159,12 +168,20 @@ export default function MemberLineagePage() {
                 Church Lineage & History Hierarchy
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Preserves full organizational heritage through parent-child lineage. Predecessor records and archives remain permanently accessible.
+                Preserves full organizational heritage through parent-child lineage and regional transfers. Predecessor records and archives remain permanently accessible.
               </p>
             </div>
 
             {canEdit && (
               <div className="flex items-center gap-2.5 flex-wrap">
+                <Button
+                  variant="outline"
+                  onClick={() => setTransferModalOpen(true)}
+                  className="text-teal-700 dark:text-teal-400 border-teal-300 dark:border-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/20"
+                >
+                  <ArrowRightLeft className="mr-1.5 h-4 w-4 text-teal-600" />
+                  Transfer Fellowship
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setMergeModalOpen(true)}
@@ -369,6 +386,120 @@ export default function MemberLineagePage() {
                   </div>
                 )}
               </div>
+
+              {/* SECTION 3: Fellowship & Regional Transfers History */}
+              <div className="space-y-3 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                    <ArrowRightLeft className="h-4 w-4 text-teal-600" />
+                    Fellowship & Regional Transfer History
+                  </h3>
+                  <span className="text-xs text-zinc-400">
+                    {transfers.length} recorded
+                  </span>
+                </div>
+
+                {transfers.length === 0 ? (
+                  <div className="p-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400">
+                    No fellowship or regional transfers recorded for this church.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {transfers.map((t) => {
+                      const typeBadgeColors = {
+                        REDISTRICTING: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700",
+                        RELOCATION: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700",
+                        ADMINISTRATIVE: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700",
+                        OTHER: "bg-zinc-100 text-zinc-800 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
+                      }[t.transferType] || "bg-zinc-100 text-zinc-800 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300";
+
+                      const fromLocation = [t.fromCity, t.fromSubcity, t.fromZone, t.fromDistrict].filter(Boolean).join(", ");
+                      const toLocation = [t.toCity, t.toSubcity, t.toZone, t.toDistrict].filter(Boolean).join(", ");
+                      const hasAddressChange = toLocation && toLocation !== fromLocation;
+
+                      return (
+                        <div
+                          key={t.id}
+                          className="p-4 rounded-xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/30 dark:bg-teal-950/10 space-y-3"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${typeBadgeColors}`}>
+                                {t.transferType}
+                              </span>
+                              {t.referenceNumber && (
+                                <span className="text-[11px] font-mono text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700">
+                                  Ref: {t.referenceNumber}
+                                </span>
+                              )}
+                            </div>
+                            <span className="flex items-center gap-1 text-[11px] text-zinc-500">
+                              <Calendar size={12} /> Effective: {new Date(t.effectiveDate).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          {/* Transition visual */}
+                          <div className="p-3 rounded-lg bg-white dark:bg-zinc-900 border border-teal-200/60 dark:border-teal-900/40 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-semibold uppercase text-zinc-400">Previous Assignment</span>
+                              <p className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                                <Building2 size={14} className="text-zinc-400" />
+                                {t.fromFellowship?.name || "Unknown Fellowship"}
+                              </p>
+                              {(t.fromRegion?.description || t.fromRegion?.value) && (
+                                <p className="text-[11px] text-zinc-500 flex items-center gap-1">
+                                  <MapPin size={12} className="text-zinc-400" />
+                                  Region: {t.fromRegion.description || t.fromRegion.value}
+                                </p>
+                              )}
+                              {fromLocation && (
+                                <p className="text-[11px] text-zinc-400 italic">
+                                  Address: {fromLocation}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="space-y-1 md:border-l md:border-zinc-100 md:dark:border-zinc-800 md:pl-3">
+                              <span className="text-[10px] font-semibold uppercase text-teal-600 dark:text-teal-400">New Assignment</span>
+                              <p className="font-semibold text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
+                                <Building2 size={14} className="text-teal-600" />
+                                {t.toFellowship?.name || "Unknown Fellowship"}
+                              </p>
+                              {(t.toRegion?.description || t.toRegion?.value) && (
+                                <p className="text-[11px] text-teal-700 dark:text-teal-300 flex items-center gap-1">
+                                  <MapPin size={12} className="text-teal-500" />
+                                  Region: {t.toRegion.description || t.toRegion.value}
+                                </p>
+                              )}
+                              {hasAddressChange && (
+                                <p className="text-[11px] text-teal-600 dark:text-teal-400 italic">
+                                  New Address: {toLocation}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Rationale & Staff */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-zinc-500 pt-1">
+                            <div>
+                              {t.reason && (
+                                <p className="text-zinc-700 dark:text-zinc-300">
+                                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">Notes:</span> {t.reason}
+                                </p>
+                              )}
+                            </div>
+                            {t.staff && (
+                              <span className="text-zinc-400 shrink-0">
+                                Authorized by: {t.staff.firstName} {t.staff.lastName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -387,6 +518,30 @@ export default function MemberLineagePage() {
         onClose={() => setSplitModalOpen(false)}
         parentMember={{ id: m.id, name: m.name, certificateNo: m.certificateNo }}
         onSuccess={() => fetchLineage()}
+      />
+
+      <TransferChurchModal
+        isOpen={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        member={{
+          id: m.id,
+          name: m.name,
+          nameEn: m.nameEn,
+          certificateNo: m.certificateNo,
+          councilFellowshipId: m.councilFellowshipId,
+          regionId: m.regionId,
+          councilFellowship: m.councilFellowship,
+          region: m.region,
+          city: m.city,
+          subcity: m.subcity,
+          zone: m.zone,
+          district: m.district,
+          houseNumber: m.houseNumber,
+        }}
+        onSuccess={() => {
+          fetchLineage();
+          refetchTransfers();
+        }}
       />
     </>
   );

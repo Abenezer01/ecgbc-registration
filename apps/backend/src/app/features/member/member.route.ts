@@ -178,6 +178,19 @@ router.post('/:id/split',
   require('./controllers/member-lineage.controller').splitMember
 );
 
+// Fellowship & Regional Transfers
+router.get('/:id/transfers',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW),
+  require('./controllers/member-transfer.controller').getMemberTransfers
+);
+
+router.post('/:id/transfer',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE),
+  require('./controllers/member-transfer.controller').transferMember
+);
+
 router.get('/check-certificate/:certificateNo', 
   StaffAuthMiddleware.verifyStaff,
   StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_ADD),

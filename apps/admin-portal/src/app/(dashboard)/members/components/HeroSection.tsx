@@ -49,6 +49,11 @@ export function HeroSection({ member, canEdit, canDeactivate, onEdit, onDeactiva
                 SPLIT
               </Badge>
             )}
+            {m.currentActionState === "TRANSFERRED" && (
+              <Badge className="bg-teal-500/30 text-teal-200 border-teal-300/40">
+                TRANSFERRED
+              </Badge>
+            )}
           </div>
           {m.nameEn && (
             <p className="text-white/70 text-base mb-2 tracking-wide">{m.nameEn}</p>
