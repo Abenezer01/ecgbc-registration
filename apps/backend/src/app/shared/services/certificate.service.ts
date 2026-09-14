@@ -72,6 +72,7 @@ export class CertificateService {
       // Launch Puppeteer with CI-safe flags
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',

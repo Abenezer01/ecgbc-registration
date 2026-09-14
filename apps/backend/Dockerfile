@@ -37,8 +37,16 @@ FROM node:22 AS runner
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
-# Install OpenSSL 1.1 for Prisma
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL for Prisma, and chromium for Puppeteer
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    ca-certificates \
+    chromium \
+    fonts-freefont-ttf \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm install -g tsx
 # RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # USER appuser
