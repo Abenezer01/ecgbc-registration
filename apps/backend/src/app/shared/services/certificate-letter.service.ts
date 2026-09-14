@@ -177,7 +177,7 @@ export class CertificateLetterService {
       browser = null;
 
       if (previewOnly) {
-        return pdfBytes;
+        return Buffer.from(pdfBytes);
       }
 
       // 7. Save to disk

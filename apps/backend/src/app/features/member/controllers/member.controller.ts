@@ -1121,7 +1121,7 @@ export const previewCertificate = catchAsync(
     const pdfBuffer = await CertificateService.generateMemberCertificate(memberId, true, layout);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
-      res.send(pdfBuffer);
+      res.end(Buffer.from(pdfBuffer));
     } catch (err: any) {
       return next(new AppError(err.message || 'Failed to generate certificate preview', 500));
     }
@@ -1151,7 +1151,7 @@ export const previewCertificateLetter = catchAsync(
       const pdfBuffer = await CertificateLetterService.generateLetter(memberId, options, true);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="letter-preview.pdf"');
-      res.send(pdfBuffer);
+      res.end(Buffer.from(pdfBuffer));
     } catch (err: any) {
       return next(new AppError(err.message || 'Failed to generate letter preview', 500));
     }

@@ -177,7 +177,7 @@ export const usePreviewCertificate = () => {
       const res = await api.get(`/members/${memberId}/preview-certificate?layout=${layout}`, {
         responseType: "blob"
       });
-      return URL.createObjectURL(res.data);
+      return URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
     },
   });
 }
@@ -227,7 +227,7 @@ export const usePreviewCertificateLetter = () => {
       const res = await api.get(`/members/${memberId}/preview-letter${queryStr}`, {
         responseType: "blob",
       });
-      return URL.createObjectURL(res.data);
+      return URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
     },
   });
 };

@@ -68,7 +68,17 @@ export function GenerateLetterModal({ open, onClose, member, onSuccess }: Genera
       setPreviewUrl(url);
     } catch (err: any) {
       console.error("Preview error:", err);
-      setErrorMsg(err.response?.data?.message || "Failed to load letter preview.");
+      let message = "Failed to load letter preview.";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed.message) message = parsed.message;
+        } catch {}
+      } else if (err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+      setErrorMsg(message);
     }
   };
 

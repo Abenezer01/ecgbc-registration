@@ -93,7 +93,7 @@ export class CertificateService {
       });
 
       if (previewOnly) {
-        return pdfBytes;
+        return Buffer.from(pdfBytes);
       }
 
       // Save to disk
