@@ -65,8 +65,17 @@ export default function FilesPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-semibold text-neutral-900 truncate mb-1">
-                    {file.fileName || file.fileType?.value || "Document"}
+                    {file.fileName?.startsWith("Letter_of_Certification")
+                      ? "Letter of Certification (የምስክር ወረቀት ደብዳቤ)"
+                      : file.fileName?.startsWith("Certificate_")
+                      ? "Certificate of Registration (የምዝገባ ሰርተፍኬት)"
+                      : file.fileName || file.category?.description || file.fileType?.value || "Document"}
                   </h4>
+                  {file.category?.description && (
+                    <span className="inline-block text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-1.5 py-0.5 rounded mb-1">
+                      {file.category.description}
+                    </span>
+                  )}
                   <p className="text-xs text-neutral-500">
                     Uploaded on {new Date(file.createdAt).toLocaleDateString()}
                   </p>

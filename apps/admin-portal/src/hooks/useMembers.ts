@@ -181,3 +181,54 @@ export const usePreviewCertificate = () => {
     },
   });
 }
+
+export interface CertificateLetterParams {
+  churchType?: 'new' | 'existing';
+  refNo?: string;
+  applicationDate?: string;
+  issuedDate?: string;
+  subject?: string;
+  recipientName?: string;
+  recipientAddress?: string;
+  bylawPageCount?: number;
+  ccPeaceSecurity?: string;
+  dateAmh?: string;
+  dateEng?: string;
+}
+
+export function useGenerateCertificateLetter() {
+  const { post } = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ memberId, params = {} }: { memberId: string; params?: CertificateLetterParams }) => {
+      const res = await post(`/members/${memberId}/generate-letter`, params);
+      return extractData(res);
+    },
+    onSuccess: (_, { memberId }) => {
+      queryClient.invalidateQueries({ queryKey: ["member", memberId] });
+      queryClient.invalidateQueries({ queryKey: ["memberFiles", memberId] });
+      queryClient.invalidateQueries({ queryKey: ["member-files", memberId] });
+      queryClient.invalidateQueries({ queryKey: ["documentCompleteness", memberId] });
+    },
+  });
+}
+
+export const usePreviewCertificateLetter = () => {
+  return useMutation({
+    mutationFn: async ({ memberId, params = {} }: { memberId: string; params?: CertificateLetterParams }) => {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && val !== '') {
+          searchParams.append(key, String(val));
+        }
+      });
+      const queryStr = searchParams.toString() ? `?${searchParams.toString()}` : '';
+      const res = await api.get(`/members/${memberId}/preview-letter${queryStr}`, {
+        responseType: "blob",
+      });
+      return URL.createObjectURL(res.data);
+    },
+  });
+};
+

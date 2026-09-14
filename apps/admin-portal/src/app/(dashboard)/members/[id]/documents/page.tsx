@@ -21,6 +21,7 @@ import { fileUrl } from "@/lib/file-url";
 import { FileViewer } from "@/components/shared/FileViewer";
 import { useRequiredDocumentTypes, useDocumentCompleteness } from "@/hooks/useDocumentCompleteness";
 import { useMember, useRegenerateCertificate, usePreviewCertificate } from "@/hooks/useMembers";
+import { GenerateLetterModal } from "@/app/(dashboard)/members/components/GenerateLetterModal";
 
 interface EditingFile {
   id: string;
@@ -86,6 +87,7 @@ export default function DocumentsPage() {
   const { mutateAsync: previewCert, isPending: loadingPreview } = usePreviewCertificate();
 
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [letterModalOpen, setLetterModalOpen] = useState(false);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [layoutOption, setLayoutOption] = useState<"standard" | "preprinted">("standard");
 
@@ -249,6 +251,15 @@ export default function DocumentsPage() {
               <div className="flex gap-2">
                 {canEdit && (
                   <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setLetterModalOpen(true)}
+                      className="gap-1.5 border-blue-200 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-950/20 text-blue-700 dark:text-blue-300"
+                    >
+                      <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Letter of Certification (ደብዳቤ)
+                    </Button>
+
                     <Select 
                       value={layoutOption} 
                       onChange={(e) => setLayoutOption(e.target.value as any)}
@@ -266,7 +277,7 @@ export default function DocumentsPage() {
                       console.error(err);
                     }
                   }} className="gap-1.5">
-                    <Eye className="h-4 w-4" /> Preview & Regenerate Certificate
+                    <Eye className="h-4 w-4" /> Certificate
                   </Button>
                   </div>
                 )}
@@ -431,6 +442,16 @@ export default function DocumentsPage() {
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* Generate Letter of Certification Modal */}
+      {member && (
+        <GenerateLetterModal
+          open={letterModalOpen}
+          onClose={() => setLetterModalOpen(false)}
+          member={member}
+          onSuccess={() => refetch()}
+        />
+      )}
 
       {/* File Viewer */}
       {viewerOpen && (

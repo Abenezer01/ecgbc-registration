@@ -16,6 +16,7 @@ export const getChurchPortalFiles = catchAsync(
 
     const files = await prisma.file.findMany({
       where: { memberId: churchUser.memberId },
+      include: { category: true },
       orderBy: { createdAt: "desc" },
     });
 

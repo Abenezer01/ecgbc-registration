@@ -263,4 +263,20 @@ router.post(
   MemberController.regenerateCertificate
 );
 
+// Preview Letter of Certification PDF
+router.get(
+  '/:id/preview-letter',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_VIEW), // Requires view permission
+  MemberController.previewCertificateLetter
+);
+
+// Generate Letter of Certification PDF
+router.post(
+  '/:id/generate-letter',
+  StaffAuthMiddleware.verifyStaff,
+  StaffAuthMiddleware.restrictStaff(Permissions.MemberPermission.MEMBER_CHANGE), // Requires edit permission
+  MemberController.generateCertificateLetter
+);
+
 export default router;

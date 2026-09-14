@@ -8,6 +8,7 @@ import { CommonObjectState, MemberType } from "../../data-lookup/enums/data-look
 import { sendSuccessResponse, sendPaginatedResponse } from "../../../shared/helpers/response.helper";
 import { logActivity, ActivityAction, ActivityEntity } from "../../../shared/services/activity.service";
 import { CertificateService } from "../../../shared/services/certificate.service";
+import { CertificateLetterService } from "../../../shared/services/certificate-letter.service";
 
 // Helper to get allowed ministry fellowship IDs for current staff by email
 async function getAllowedMinistryIdsByEmail(email: string): Promise<string[]> {
@@ -1123,6 +1124,54 @@ export const previewCertificate = catchAsync(
       res.send(pdfBuffer);
     } catch (err: any) {
       return next(new AppError(err.message || 'Failed to generate certificate preview', 500));
+    }
+  }
+);
+
+export const previewCertificateLetter = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const memberId = req.params.id;
+    await assertAccessToMember(req, memberId);
+
+    try {
+      const options = {
+        churchType: req.query.churchType as any,
+        refNo: req.query.refNo as string,
+        applicationDate: req.query.applicationDate as string,
+        issuedDate: req.query.issuedDate as string,
+        subject: req.query.subject as string,
+        recipientName: req.query.recipientName as string,
+        recipientAddress: req.query.recipientAddress as string,
+        bylawPageCount: req.query.bylawPageCount ? Number(req.query.bylawPageCount) : undefined,
+        ccPeaceSecurity: req.query.ccPeaceSecurity as string,
+        dateAmh: req.query.dateAmh as string,
+        dateEng: req.query.dateEng as string,
+      };
+
+      const pdfBuffer = await CertificateLetterService.generateLetter(memberId, options, true);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="letter-preview.pdf"');
+      res.send(pdfBuffer);
+    } catch (err: any) {
+      return next(new AppError(err.message || 'Failed to generate letter preview', 500));
+    }
+  }
+);
+
+export const generateCertificateLetter = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const memberId = req.params.id;
+    await assertAccessToMember(req, memberId);
+
+    try {
+      const options = req.body || {};
+      const file = await CertificateLetterService.generateLetter(memberId, options, false);
+      sendSuccessResponse(res, {
+        message: 'Letter of Certification generated successfully',
+        file,
+      });
+    } catch (err: any) {
+      return next(new AppError(err.message || 'Failed to generate letter of certification', 500));
     }
   }
 );
