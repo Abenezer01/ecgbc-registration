@@ -37,11 +37,19 @@ export function FileViewer({ open, onClose, fileUrl, fileName }: FileViewerProps
 
     if (fileType === "pdf") {
       return (
-        <iframe
-          title={fileName || "pdf-viewer"}
-          src={fileUrl}
-          className="w-full h-[70vh] border-0 rounded-lg"
-        />
+        <object
+          data={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+          type="application/pdf"
+          className="w-full h-[70vh] bg-white rounded-lg"
+          style={{ colorScheme: "light", backgroundColor: "#ffffff" }}
+        >
+          <iframe
+            title={fileName || "pdf-viewer"}
+            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+            className="w-full h-[70vh] border-0 rounded-lg bg-white"
+            style={{ colorScheme: "light", backgroundColor: "#ffffff" }}
+          />
+        </object>
       );
     }
 

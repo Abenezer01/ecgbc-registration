@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, FormField, Input, Select } from "@/components/ui";
-import { FileText, Eye, CheckCircle2, RefreshCw, Download, FileCheck, Building2, Landmark } from "lucide-react";
+import { FileText, Eye, CheckCircle2, RefreshCw, Download, FileCheck, Building2, Landmark, ExternalLink } from "lucide-react";
 import { usePreviewCertificateLetter, useGenerateCertificateLetter, CertificateLetterParams } from "@/hooks/useMembers";
 
 interface GenerateLetterModalProps {
@@ -266,25 +266,33 @@ export function GenerateLetterModal({ open, onClose, member, onSuccess }: Genera
                 href={previewUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-md border border-blue-200 dark:border-blue-900/40"
               >
-                <Download className="h-3.5 w-3.5" /> Open in New Tab
+                <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
               </a>
             )}
           </div>
 
-          <div className="w-full h-[65vh] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
+          <div className="w-full h-[65vh] bg-white border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden shadow-sm flex items-center justify-center">
             {loadingPreview ? (
               <div className="flex flex-col items-center gap-2 text-zinc-400">
                 <RefreshCw className="h-6 w-6 animate-spin text-blue-500" />
                 <span className="text-sm">Rendering letter preview...</span>
               </div>
             ) : previewUrl ? (
-              <iframe
-                src={previewUrl}
-                className="w-full h-full"
-                title="Letter of Certification Preview"
-              />
+              <object
+                data={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+                type="application/pdf"
+                className="w-full h-full bg-white"
+                style={{ colorScheme: "light", backgroundColor: "#ffffff" }}
+              >
+                <iframe
+                  src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+                  className="w-full h-full border-0 bg-white"
+                  style={{ colorScheme: "light", backgroundColor: "#ffffff" }}
+                  title="Letter of Certification Preview"
+                />
+              </object>
             ) : (
               <div className="text-sm text-zinc-400">Preview not loaded. Click Refresh Preview.</div>
             )}

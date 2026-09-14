@@ -414,8 +414,20 @@ export default function DocumentsPage() {
             This is a preview of the certificate that will be generated.
           </p>
           {previewBlobUrl ? (
-            <div className="w-full h-[82vh] bg-zinc-100 dark:bg-zinc-900 border rounded-xl overflow-hidden">
-              <iframe src={previewBlobUrl} className="w-full h-full" title="Certificate Preview" />
+            <div className="w-full h-[82vh] bg-white border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden shadow-sm">
+              <object
+                data={`${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+                type="application/pdf"
+                className="w-full h-full bg-white"
+                style={{ colorScheme: "light", backgroundColor: "#ffffff" }}
+              >
+                <iframe
+                  src={`${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
+                  className="w-full h-full border-0 bg-white"
+                  style={{ colorScheme: "light", backgroundColor: "#ffffff" }}
+                  title="Certificate Preview"
+                />
+              </object>
             </div>
           ) : (
             <div className="w-full h-[82vh] flex items-center justify-center text-zinc-500">
