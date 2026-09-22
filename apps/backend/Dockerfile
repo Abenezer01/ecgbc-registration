@@ -3,7 +3,7 @@ FROM node:22 AS dependencies
 WORKDIR /usr/src/app
 
 # Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 RUN npm install -g tsx
 
 COPY package.json pnpm-lock.yaml* .npmrc* ./
@@ -17,7 +17,7 @@ FROM node:22 AS builder
 WORKDIR /usr/src/app
 
 # Install pnpm in this stage as well
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy dependencies (including generated prisma client)
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
