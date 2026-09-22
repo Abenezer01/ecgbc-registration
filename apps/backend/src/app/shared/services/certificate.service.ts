@@ -178,16 +178,9 @@ export class CertificateService {
         page.drawImage(bgImage, { x: 0, y: 0, width, height });
       } catch (err) {
         console.warn('Background image not found, falling back to drawing borders.');
+        layout = 'standard';
       }
     }
-
-    if (layout !== 'preprinted') {
-      // Borders
-    page.drawRectangle({ x: 30, y: 30, width: width - 60, height: height - 60, borderColor: goldColor, borderWidth: 4 });
-    page.drawRectangle({ x: 38, y: 38, width: width - 76, height: height - 76, borderColor: darkBlueColor, borderWidth: 1 });
-    page.drawRectangle({ x: 42, y: 42, width: width - 84, height: height - 84, borderColor: goldColor, borderWidth: 2 });
-
-    
 
     // Logo
     const logoImage = await pdfDoc.embedPng(logoImageBytes);
@@ -204,6 +197,16 @@ export class CertificateService {
 
     const logoSize = 65;
     page.drawImage(logoImage, { x: (width - logoSize) / 2, y: height - 100, width: logoSize, height: logoSize });
+
+    if (layout !== 'preprinted') {
+      // Borders
+    page.drawRectangle({ x: 30, y: 30, width: width - 60, height: height - 60, borderColor: goldColor, borderWidth: 4 });
+    page.drawRectangle({ x: 38, y: 38, width: width - 76, height: height - 76, borderColor: darkBlueColor, borderWidth: 1 });
+    page.drawRectangle({ x: 42, y: 42, width: width - 84, height: height - 84, borderColor: goldColor, borderWidth: 2 });
+
+    
+
+
 
     // Header
     drawCenteredText("የኢትዮጵያ ወንጌል አማኞች አብያተ ክርስቲያናት ካውንስል", height - 130, 24, darkBlueColor, customFont);

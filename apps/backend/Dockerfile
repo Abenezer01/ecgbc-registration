@@ -53,6 +53,7 @@ RUN npm install -g tsx
 
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/src ./src
+COPY --from=builder /usr/src/app/public ./public
 COPY --from=dependencies /usr/src/app/node_modules ./node_modules
 
 # Now, copy prisma from the builder stage where it was copied by 'COPY . .'
