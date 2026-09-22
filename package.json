@@ -15,5 +15,14 @@
   },
   "dependencies": {
     "framer-motion": "^12.42.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "puppeteer"
+    ]
   }
 }
