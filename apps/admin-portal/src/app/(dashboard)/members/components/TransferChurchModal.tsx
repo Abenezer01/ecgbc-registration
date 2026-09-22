@@ -17,16 +17,17 @@ import { useFellowships } from "@/hooks/useFellowships";
 import { useDataLookups } from "@/hooks/useDataLookups";
 import { useTransferMember } from "@/hooks/useMemberTransfers";
 import { toast } from "react-hot-toast";
+import { ChurchSearchPicker, MemberOption } from "./ChurchSearchPicker";
 
 interface TransferChurchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  member: {
+  member?: {
     id: string;
     name: string;
     nameEn?: string;
     certificateNo: string;
-    councilFellowshipId: string;
+    councilFellowshipId?: string;
     regionId?: string;
     councilFellowship?: { id: string; name: string };
     region?: { id: string; description: string; value: string };
@@ -35,7 +36,7 @@ interface TransferChurchModalProps {
     zone?: string;
     district?: string;
     houseNumber?: string;
-  };
+  } | null;
   onSuccess?: () => void;
 }
 
@@ -51,6 +52,8 @@ export function TransferChurchModal({
 
   const regionOptions = lookups.filter((l) => l.type === "region");
   const fellowships = fellowshipsData?.fellowships || [];
+
+  const [currentMember, setCurrentMember] = useState<MemberOption | null>(null);
 
   const [toFellowshipId, setToFellowshipId] = useState("");
   const [toRegionId, setToRegionId] = useState("");
@@ -68,21 +71,67 @@ export function TransferChurchModal({
   const [toHouseNumber, setToHouseNumber] = useState("");
 
   useEffect(() => {
-    if (isOpen && member) {
+    if (isOpen) {
+      if (member) {
+        setCurrentMember({
+          id: member.id,
+          name: member.name,
+          nameEn: member.nameEn,
+          certificateNo: member.certificateNo,
+          councilFellowshipId: member.councilFellowshipId,
+          regionId: member.regionId,
+          councilFellowship: member.councilFellowship,
+          region: member.region,
+          city: member.city,
+          subcity: member.subcity,
+          zone: member.zone,
+          district: member.district,
+          houseNumber: member.houseNumber,
+          isActive: true,
+        });
+        setToRegionId(member.regionId || "");
+        setToCity(member.city || "");
+        setToSubcity(member.subcity || "");
+        setToZone(member.zone || "");
+        setToDistrict(member.district || "");
+        setToHouseNumber(member.houseNumber || "");
+      } else {
+        setCurrentMember(null);
+        setToRegionId("");
+        setToCity("");
+        setToSubcity("");
+        setToZone("");
+        setToDistrict("");
+        setToHouseNumber("");
+      }
       setToFellowshipId("");
-      setToRegionId(member.regionId || "");
       setTransferType("REDISTRICTING");
       setEffectiveDate(new Date().toISOString().split("T")[0]);
       setReferenceNumber("");
       setReason("");
       setUpdateAddress(false);
-      setToCity(member.city || "");
-      setToSubcity(member.subcity || "");
-      setToZone(member.zone || "");
-      setToDistrict(member.district || "");
-      setToHouseNumber(member.houseNumber || "");
     }
   }, [isOpen, member]);
+
+  // When currentMember changes via picker in standalone mode
+  const handleSelectChurch = (selected: MemberOption | null) => {
+    setCurrentMember(selected);
+    if (selected) {
+      setToRegionId(selected.regionId || "");
+      setToCity(selected.city || "");
+      setToSubcity(selected.subcity || "");
+      setToZone(selected.zone || "");
+      setToDistrict(selected.district || "");
+      setToHouseNumber(selected.houseNumber || "");
+    } else {
+      setToRegionId("");
+      setToCity("");
+      setToSubcity("");
+      setToZone("");
+      setToDistrict("");
+      setToHouseNumber("");
+    }
+  };
 
   // When transferType is RELOCATION, automatically enable address editing
   const handleTypeChange = (type: "REDISTRICTING" | "RELOCATION" | "ADMINISTRATIVE" | "OTHER") => {
@@ -104,19 +153,24 @@ export function TransferChurchModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!currentMember) {
+      toast.error("Please select a church to transfer");
+      return;
+    }
+
     if (!toFellowshipId) {
       toast.error("Please select a destination fellowship");
       return;
     }
 
-    if (toFellowshipId === member.councilFellowshipId && (!toRegionId || toRegionId === member.regionId) && !updateAddress) {
+    if (toFellowshipId === currentMember.councilFellowshipId && (!toRegionId || toRegionId === currentMember.regionId) && !updateAddress) {
       toast.error("Destination fellowship is the same as the current fellowship. Please select a different fellowship or update region/location.");
       return;
     }
 
     try {
       await transferMember({
-        memberId: member.id,
+        memberId: currentMember.id,
         toFellowshipId,
         toRegionId: toRegionId || undefined,
         transferType,
@@ -143,66 +197,84 @@ export function TransferChurchModal({
   return (
     <Modal open={isOpen} onClose={onClose} title="Transfer Church Between Fellowships" size="lg">
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Zero-Loss Info Banner */}
-        <div className="p-3.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/20 flex items-start gap-3 text-xs text-teal-800 dark:text-teal-300">
-          <Info className="h-5 w-5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-semibold">
-              Transferring: {member.name} ({member.certificateNo})
-            </p>
-            <p className="text-teal-700 dark:text-teal-400 leading-relaxed">
-              Moving this church to a different fellowship preserves its full organizational history.
-              Existing reports, financial receipts, files, and church users remain intact.
-            </p>
-          </div>
-        </div>
+        {/* Church Picker (standalone or locked) */}
+        <ChurchSearchPicker
+          selectedChurch={currentMember}
+          onSelectChurch={handleSelectChurch}
+          disabled={!!member}
+          label="Church to Transfer"
+          required
+        />
 
-        {/* Current State Summary Card */}
-        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div>
-            <span className="text-zinc-500 font-medium">Current Fellowship:</span>
-            <p className="font-semibold text-zinc-900 dark:text-white mt-0.5">
-              {member.councilFellowship?.name || "Not Assigned"}
-            </p>
-          </div>
-          <div>
-            <span className="text-zinc-500 font-medium">Current Region:</span>
-            <p className="font-semibold text-zinc-900 dark:text-white mt-0.5">
-              {member.region?.description || member.region?.value || "Not Set"}
-            </p>
-          </div>
-          <div className="sm:col-span-2">
-            <span className="text-zinc-500 font-medium">Current Address:</span>
-            <p className="text-zinc-700 dark:text-zinc-300 mt-0.5">
-              {[member.city, member.subcity, member.zone, member.district].filter(Boolean).join(", ") || "No address on file"}
-            </p>
-          </div>
-        </div>
+        {currentMember ? (
+          <>
+            {/* Zero-Loss Info Banner */}
+            <div className="p-3.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/20 flex items-start gap-3 text-xs text-teal-800 dark:text-teal-300">
+              <Info className="h-5 w-5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold">
+                  Transferring: {currentMember.name} ({currentMember.certificateNo})
+                </p>
+                <p className="text-teal-700 dark:text-teal-400 leading-relaxed">
+                  Moving this church to a different fellowship preserves its full organizational history.
+                  Existing reports, financial receipts, files, and church users remain intact.
+                </p>
+              </div>
+            </div>
 
-        {/* Form Inputs */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Destination Fellowship */}
-            <FormField id="toFellowshipId" label="Destination Council Fellowship *" required>
-              <Select
-                value={toFellowshipId}
-                onChange={(e) => handleFellowshipChange(e.target.value)}
-                disabled={fellowshipsLoading}
-              >
-                <option value="">-- Select Destination Fellowship --</option>
-                {fellowships.map((f) => (
-                  <option
-                    key={f.id}
-                    value={f.id}
-                    disabled={f.id === member.councilFellowshipId}
-                  >
-                    {f.name} {f.id === member.councilFellowshipId ? "(Current)" : ""}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+            {/* Current State Summary Card */}
+            <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-zinc-500 font-medium">Current Fellowship:</span>
+                <p className="font-semibold text-zinc-900 dark:text-white mt-0.5">
+                  {currentMember.councilFellowship?.name || "Not Assigned"}
+                </p>
+              </div>
+              <div>
+                <span className="text-zinc-500 font-medium">Current Region:</span>
+                <p className="font-semibold text-zinc-900 dark:text-white mt-0.5">
+                  {currentMember.region?.description || currentMember.region?.value || "Not Set"}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-zinc-500 font-medium">Current Address:</span>
+                <p className="text-zinc-700 dark:text-zinc-300 mt-0.5">
+                  {[currentMember.city, currentMember.subcity, currentMember.zone, currentMember.district].filter(Boolean).join(", ") || "No address on file"}
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="p-6 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-center text-xs text-zinc-500">
+            Please search and select a church above to configure fellowship transfer.
+          </div>
+        )}
 
-            {/* Destination Region */}
+        {/* Form Inputs (Enabled only if currentMember is selected) */}
+        {currentMember && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Destination Fellowship */}
+              <FormField id="toFellowshipId" label="Destination Council Fellowship *" required>
+                <Select
+                  value={toFellowshipId}
+                  onChange={(e) => handleFellowshipChange(e.target.value)}
+                  disabled={fellowshipsLoading}
+                >
+                  <option value="">-- Select Destination Fellowship --</option>
+                  {fellowships.map((f) => (
+                    <option
+                      key={f.id}
+                      value={f.id}
+                      disabled={f.id === currentMember.councilFellowshipId}
+                    >
+                      {f.name} {f.id === currentMember.councilFellowshipId ? "(Current)" : ""}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              {/* Destination Region */}
             <FormField id="toRegionId" label="Destination Region">
               <Select
                 value={toRegionId}
@@ -333,6 +405,7 @@ export function TransferChurchModal({
             )}
           </div>
         </div>
+        )}
 
         <ModalFooter className="mt-4 flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
@@ -340,7 +413,7 @@ export function TransferChurchModal({
           </Button>
           <Button
             type="submit"
-            disabled={submitting || !toFellowshipId}
+            disabled={submitting || !currentMember || !toFellowshipId}
             className="bg-teal-600 hover:bg-teal-700 text-white"
           >
             {submitting ? (

@@ -1,8 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, RefreshCw, Download, ShieldAlert } from "lucide-react";
+import {
+  UserPlus,
+  RefreshCw,
+  Download,
+  ShieldAlert,
+  Building2,
+  ChevronDown,
+  ArrowRightLeft,
+  GitMerge,
+  GitFork,
+  AlertTriangle,
+} from "lucide-react";
 import { useMembers, MembersFilters } from "@/hooks/useMembers";
 import { useMemberStats } from "@/hooks/useMemberStats";
 import { useFellowships } from "@/hooks/useFellowships";
@@ -20,10 +31,15 @@ import api from "@/lib/api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
-import { columns } from "./components/Columns";
+import { getColumns } from "./components/Columns";
 import { MembersFilterRibbon } from "./components/MembersFilterRibbon";
 import { MembersStatCards } from "./components/MembersStatCards";
 import { AddMemberModal } from "./components/AddMemberModal";
+import { TransferChurchModal } from "./components/TransferChurchModal";
+import { MergeChurchModal } from "./components/MergeChurchModal";
+import { SplitChurchModal } from "./components/SplitChurchModal";
+import { VoluntaryClosureModal } from "./components/VoluntaryClosureModal";
+import type { MemberOption } from "./components/ChurchSearchPicker";
 import { formatEthiopianDate, getCurrentEthYear } from "@/lib/dateUtils";
 
 const PAGE_SIZE = 20;
@@ -49,11 +65,45 @@ export default function MembersPage() {
   const canDeleteMember = hasPermission("delete_member");
   const canExport = hasPermission("view_member");
   const staffIsOwner = staff?.role?.type?.value === "role_type_owner";
+  const canEditMember = hasPermission("change_member") || staffIsOwner;
+  const canDeactivate = hasPermission("deactivate_member") || canDeleteMember || staffIsOwner;
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Church Operations State (Standalone & Contextual)
+  const [opsMenuOpen, setOpsMenuOpen] = useState(false);
+  const opsMenuRef = useRef<HTMLDivElement>(null);
+
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferTarget, setTransferTarget] = useState<any | null>(null);
+
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
+  const [mergeTarget, setMergeTarget] = useState<any | null>(null);
+  const [mergeInitialChurches, setMergeInitialChurches] = useState<MemberOption[]>([]);
+
+  const [splitModalOpen, setSplitModalOpen] = useState(false);
+  const [splitTarget, setSplitTarget] = useState<any | null>(null);
+
+  const [closureModalOpen, setClosureModalOpen] = useState(false);
+  const [closureTarget, setClosureTarget] = useState<any | null>(null);
+
+  // Close church operations dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (opsMenuRef.current && !opsMenuRef.current.contains(event.target as Node)) {
+        setOpsMenuOpen(false);
+      }
+    };
+    if (opsMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [opsMenuOpen]);
 
   const deleteMemberMutation = useDeleteMember();
 
@@ -70,7 +120,6 @@ export default function MembersPage() {
   const reportStatusOptions = lookups?.filter((l) => l.type === "report_state") || [];
 
   const { data: stats, isLoading: statsLoading } = useMemberStats(filters, memberTypeOptions);
-
 
   const fellowShipOptions = useMemo(() => {
     if (!fellowshipsData?.fellowships) return [];
@@ -98,6 +147,30 @@ export default function MembersPage() {
 
   const members = data?.members ?? [];
   const total = data?.total ?? 0;
+
+  // Memoized columns with row actions attached
+  const tableColumns = useMemo(() => {
+    return getColumns({
+      onView: (row) => router.push(`/members/${row.id}`),
+      onTransfer: (row) => {
+        setTransferTarget(row);
+        setTransferModalOpen(true);
+      },
+      onMerge: (row) => {
+        setMergeTarget(row);
+        setMergeInitialChurches([]);
+        setMergeModalOpen(true);
+      },
+      onSplit: (row) => {
+        setSplitTarget(row);
+        setSplitModalOpen(true);
+      },
+      onClosure: (row) => {
+        setClosureTarget(row);
+        setClosureModalOpen(true);
+      },
+    });
+  }, [router]);
 
   // Only show member rows — fellowships have their own dedicated page
   const displayRows = useMemo(() => {
@@ -291,6 +364,108 @@ export default function MembersPage() {
                 {downloading ? "Exporting..." : "Export"}
               </Button>
             )}
+            {canEditMember && (
+              <div className="relative" ref={opsMenuRef}>
+                <Button
+                  variant="outline"
+                  onClick={() => setOpsMenuOpen((prev) => !prev)}
+                  className="gap-1.5 text-zinc-700 dark:text-zinc-200"
+                >
+                  <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Church Operations</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      opsMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </Button>
+
+                {opsMenuOpen && (
+                  <div className="absolute right-0 mt-1.5 w-60 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                    <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
+                      Church Lifecycle
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpsMenuOpen(false);
+                        setTransferTarget(null);
+                        setTransferModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors text-left"
+                    >
+                      <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Transfer Fellowship</div>
+                        <div className="text-xs text-zinc-400">Relocate to another fellowship</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpsMenuOpen(false);
+                        setMergeTarget(null);
+                        setMergeInitialChurches([]);
+                        setMergeModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors text-left"
+                    >
+                      <div className="p-1.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+                        <GitMerge className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Merge Churches</div>
+                        <div className="text-xs text-zinc-400">Combine into one surviving church</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpsMenuOpen(false);
+                        setSplitTarget(null);
+                        setSplitModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors text-left"
+                    >
+                      <div className="p-1.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                        <GitFork className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Split Church</div>
+                        <div className="text-xs text-zinc-400">Branch daughter assemblies</div>
+                      </div>
+                    </button>
+
+                    {canDeactivate && (
+                      <>
+                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpsMenuOpen(false);
+                            setClosureTarget(null);
+                            setClosureModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors text-left"
+                        >
+                          <div className="p-1.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
+                            <AlertTriangle className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="font-medium">Voluntary Closure</div>
+                            <div className="text-xs text-amber-500/80">Deactivate / record closure</div>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {hasPermission("add_member") && (
               <Button onClick={() => setAddOpen(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
@@ -303,34 +478,112 @@ export default function MembersPage() {
 
       {/* Selection feedback and bulk actions */}
       {selectedIds.length > 0 && (
-        <>
-          <div className="flex items-center justify-between space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 mb-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-              {selectedIds.length} selected
-            </div>
-            <div className="flex space-x-2">
-              {canExport && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportSelected}
-                  disabled={downloading}
-                >
-                  Export Selected
-                </Button>
-              )}
-              {canDeleteMember && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleDeleteSelected}
-                >
-                  Delete Selected
-                </Button>
-              )}
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 mb-4">
+          <div className="flex items-center space-x-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span>{selectedIds.length} selected</span>
           </div>
-        </>
+          <div className="flex flex-wrap items-center gap-2">
+            {canEditMember && selectedIds.length >= 2 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const selectedMembers = members.filter((m: any) => selectedIds.includes(m.id));
+                  const memberOptions = selectedMembers.map((m: any) => ({
+                    id: m.id,
+                    name: m.name || m.fullName || "Unknown",
+                    certificateNo: m.certificateNo || "",
+                    isActive: m.isActive,
+                  }));
+                  setMergeInitialChurches(memberOptions);
+                  setMergeTarget(null);
+                  setMergeModalOpen(true);
+                }}
+                className="text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+              >
+                <GitMerge className="mr-1.5 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                Merge Selected ({selectedIds.length})
+              </Button>
+            )}
+
+            {canEditMember && selectedIds.length === 1 && (() => {
+              const singleSelected = members.find((m: any) => m.id === selectedIds[0]);
+              if (!singleSelected) return null;
+              return (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setTransferTarget(singleSelected);
+                      setTransferModalOpen(true);
+                    }}
+                  >
+                    <ArrowRightLeft className="mr-1.5 h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    Transfer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMergeTarget(singleSelected);
+                      setMergeInitialChurches([]);
+                      setMergeModalOpen(true);
+                    }}
+                  >
+                    <GitMerge className="mr-1.5 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    Merge
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSplitTarget(singleSelected);
+                      setSplitModalOpen(true);
+                    }}
+                  >
+                    <GitFork className="mr-1.5 h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    Split
+                  </Button>
+                  {canDeactivate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setClosureTarget(singleSelected);
+                        setClosureModalOpen(true);
+                      }}
+                      className="text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                    >
+                      <AlertTriangle className="mr-1.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      Close
+                    </Button>
+                  )}
+                </>
+              );
+            })()}
+
+            {canExport && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportSelected}
+                disabled={downloading}
+              >
+                Export Selected
+              </Button>
+            )}
+            {canDeleteMember && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSelected}
+              >
+                Delete Selected
+              </Button>
+            )}
+          </div>
+        </div>
       )}
 
       <MembersStatCards
@@ -354,7 +607,7 @@ export default function MembersPage() {
       />
 
       <DataTable<any>
-        columns={columns}
+        columns={tableColumns}
         data={displayRows}
         isLoading={isLoading}
         skeletonRows={PAGE_SIZE}
@@ -385,6 +638,68 @@ export default function MembersPage() {
 
       {addOpen && (
         <AddMemberModal open={addOpen} onClose={() => setAddOpen(false)} />
+      )}
+
+      {transferModalOpen && (
+        <TransferChurchModal
+          isOpen={transferModalOpen}
+          onClose={() => {
+            setTransferModalOpen(false);
+            setTransferTarget(null);
+          }}
+          member={transferTarget}
+          onSuccess={() => {
+            refetch();
+            setSelectedIds([]);
+          }}
+        />
+      )}
+
+      {mergeModalOpen && (
+        <MergeChurchModal
+          isOpen={mergeModalOpen}
+          onClose={() => {
+            setMergeModalOpen(false);
+            setMergeTarget(null);
+            setMergeInitialChurches([]);
+          }}
+          targetMember={mergeTarget}
+          initialSelectedChurches={mergeInitialChurches}
+          onSuccess={() => {
+            refetch();
+            setSelectedIds([]);
+          }}
+        />
+      )}
+
+      {splitModalOpen && (
+        <SplitChurchModal
+          isOpen={splitModalOpen}
+          onClose={() => {
+            setSplitModalOpen(false);
+            setSplitTarget(null);
+          }}
+          parentMember={splitTarget}
+          onSuccess={() => {
+            refetch();
+            setSelectedIds([]);
+          }}
+        />
+      )}
+
+      {closureModalOpen && (
+        <VoluntaryClosureModal
+          isOpen={closureModalOpen}
+          onClose={() => {
+            setClosureModalOpen(false);
+            setClosureTarget(null);
+          }}
+          member={closureTarget}
+          onSuccess={() => {
+            refetch();
+            setSelectedIds([]);
+          }}
+        />
       )}
     </div>
   );

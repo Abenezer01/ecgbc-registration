@@ -2,26 +2,27 @@
 
 import React, { useState, useEffect } from "react";
 import { Modal, ModalFooter, Button, FormField } from "@/components/ui";
-import { Search, AlertTriangle, GitMerge, X, Loader2, Check } from "lucide-react";
+import { Search, AlertTriangle, GitMerge, X, Loader2, Check, Building2 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
+import { ChurchSearchPicker, MemberOption } from "./ChurchSearchPicker";
 
 interface MergeChurchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  targetMember: { id: string; name: string; certificateNo: string };
+  targetMember?: { id: string; name: string; certificateNo: string } | null;
+  initialSelectedChurches?: MemberOption[];
   onSuccess: () => void;
 }
 
-interface MemberOption {
-  id: string;
-  name: string;
-  certificateNo: string;
-  city?: string;
-  isActive: boolean;
-}
-
-export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: MergeChurchModalProps) {
+export function MergeChurchModal({
+  isOpen,
+  onClose,
+  targetMember,
+  initialSelectedChurches = [],
+  onSuccess,
+}: MergeChurchModalProps) {
+  const [currentTarget, setCurrentTarget] = useState<MemberOption | null>(null);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const [candidates, setCandidates] = useState<MemberOption[]>([]);
@@ -35,6 +36,7 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
 
   useEffect(() => {
     if (!isOpen) {
+      setCurrentTarget(null);
       setSearch("");
       setCandidates([]);
       setSelectedChurches([]);
@@ -43,7 +45,24 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
       setEffectiveDate(new Date().toISOString().split("T")[0]);
       return;
     }
-  }, [isOpen]);
+
+    if (initialSelectedChurches.length >= 2) {
+      // Multi-select merge mode: first church is default surviving entity, rest are absorbed
+      setCurrentTarget(initialSelectedChurches[0]);
+      setSelectedChurches(initialSelectedChurches.slice(1));
+    } else if (targetMember) {
+      setCurrentTarget({
+        id: targetMember.id,
+        name: targetMember.name,
+        certificateNo: targetMember.certificateNo,
+        isActive: true,
+      });
+      setSelectedChurches([]);
+    } else {
+      setCurrentTarget(null);
+      setSelectedChurches([]);
+    }
+  }, [isOpen, targetMember, initialSelectedChurches]);
 
   // Search members debounce
   useEffect(() => {
@@ -62,8 +81,8 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
         // Filter out target member and already selected members
         const filtered = list.filter(
           (m: any) =>
-            m.id !== targetMember.id &&
-            !selectedChurches.some((s) => s.id === m.id)
+            m.id !== currentTarget?.id &&
+            !selectedChurches.some((s: MemberOption) => s.id === m.id)
         );
         setCandidates(filtered);
       } catch (err) {
@@ -74,19 +93,34 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [search, targetMember.id, selectedChurches]);
+  }, [search, currentTarget?.id, selectedChurches]);
 
   const handleSelect = (member: MemberOption) => {
-    setSelectedChurches((prev) => [...prev, member]);
+    setSelectedChurches((prev: MemberOption[]) => [...prev, member]);
     setSearch("");
     setCandidates([]);
   };
 
   const handleRemove = (id: string) => {
-    setSelectedChurches((prev) => prev.filter((c) => c.id !== id));
+    setSelectedChurches((prev: MemberOption[]) => prev.filter((c: MemberOption) => c.id !== id));
+  };
+
+  const handleSurvivingChange = (survivor: MemberOption) => {
+    if (!initialSelectedChurches.length) {
+      setCurrentTarget(survivor);
+      return;
+    }
+    // Update surviving entity and make all other initial selected churches candidates
+    setCurrentTarget(survivor);
+    const others = initialSelectedChurches.filter((c: MemberOption) => c.id !== survivor.id);
+    setSelectedChurches(others);
   };
 
   const handleSubmit = async () => {
+    if (!currentTarget) {
+      toast.error("Please select the surviving target church");
+      return;
+    }
     if (selectedChurches.length === 0) {
       toast.error("Please select at least one predecessor church to merge");
       return;
@@ -98,8 +132,8 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
 
     setSubmitting(true);
     try {
-      await api.post(`/members/${targetMember.id}/merge`, {
-        predecessorIds: selectedChurches.map((c) => c.id),
+      await api.post(`/members/${currentTarget.id}/merge`, {
+        predecessorIds: selectedChurches.map((c: MemberOption) => c.id),
         effectiveDate,
         reason: reason.trim(),
         notes: notes.trim() || undefined,
@@ -118,19 +152,70 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
   return (
     <Modal open={isOpen} onClose={onClose} title="Combine / Merge Churches" size="lg">
       <div className="space-y-5">
-        {/* Banner */}
-        <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
-          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-semibold">
-              Merging into: {targetMember.name} ({targetMember.certificateNo})
+        {/* Multi-Selection Mode: Pick surviving entity */}
+        {initialSelectedChurches.length >= 2 ? (
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
+              Step 1: Choose Surviving Entity (Absorbing Church) *
+            </label>
+            <p className="text-xs text-neutral-500">
+              Select which of the {initialSelectedChurches.length} selected churches will remain active. The other church(es) will be merged into it with full historical retention.
             </p>
-            <p className="text-amber-700 dark:text-amber-400 leading-relaxed">
-              Selected predecessor churches will be deactivated and marked as <strong>MERGED</strong>.
-              Their historical reports, certificates, and files are permanently preserved as predecessor lineage.
-            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              {initialSelectedChurches.map((c) => {
+                const isSelected = currentTarget?.id === c.id;
+                return (
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => handleSurvivingChange(c)}
+                    className={`p-3 rounded-xl border text-left flex items-start justify-between transition-colors ${
+                      isSelected
+                        ? "border-amber-500 bg-amber-50/70 dark:bg-amber-950/30 ring-2 ring-amber-500/20"
+                        : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                    }`}
+                  >
+                    <div>
+                      <p className="font-semibold text-xs text-neutral-900 dark:text-white">{c.name}</p>
+                      <p className="text-[11px] text-neutral-500 font-mono mt-0.5">Cert: {c.certificateNo || "None"}</p>
+                    </div>
+                    {isSelected && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 font-semibold">
+                        Surviving
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Single / Standalone Mode: Church Picker for Surviving Target */
+          <ChurchSearchPicker
+            selectedChurch={currentTarget}
+            onSelectChurch={setCurrentTarget}
+            disabled={!!targetMember}
+            label="Step 1: Surviving Target Church (Remains Active) *"
+            placeholder="Search surviving church name or certificate number..."
+            required
+          />
+        )}
+
+        {/* Banner */}
+        {currentTarget && (
+          <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold">
+                Merging into: {currentTarget.name} ({currentTarget.certificateNo})
+              </p>
+              <p className="text-amber-700 dark:text-amber-400 leading-relaxed">
+                Selected predecessor churches will be deactivated and marked as <strong>MERGED</strong>.
+                Their historical reports, certificates, and files are permanently preserved as predecessor lineage.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Church Search and Select */}
         <div className="space-y-2">
@@ -154,7 +239,7 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
           {/* Search Results Dropdown */}
           {candidates.length > 0 && (
             <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md divide-y divide-neutral-100 dark:divide-neutral-700">
-              {candidates.map((c) => (
+              {candidates.map((c: MemberOption) => (
                 <button
                   type="button"
                   key={c.id}
@@ -178,7 +263,7 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
           {/* Selected Churches Chips */}
           {selectedChurches.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {selectedChurches.map((c) => (
+              {selectedChurches.map((c: MemberOption) => (
                 <span
                   key={c.id}
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white"
@@ -246,7 +331,7 @@ export function MergeChurchModal({ isOpen, onClose, targetMember, onSuccess }: M
         </Button>
         <Button
           onClick={handleSubmit}
-          disabled={submitting || selectedChurches.length === 0}
+          disabled={submitting || !currentTarget || selectedChurches.length === 0}
           className="bg-amber-600 hover:bg-amber-700 text-white"
         >
           {submitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <GitMerge className="mr-2 h-4 w-4" />}

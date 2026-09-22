@@ -1,7 +1,8 @@
 import React from "react";
-import { Avatar, Badge } from "@/components/ui";
+import { Avatar, Badge, RowActions } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import ActionStateDrawer from "@/components/action-state/ActionStateDrawer";
+import { Eye, ArrowRightLeft, GitMerge, GitFork, AlertTriangle } from "lucide-react";
 
 function statusBadge(isActive: boolean, stateObj?: any) {
   // Try to use the state object description if available, fallback to isActive boolean
@@ -14,79 +15,165 @@ function statusBadge(isActive: boolean, stateObj?: any) {
   );
 }
 
-export const columns: Column<any>[] = [
-  {
-    key: "member",
-    header: "Name",
-    cell: (row) => {
-      // The backend uses `name` for both Member and CouncilFellowship
-      const nameStr = row.name || "Unknown";
-      return (
-        <div className="flex items-center gap-3">
-          <Avatar fallback={nameStr[0]?.toUpperCase() || "?"} size="sm" />
-          <div>
-            <p className="font-medium text-zinc-900 dark:text-white">
-              {nameStr}
-            </p>
-            {row.kind === "member" && row.nameEn && (
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">{row.nameEn}</p>
-            )}
-            {row.kind === "member" && row.email && (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">{row.email}</p>
-            )}
-            {row.kind === "member" && row.certificateNo && (
-              <p className="text-xs text-zinc-400 mt-0.5">Cert: {row.certificateNo}</p>
-            )}
+export interface MemberColumnActions {
+  onTransfer?: (member: any) => void;
+  onMerge?: (member: any) => void;
+  onSplit?: (member: any) => void;
+  onClosure?: (member: any) => void;
+  onView?: (member: any) => void;
+}
+
+export function getColumns(actions?: MemberColumnActions): Column<any>[] {
+  const baseCols: Column<any>[] = [
+    {
+      key: "member",
+      header: "Name",
+      cell: (row) => {
+        // The backend uses `name` for both Member and CouncilFellowship
+        const nameStr = row.name || "Unknown";
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar fallback={nameStr[0]?.toUpperCase() || "?"} size="sm" />
+            <div>
+              <p className="font-medium text-zinc-900 dark:text-white">
+                {nameStr}
+              </p>
+              {row.kind === "member" && row.nameEn && (
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">{row.nameEn}</p>
+              )}
+              {row.kind === "member" && row.email && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{row.email}</p>
+              )}
+              {row.kind === "member" && row.certificateNo && (
+                <p className="text-xs text-zinc-400 mt-0.5">Cert: {row.certificateNo}</p>
+              )}
+            </div>
           </div>
-        </div>
-      );
+        );
+      },
     },
-  },
-  {
-    key: "fellowship",
-    header: "Council Fellowship",
-    cell: (row) =>
-      row.kind === "fellowship" ? (
-        <span className="text-zinc-400">—</span>
-      ) : (
-        row.councilFellowship?.name || row.fellowship?.name || <span className="text-zinc-400">—</span>
-      ),
-  },
-  {
-    key: "region",
-    header: "Region",
-    cell: (row) =>
-      row.kind === "fellowship"
-        ? row.region?.description || row.region?.name || <span className="text-zinc-400">—</span>
-        : row.region?.description || row.fellowship?.region?.name || <span className="text-zinc-400">—</span>,
-  },
-  {
-    key: "category",
-    header: "Type",
-    cell: (row) =>
-      row.kind === "fellowship" ? (
-        <Badge variant="secondary">Council Fellowship</Badge>
-      ) : (
-        row.type?.description || row.category?.name || <span className="text-zinc-400">—</span>
-      ),
-  },
-  {
-    key: "status",
-    header: "Status",
-    cell: (row) => statusBadge(row.isActive, row.state),
-  },
-  {
-    key: "actionState",
-    header: "Approval State",
-    cell: (row) => {
-      const entityType = row.kind === "fellowship" ? "FELLOWSHIP" : "MEMBER";
-      return (
-        <ActionStateDrawer
-          entityType={entityType}
-          entityId={row.id}
-          currentActionState={row.currentActionState}
-        />
-      );
+    {
+      key: "fellowship",
+      header: "Council Fellowship",
+      cell: (row) =>
+        row.kind === "fellowship" ? (
+          <span className="text-zinc-400">—</span>
+        ) : (
+          row.councilFellowship?.name || row.fellowship?.name || <span className="text-zinc-400">—</span>
+        ),
     },
-  },
-];
+    {
+      key: "region",
+      header: "Region",
+      cell: (row) =>
+        row.kind === "fellowship"
+          ? row.region?.description || row.region?.name || <span className="text-zinc-400">—</span>
+          : row.region?.description || row.fellowship?.region?.name || <span className="text-zinc-400">—</span>,
+    },
+    {
+      key: "category",
+      header: "Type",
+      cell: (row) =>
+        row.kind === "fellowship" ? (
+          <Badge variant="secondary">Council Fellowship</Badge>
+        ) : (
+          row.type?.description || row.category?.name || <span className="text-zinc-400">—</span>
+        ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => statusBadge(row.isActive, row.state),
+    },
+    {
+      key: "actionState",
+      header: "Approval State",
+      cell: (row) => {
+        const entityType = row.kind === "fellowship" ? "FELLOWSHIP" : "MEMBER";
+        return (
+          <ActionStateDrawer
+            entityType={entityType}
+            entityId={row.id}
+            currentActionState={row.currentActionState}
+          />
+        );
+      },
+    },
+  ];
+
+  if (actions) {
+    baseCols.push({
+      key: "actions",
+      header: "",
+      className: "w-10 text-right",
+      cell: (row) => {
+        if (row.kind === "fellowship") return null;
+
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <RowActions
+              mode="menu"
+              actions={[
+                ...(actions.onView
+                  ? [
+                      {
+                        key: "view",
+                        label: "View Details",
+                        icon: Eye,
+                        onClick: () => actions.onView!(row),
+                      },
+                    ]
+                  : []),
+                ...(actions.onTransfer
+                  ? [
+                      {
+                        key: "transfer",
+                        label: "Transfer Fellowship",
+                        icon: ArrowRightLeft,
+                        onClick: () => actions.onTransfer!(row),
+                      },
+                    ]
+                  : []),
+                ...(actions.onMerge
+                  ? [
+                      {
+                        key: "merge",
+                        label: "Merge Other Churches",
+                        icon: GitMerge,
+                        onClick: () => actions.onMerge!(row),
+                      },
+                    ]
+                  : []),
+                ...(actions.onSplit
+                  ? [
+                      {
+                        key: "split",
+                        label: "Split Daughters",
+                        icon: GitFork,
+                        onClick: () => actions.onSplit!(row),
+                      },
+                    ]
+                  : []),
+                ...(actions.onClosure
+                  ? [
+                      {
+                        key: "closure",
+                        label: "Voluntary Closure",
+                        icon: AlertTriangle,
+                        variant: "warning" as const,
+                        onClick: () => actions.onClosure!(row),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          </div>
+        );
+      },
+    });
+  }
+
+  return baseCols;
+}
+
+export const columns: Column<any>[] = getColumns();

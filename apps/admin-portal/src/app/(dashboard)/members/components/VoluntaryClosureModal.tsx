@@ -15,15 +15,16 @@ import {
 import { Modal, ModalFooter, Button, FormField, Input, Select } from "@/components/ui";
 import { useSubmitClosureRequest } from "@/hooks/useClosureRequests";
 import { toast } from "react-hot-toast";
+import { ChurchSearchPicker, MemberOption } from "./ChurchSearchPicker";
 
 interface VoluntaryClosureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  member: {
+  member?: {
     id: string;
     name: string;
     certificateNo: string;
-  };
+  } | null;
   onSuccess?: () => void;
 }
 
@@ -35,6 +36,7 @@ export function VoluntaryClosureModal({
 }: VoluntaryClosureModalProps) {
   const { mutateAsync: submitClosure, isPending: submitting } = useSubmitClosureRequest();
 
+  const [currentMember, setCurrentMember] = useState<MemberOption | null>(null);
   const [closureType, setClosureType] = useState<
     "DISSOLUTION" | "LOW_MEMBERSHIP" | "FINANCIAL_HARDSHIP" | "LEADERSHIP_VACANCY" | "EXTERNAL_AMALGAMATION" | "OTHER"
   >("DISSOLUTION");
@@ -49,6 +51,16 @@ export function VoluntaryClosureModal({
 
   useEffect(() => {
     if (isOpen) {
+      if (member) {
+        setCurrentMember({
+          id: member.id,
+          name: member.name,
+          certificateNo: member.certificateNo,
+          isActive: true,
+        });
+      } else {
+        setCurrentMember(null);
+      }
       setClosureType("DISSOLUTION");
       setResolutionDate("");
       setEffectiveDate(new Date().toISOString().split("T")[0]);
@@ -59,10 +71,15 @@ export function VoluntaryClosureModal({
       setContactPersonEmail("");
       setResolutionDocumentUrl("");
     }
-  }, [isOpen]);
+  }, [isOpen, member]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!currentMember) {
+      toast.error("Please select a church to initiate closure");
+      return;
+    }
 
     if (!reason.trim()) {
       toast.error("Please provide a reason or statement for voluntary closure");
@@ -71,7 +88,7 @@ export function VoluntaryClosureModal({
 
     try {
       await submitClosure({
-        memberId: member.id,
+        memberId: currentMember.id,
         closureType,
         reason: reason.trim(),
         resolutionDate: resolutionDate || undefined,
@@ -94,18 +111,30 @@ export function VoluntaryClosureModal({
   return (
     <Modal open={isOpen} onClose={onClose} title="Initiate Voluntary Closure Request" size="lg">
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Church Search Picker */}
+        <ChurchSearchPicker
+          selectedChurch={currentMember}
+          onSelectChurch={setCurrentMember}
+          disabled={!!member}
+          label="Church to Close / Deactivate *"
+          placeholder="Search church to voluntarily deactivate..."
+          required
+        />
+
         {/* Zero Loss Banner */}
-        <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
-          <Archive className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-semibold">
-              Voluntary Closure for: {member.name} ({member.certificateNo})
-            </p>
-            <p className="text-amber-700 dark:text-amber-400 leading-relaxed">
-              This request initiates a formal closure workflow. Upon administrative approval, active operations cease, but all historical certificates, annual reports, CRVs, financial transactions, and files remain permanently preserved with zero data loss.
-            </p>
+        {currentMember && (
+          <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <Archive className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold">
+                Voluntary Closure for: {currentMember.name} ({currentMember.certificateNo})
+              </p>
+              <p className="text-amber-700 dark:text-amber-400 leading-relaxed">
+                This request initiates a formal closure workflow. Upon administrative approval, active operations cease, but all historical certificates, annual reports, CRVs, financial transactions, and files remain permanently preserved with zero data loss.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Basic Closure Details */}
         <div className="space-y-4">
@@ -215,7 +244,7 @@ export function VoluntaryClosureModal({
           </Button>
           <Button
             type="submit"
-            disabled={submitting || !reason.trim()}
+            disabled={submitting || !currentMember || !reason.trim()}
             className="bg-amber-600 hover:bg-amber-700 text-white"
           >
             {submitting ? (

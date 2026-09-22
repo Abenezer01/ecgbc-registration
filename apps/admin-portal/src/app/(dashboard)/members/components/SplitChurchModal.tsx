@@ -5,23 +5,17 @@ import { Modal, ModalFooter, Button } from "@/components/ui";
 import { Search, AlertTriangle, GitFork, X, Loader2, Check } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
+import { ChurchSearchPicker, MemberOption } from "./ChurchSearchPicker";
 
 interface SplitChurchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  parentMember: { id: string; name: string; certificateNo: string };
+  parentMember?: { id: string; name: string; certificateNo: string } | null;
   onSuccess: () => void;
 }
 
-interface MemberOption {
-  id: string;
-  name: string;
-  certificateNo: string;
-  city?: string;
-  isActive: boolean;
-}
-
 export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: SplitChurchModalProps) {
+  const [currentParent, setCurrentParent] = useState<MemberOption | null>(null);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const [candidates, setCandidates] = useState<MemberOption[]>([]);
@@ -36,6 +30,7 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
 
   useEffect(() => {
     if (!isOpen) {
+      setCurrentParent(null);
       setSearch("");
       setCandidates([]);
       setSelectedDaughters([]);
@@ -45,7 +40,18 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
       setEffectiveDate(new Date().toISOString().split("T")[0]);
       return;
     }
-  }, [isOpen]);
+
+    if (parentMember) {
+      setCurrentParent({
+        id: parentMember.id,
+        name: parentMember.name,
+        certificateNo: parentMember.certificateNo,
+        isActive: true,
+      });
+    } else {
+      setCurrentParent(null);
+    }
+  }, [isOpen, parentMember]);
 
   useEffect(() => {
     if (!search.trim() || search.trim().length < 2) {
@@ -62,8 +68,8 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
         const list = res.data?.data?.members || [];
         const filtered = list.filter(
           (m: any) =>
-            m.id !== parentMember.id &&
-            !selectedDaughters.some((s) => s.id === m.id)
+            m.id !== currentParent?.id &&
+            !selectedDaughters.some((s: MemberOption) => s.id === m.id)
         );
         setCandidates(filtered);
       } catch (err) {
@@ -74,19 +80,23 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [search, parentMember.id, selectedDaughters]);
+  }, [search, currentParent?.id, selectedDaughters]);
 
   const handleSelect = (member: MemberOption) => {
-    setSelectedDaughters((prev) => [...prev, member]);
+    setSelectedDaughters((prev: MemberOption[]) => [...prev, member]);
     setSearch("");
     setCandidates([]);
   };
 
   const handleRemove = (id: string) => {
-    setSelectedDaughters((prev) => prev.filter((c) => c.id !== id));
+    setSelectedDaughters((prev: MemberOption[]) => prev.filter((c: MemberOption) => c.id !== id));
   };
 
   const handleSubmit = async () => {
+    if (!currentParent) {
+      toast.error("Please select a parent/mother church");
+      return;
+    }
     if (selectedDaughters.length === 0) {
       toast.error("Please select at least one daughter church to establish split lineage");
       return;
@@ -98,8 +108,8 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
 
     setSubmitting(true);
     try {
-      await api.post(`/members/${parentMember.id}/split`, {
-        daughterMemberIds: selectedDaughters.map((c) => c.id),
+      await api.post(`/members/${currentParent.id}/split`, {
+        daughterMemberIds: selectedDaughters.map((c: MemberOption) => c.id),
         parentDisposition,
         effectiveDate,
         reason: reason.trim(),
@@ -119,19 +129,31 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
   return (
     <Modal open={isOpen} onClose={onClose} title="Split / Branch Daughter Churches" size="lg">
       <div className="space-y-5">
+        {/* Parent Church Picker */}
+        <ChurchSearchPicker
+          selectedChurch={currentParent}
+          onSelectChurch={setCurrentParent}
+          disabled={!!parentMember}
+          label="Parent / Mother Church (Origin) *"
+          placeholder="Search mother church by name or cert..."
+          required
+        />
+
         {/* Banner */}
-        <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20 flex items-start gap-3 text-xs text-purple-800 dark:text-purple-300">
-          <GitFork className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-semibold">
-              Parent / Mother Church: {parentMember.name} ({parentMember.certificateNo})
-            </p>
-            <p className="text-purple-700 dark:text-purple-400 leading-relaxed">
-              Link one or more daughter churches established from this church. All historical lineage
-              is preserved on both mother and daughter church records.
-            </p>
+        {currentParent && (
+          <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20 flex items-start gap-3 text-xs text-purple-800 dark:text-purple-300">
+            <GitFork className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold">
+                Parent / Mother Church: {currentParent.name} ({currentParent.certificateNo})
+              </p>
+              <p className="text-purple-700 dark:text-purple-400 leading-relaxed">
+                Link one or more daughter churches established from this church. All historical lineage
+                is preserved on both mother and daughter church records.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Daughter Church Search and Select */}
         <div className="space-y-2">
@@ -155,7 +177,7 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
           {/* Candidates dropdown */}
           {candidates.length > 0 && (
             <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md divide-y divide-neutral-100 dark:divide-neutral-700">
-              {candidates.map((c) => (
+              {candidates.map((c: MemberOption) => (
                 <button
                   type="button"
                   key={c.id}
@@ -179,7 +201,7 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
           {/* Selected Daughter Churches Chips */}
           {selectedDaughters.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {selectedDaughters.map((c) => (
+              {selectedDaughters.map((c: MemberOption) => (
                 <span
                   key={c.id}
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white"
@@ -301,7 +323,7 @@ export function SplitChurchModal({ isOpen, onClose, parentMember, onSuccess }: S
         </Button>
         <Button
           onClick={handleSubmit}
-          disabled={submitting || selectedDaughters.length === 0}
+          disabled={submitting || !currentParent || selectedDaughters.length === 0}
           className="bg-purple-600 hover:bg-purple-700 text-white"
         >
           {submitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <GitFork className="mr-2 h-4 w-4" />}
