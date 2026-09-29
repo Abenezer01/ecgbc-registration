@@ -358,13 +358,14 @@ export default function ReserveNamePage() {
                         {nameCheckResult.isAvailable ? (
                           <div className="flex items-center gap-2"><CheckCircle size={16} /> Name looks available!</div>
                         ) : (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2 font-semibold"><AlertCircle size={16} /> Found similar names:</div>
-                            <ul className="list-disc pl-5 space-y-1 text-xs">
-                              {nameCheckResult.matches.map((m: any, i: number) => (
-                                <li key={i}>{m.nameAm} ({m.score}%)</li>
-                              ))}
-                            </ul>
+                          <div className="flex items-start gap-2">
+                            <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                            <div>
+                              <p className="font-semibold text-xs text-amber-800 dark:text-amber-300">Name is not available</p>
+                              <p className="text-xs text-amber-700/90 dark:text-amber-400/90 mt-0.5">
+                                A matching or closely similar church name is already registered or reserved under the council. Please choose a different name.
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>

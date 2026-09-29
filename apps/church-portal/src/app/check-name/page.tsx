@@ -23,13 +23,6 @@ const publicApi = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-interface MatchResult {
-  nameAm?: string;
-  nameEn?: string;
-  score?: number;
-  [key: string]: any;
-}
-
 const SAMPLE_EXAMPLES = [
   {
     nameAm: "የሕይወት ቃል ወንጌላዊት ቤተክርስቲያን",
@@ -60,7 +53,6 @@ export default function CheckNamePage() {
   const [nameEn, setNameEn] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
-  const [matches, setMatches] = useState<MatchResult[]>([]);
   const [isAvailable, setIsAvailable] = useState(false);
 
   const handleCheck = async (e?: React.FormEvent) => {
@@ -81,14 +73,13 @@ export default function CheckNamePage() {
       });
 
       const foundMatches = data.data?.matches || [];
-      setMatches(foundMatches);
       setIsAvailable(foundMatches.length === 0);
       setHasChecked(true);
 
       if (foundMatches.length === 0) {
         toast.success("Name is available!");
       } else {
-        toast.error(`Found ${foundMatches.length} similar registered name(s).`);
+        toast.error("This name is not available. Please try a different name.");
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to check name availability. Please try again.");
@@ -101,7 +92,6 @@ export default function CheckNamePage() {
     setNameAm(ex.nameAm);
     setNameEn(ex.nameEn);
     setHasChecked(false);
-    setMatches([]);
   };
 
   const handleProceedToReserve = () => {
@@ -300,48 +290,24 @@ export default function CheckNamePage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-amber-900 dark:text-amber-300">
-                        Found Similar Registered Names / ተመሳሳይ ስሞች ተገኝተዋል
+                        Name Not Available / ስሙ ክፍት አይደለም
                       </h3>
                       <p className="text-sm text-amber-800/80 dark:text-amber-400/90 mt-1 leading-relaxed">
-                        We found {matches.length} church name(s) with close similarity. To prevent confusion, prospective church names must be clearly distinguishable.
+                        This name or a closely similar name is already registered or reserved under the council registry. To avoid conflict and ensure approval, please choose a different or more distinct church name.
                       </p>
                     </div>
                   </div>
 
-                  {/* Matches List */}
-                  <div className="space-y-2 pt-2">
-                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-300 uppercase tracking-wider">
-                      Matching Churches & Similarity:
+                  <div className="p-4 rounded-xl bg-white/80 dark:bg-neutral-900/80 border border-amber-200/60 dark:border-amber-900/40 text-xs text-neutral-700 dark:text-neutral-300 space-y-2">
+                    <p className="font-semibold text-amber-900 dark:text-amber-300">
+                      Suggestions for choosing an available name / ምክረ-ሀሳብ፡
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {matches.map((match, i) => (
-                        <div 
-                          key={i} 
-                          className="p-3 rounded-xl bg-white dark:bg-neutral-900 border border-amber-200/70 dark:border-amber-900/40 flex items-center justify-between"
-                        >
-                          <div className="min-w-0 pr-2">
-                            <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
-                              {match.nameAm || match.name}
-                            </p>
-                            {match.nameEn && (
-                              <p className="text-[11px] text-neutral-500 truncate">
-                                {match.nameEn}
-                              </p>
-                            )}
-                          </div>
-                          {typeof match.score === "number" && (
-                            <span className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
-                              {match.score}% match
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <ul className="list-disc pl-4 space-y-1 text-neutral-600 dark:text-neutral-400">
+                      <li>Add a specific location or branch indicator (e.g., አጥቢያ, ወረዳ, ከተማ).</li>
+                      <li>Incorporate a unique ministry vision or distinctive theological term.</li>
+                      <li>Ensure proper church classification (e.g., ቤተክርስቲያን or ኅብረት).</li>
+                    </ul>
                   </div>
-
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 italic pt-1">
-                    Tip: Try adding distinctive qualifiers or location designations to your name.
-                  </p>
                 </div>
               )}
             </div>
