@@ -18,7 +18,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (hasVerified.current) return;
     hasVerified.current = true;
 
-    const publicRoutes = ["/", "/login", "/apply", "/reserve-name"];
+    const publicRoutes = ["/", "/login", "/apply", "/reserve-name", "/check-name"];
 
     const verifyToken = async () => {
       const token = localStorage.getItem("church_portal_token");

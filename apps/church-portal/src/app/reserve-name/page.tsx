@@ -1,10 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle, ArrowLeft, Sparkles } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
+
+const EXAMPLE_NAMES = [
+  {
+    nameAm: "የሕይወት ቃል ወንጌላዊት ቤተክርስቲያን",
+    nameEn: "Word of Life Evangelical Church",
+  },
+  {
+    nameAm: "ጸጋና እውነት ዓለም አቀፍ ቤተክርስቲያን",
+    nameEn: "Grace and Truth International Church",
+  },
+  {
+    nameAm: "አዲስ ኪዳን ካህናት ኅብረት",
+    nameEn: "New Covenant Priesthood Fellowship",
+  },
+  {
+    nameAm: "ብርሃነ ወንጌል አማኞች ቤተክርስቲያን",
+    nameEn: "Light of the Gospel Believers Church",
+  },
+  {
+    nameAm: "ተስፋ ሕይወት መጥምቃዊት ቤተክርስቲያን",
+    nameEn: "Living Hope Baptist Church",
+  },
+];
 
 const publicApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "https://api.registration.ecgbc.org/api/v1",
@@ -15,7 +38,7 @@ export default function ReserveNamePage() {
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [checkingName, setCheckingName] = useState(false);
+  const [checkingIndex, setCheckingIndex] = useState<number | null>(null);
   const [proposedNames, setProposedNames] = useState([
     { nameAm: "", nameEn: "" },
     { nameAm: "", nameEn: "" },
@@ -34,10 +57,36 @@ export default function ReserveNamePage() {
   const [success, setSuccess] = useState(false);
   const [successCode, setSuccessCode] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const nameAm = params.get("nameAm");
+      const nameEn = params.get("nameEn");
+      if (nameAm || nameEn) {
+        setProposedNames((prev) => {
+          const next = [...prev];
+          next[0] = { nameAm: nameAm || "", nameEn: nameEn || "" };
+          return next;
+        });
+      }
+    }
+  }, []);
+
   const handleNameChange = (index: number, field: "nameAm" | "nameEn", value: string) => {
     const newNames = [...proposedNames];
     newNames[index][field] = value;
     setProposedNames(newNames);
+  };
+
+  const handleFillExamples = () => {
+    setProposedNames(EXAMPLE_NAMES.map((item) => ({ ...item })));
+    setNameCheckResult(null);
+    setFormData((prev) => ({
+      publicName: prev.publicName || "ፓስተር ዮሐንስ አበበ",
+      publicPhone: prev.publicPhone || "0911234567",
+      publicEmail: prev.publicEmail || "info@church.org",
+    }));
+    toast.success("Example church names loaded!");
   };
 
   const checkAvailability = async (index: number) => {
@@ -46,9 +95,9 @@ export default function ReserveNamePage() {
       toast.error(`Please enter Church Name (Amharic) for Choice ${index + 1}.`);
       return;
     }
-    setCheckingName(true);
+    setCheckingIndex(index);
     try {
-      const { data } = await publicApi.post("/name-reservations/check", { 
+      const { data } = await publicApi.post("/name-reservations/public/check", { 
         nameAm: pn.nameAm, 
         nameEn: pn.nameEn 
       });
@@ -61,7 +110,7 @@ export default function ReserveNamePage() {
     } catch (err: any) {
       toast.error("Failed to check name availability.");
     } finally {
-      setCheckingName(false);
+      setCheckingIndex(null);
     }
   };
 
@@ -165,9 +214,21 @@ export default function ReserveNamePage() {
             Reserve your <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-amber-300">Church Name.</span>
           </h1>
-          <p className="text-lg text-white/80 leading-relaxed">
+          <p className="text-lg text-white/80 leading-relaxed mb-6">
             Secure a unique name for your church or fellowship before starting the full registration process.
           </p>
+
+          <div className="p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white/90 space-y-2">
+            <div className="font-semibold text-amber-300 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Naming Requirements & Examples:
+            </div>
+            <ul className="space-y-1 list-disc pl-4 text-white/80">
+              <li>Must include classification (e.g., ቤተክርስቲያን or ኅብረት)</li>
+              <li>Provide 5 unique alternative choices in priority order</li>
+              <li>Instant verification against existing registered names</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -188,6 +249,49 @@ export default function ReserveNamePage() {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             
+            {/* Example Guidelines Card */}
+            <div className="rounded-xl border border-amber-200/90 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                      Naming Guide & Examples / የስም አሰያየም ምሳሌ
+                    </h4>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
+                      Names must explicitly include your church classification (e.g., <span className="font-semibold text-neutral-800 dark:text-neutral-200">ቤተክርስቲያን</span> or <span className="font-semibold text-neutral-800 dark:text-neutral-200">ኅብረት</span>). Provide 5 alternatives in priority order.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFillExamples}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-900 dark:text-amber-200 bg-amber-200/70 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-900 transition-colors shadow-2xs"
+                  title="Populate fields with sample church names"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                  Load Examples
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/30 text-xs space-y-1.5 text-neutral-700 dark:text-neutral-300">
+                <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
+                  <span>Sample Choices / ምሳሌዎች:</span>
+                  <span>Priority 1 – 5</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {EXAMPLE_NAMES.slice(0, 4).map((ex, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[11px] text-neutral-700 dark:text-neutral-300 bg-white/60 dark:bg-neutral-900/40 px-2 py-1 rounded border border-amber-200/40 dark:border-amber-900/20">
+                      <span className="w-3.5 h-3.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center text-[9px] font-bold shrink-0">{i + 1}</span>
+                      <span className="truncate font-medium">{ex.nameAm}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-2">Proposed Names</h3>
               <div className="space-y-4">
@@ -206,29 +310,42 @@ export default function ReserveNamePage() {
                         <button
                           type="button"
                           onClick={() => checkAvailability(idx)}
-                          disabled={checkingName}
-                          className="text-xs text-amber-600 hover:text-amber-700 font-medium disabled:opacity-50"
+                          disabled={checkingIndex !== null}
+                          className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-medium disabled:opacity-50 transition-colors"
                         >
-                          Check Availability
+                          {checkingIndex === idx ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>Checking...</span>
+                            </>
+                          ) : (
+                            "Check Availability"
+                          )}
                         </button>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
+                        <label className="block text-[11px] font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+                          Amharic Name *
+                        </label>
                         <input 
                           required={true} 
                           type="text" 
-                          placeholder="Amharic Name"
+                          placeholder={EXAMPLE_NAMES[idx] ? `ምሳሌ፡ ${EXAMPLE_NAMES[idx].nameAm}` : "የቤተክርስቲያን ስም"}
                           value={pn.nameAm} 
                           onChange={(e) => handleNameChange(idx, "nameAm", e.target.value)} 
                           className="w-full px-4 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none" 
                         />
                       </div>
                       <div>
+                        <label className="block text-[11px] font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+                          English Name (Optional)
+                        </label>
                         <input 
                           type="text" 
-                          placeholder="English Name (Optional)"
+                          placeholder={EXAMPLE_NAMES[idx] ? `e.g. ${EXAMPLE_NAMES[idx].nameEn}` : "English Name (Optional)"}
                           value={pn.nameEn} 
                           onChange={(e) => handleNameChange(idx, "nameEn", e.target.value)} 
                           className="w-full px-4 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none" 
@@ -266,6 +383,7 @@ export default function ReserveNamePage() {
                 <input
                   type="text"
                   required
+                  placeholder="e.g. ፓስተር ዮሐንስ አበበ / Pastor Yohannes Abebe"
                   className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none"
                   value={formData.publicName}
                   onChange={(e) => setFormData({ ...formData, publicName: e.target.value })}
@@ -279,6 +397,7 @@ export default function ReserveNamePage() {
                 <input
                   type="text"
                   required
+                  placeholder="e.g. 0911234567 or +251911234567"
                   className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none"
                   value={formData.publicPhone}
                   onChange={(e) => setFormData({ ...formData, publicPhone: e.target.value })}
@@ -291,6 +410,7 @@ export default function ReserveNamePage() {
                 </label>
                 <input
                   type="email"
+                  placeholder="e.g. info@church.org"
                   className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none"
                   value={formData.publicEmail}
                   onChange={(e) => setFormData({ ...formData, publicEmail: e.target.value })}

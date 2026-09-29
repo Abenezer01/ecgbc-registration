@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Hash, LayoutDashboard, CheckCircle2, BookOpen, ShieldCheck, FileText } from "lucide-react";
+import { ArrowRight, Building2, Hash, LayoutDashboard, CheckCircle2, BookOpen, ShieldCheck, FileText, Search } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -21,12 +21,20 @@ export default function LandingPage() {
           </div>
         </div>
         
-        <Link 
-          href="/login"
-          className="hidden sm:flex items-center gap-2 text-sm font-medium text-white bg-white/10 hover:bg-white/20 px-5 py-2 rounded-full backdrop-blur-md border border-white/10 transition-colors"
-        >
-          Sign In <ArrowRight size={16} />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link 
+            href="/check-name"
+            className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white px-4 py-2 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <Search size={15} /> Check Name
+          </Link>
+          <Link 
+            href="/login"
+            className="hidden sm:flex items-center gap-2 text-sm font-medium text-white bg-white/10 hover:bg-white/20 px-5 py-2 rounded-full backdrop-blur-md border border-white/10 transition-colors"
+          >
+            Sign In <ArrowRight size={16} />
+          </Link>
+        </div>
       </header>
 
       {/* HERO SECTION */}
@@ -62,21 +70,29 @@ export default function LandingPage() {
       <section className="relative z-20 px-4 -mt-24 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Card 1: Reserve Name */}
+          {/* Card 1: Check & Reserve Name */}
           <div className="group flex flex-col bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-xl shadow-black/5 border border-neutral-100 dark:border-neutral-800 hover:-translate-y-1 hover:shadow-2xl hover:border-amber-500/30 transition-all duration-300">
             <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6">
-              <Hash size={24} />
+              <Search size={24} />
             </div>
-            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">Reserve a Name</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 flex-1 mb-8 leading-relaxed">
-              Secure a unique name for your church or fellowship before starting the full registration application process.
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">Check Church Name</h3>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 flex-1 mb-6 leading-relaxed">
+              Verify name uniqueness, search for similar registered churches in real-time, and reserve your name.
             </p>
-            <Link 
-              href="/reserve-name"
-              className="mt-auto inline-flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors"
-            >
-              Reserve Now
-            </Link>
+            <div className="flex flex-col gap-2 mt-auto">
+              <Link 
+                href="/check-name"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors"
+              >
+                Check Availability <ArrowRight size={15} />
+              </Link>
+              <Link 
+                href="/reserve-name"
+                className="inline-flex items-center justify-center text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 py-1 transition-colors"
+              >
+                Or reserve 5 choices directly →
+              </Link>
+            </div>
           </div>
 
           {/* Card 2: Apply for Registration */}
