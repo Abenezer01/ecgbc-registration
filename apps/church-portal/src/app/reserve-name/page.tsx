@@ -6,29 +6,6 @@ import { Loader2, AlertCircle, CheckCircle, ArrowLeft, Sparkles } from "lucide-r
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
 
-const EXAMPLE_NAMES = [
-  {
-    nameAm: "የሕይወት ቃል ወንጌላዊት ቤተክርስቲያን",
-    nameEn: "Word of Life Evangelical Church",
-  },
-  {
-    nameAm: "ጸጋና እውነት ዓለም አቀፍ ቤተክርስቲያን",
-    nameEn: "Grace and Truth International Church",
-  },
-  {
-    nameAm: "አዲስ ኪዳን ካህናት ኅብረት",
-    nameEn: "New Covenant Priesthood Fellowship",
-  },
-  {
-    nameAm: "ብርሃነ ወንጌል አማኞች ቤተክርስቲያን",
-    nameEn: "Light of the Gospel Believers Church",
-  },
-  {
-    nameAm: "ተስፋ ሕይወት መጥምቃዊት ቤተክርስቲያን",
-    nameEn: "Living Hope Baptist Church",
-  },
-];
-
 const publicApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "https://api.registration.ecgbc.org/api/v1",
   headers: { "Content-Type": "application/json" },
@@ -78,16 +55,6 @@ export default function ReserveNamePage() {
     setProposedNames(newNames);
   };
 
-  const handleFillExamples = () => {
-    setProposedNames(EXAMPLE_NAMES.map((item) => ({ ...item })));
-    setNameCheckResult(null);
-    setFormData((prev) => ({
-      publicName: prev.publicName || "ፓስተር ዮሐንስ አበበ",
-      publicPhone: prev.publicPhone || "0911234567",
-      publicEmail: prev.publicEmail || "info@church.org",
-    }));
-    toast.success("Example church names loaded!");
-  };
 
   const checkAvailability = async (index: number) => {
     const pn = proposedNames[index];
@@ -249,45 +216,19 @@ export default function ReserveNamePage() {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             
-            {/* Example Guidelines Card */}
-            <div className="rounded-xl border border-amber-200/90 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                      Naming Guide & Examples / የስም አሰያየም ምሳሌ
-                    </h4>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
-                      Names must explicitly include your church classification (e.g., <span className="font-semibold text-neutral-800 dark:text-neutral-200">ቤተክርስቲያን</span> or <span className="font-semibold text-neutral-800 dark:text-neutral-200">ኅብረት</span>). Provide 5 alternatives in priority order.
-                    </p>
-                  </div>
+            {/* Guidelines Card */}
+            <div className="rounded-xl border border-amber-200/90 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 p-4">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={handleFillExamples}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-900 dark:text-amber-200 bg-amber-200/70 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-900 transition-colors shadow-2xs"
-                  title="Populate fields with sample church names"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                  Load Examples
-                </button>
-              </div>
-
-              <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/30 text-xs space-y-1.5 text-neutral-700 dark:text-neutral-300">
-                <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
-                  <span>Sample Choices / ምሳሌዎች:</span>
-                  <span>Priority 1 – 5</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {EXAMPLE_NAMES.slice(0, 4).map((ex, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[11px] text-neutral-700 dark:text-neutral-300 bg-white/60 dark:bg-neutral-900/40 px-2 py-1 rounded border border-amber-200/40 dark:border-amber-900/20">
-                      <span className="w-3.5 h-3.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center text-[9px] font-bold shrink-0">{i + 1}</span>
-                      <span className="truncate font-medium">{ex.nameAm}</span>
-                    </div>
-                  ))}
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                    Naming Guidelines / የስም አሰያየም መመሪያ
+                  </h4>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
+                    Names must explicitly include your church classification (e.g., <span className="font-semibold text-neutral-800 dark:text-neutral-200">ቤተክርስቲያን</span> or <span className="font-semibold text-neutral-800 dark:text-neutral-200">ኅብረት</span>). Provide exactly 5 prioritized alternatives.
+                  </p>
                 </div>
               </div>
             </div>
@@ -333,7 +274,7 @@ export default function ReserveNamePage() {
                         <input 
                           required={true} 
                           type="text" 
-                          placeholder={EXAMPLE_NAMES[idx] ? `ምሳሌ፡ ${EXAMPLE_NAMES[idx].nameAm}` : "የቤተክርስቲያን ስም"}
+                          placeholder="የቤተክርስቲያን ስም (በአማርኛ)"
                           value={pn.nameAm} 
                           onChange={(e) => handleNameChange(idx, "nameAm", e.target.value)} 
                           className="w-full px-4 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none" 
@@ -345,7 +286,7 @@ export default function ReserveNamePage() {
                         </label>
                         <input 
                           type="text" 
-                          placeholder={EXAMPLE_NAMES[idx] ? `e.g. ${EXAMPLE_NAMES[idx].nameEn}` : "English Name (Optional)"}
+                          placeholder="English Name (Optional)"
                           value={pn.nameEn} 
                           onChange={(e) => handleNameChange(idx, "nameEn", e.target.value)} 
                           className="w-full px-4 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white focus:ring-1 focus:ring-slate-900 outline-none" 
