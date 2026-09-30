@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle, ArrowLeft, Sparkles } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import axios from "axios";
@@ -11,14 +11,13 @@ const publicApi = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-export default function ReserveNamePage() {
+function ReserveNameContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [checkingIndex, setCheckingIndex] = useState<number | null>(null);
   const [proposedNames, setProposedNames] = useState([
-    { nameAm: "", nameEn: "" },
-    { nameAm: "", nameEn: "" },
     { nameAm: "", nameEn: "" },
     { nameAm: "", nameEn: "" },
     { nameAm: "", nameEn: "" }
@@ -35,19 +34,16 @@ export default function ReserveNamePage() {
   const [successCode, setSuccessCode] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const nameAm = params.get("nameAm");
-      const nameEn = params.get("nameEn");
-      if (nameAm || nameEn) {
-        setProposedNames((prev) => {
-          const next = [...prev];
-          next[0] = { nameAm: nameAm || "", nameEn: nameEn || "" };
-          return next;
-        });
-      }
+    const nameAm = searchParams.get("nameAm");
+    const nameEn = searchParams.get("nameEn");
+    if (nameAm || nameEn) {
+      setProposedNames((prev) => {
+        const next = [...prev];
+        next[0] = { nameAm: nameAm || "", nameEn: nameEn || "" };
+        return next;
+      });
     }
-  }, []);
+  }, [searchParams]);
 
   const handleNameChange = (index: number, field: "nameAm" | "nameEn", value: string) => {
     const newNames = [...proposedNames];
@@ -84,7 +80,7 @@ export default function ReserveNamePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (proposedNames.some(pn => !pn.nameAm.trim())) {
-      toast.error("Please provide all 5 alternative choices.");
+      toast.error("Please provide all 3 alternative choices.");
       return;
     }
     if (!formData.publicName.trim() || (!formData.publicPhone.trim() && !formData.publicEmail.trim())) {
@@ -192,7 +188,7 @@ export default function ReserveNamePage() {
             </div>
             <ul className="space-y-1 list-disc pl-4 text-white/80">
               <li>Must include classification (e.g., ቤተክርስቲያን or ኅብረት)</li>
-              <li>Provide 5 unique alternative choices in priority order</li>
+              <li>Provide 3 unique alternative choices in priority order</li>
               <li>Instant verification against existing registered names</li>
             </ul>
           </div>
@@ -210,7 +206,7 @@ export default function ReserveNamePage() {
           <div className="mb-8">
             <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">Reserve Name</h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Submit exactly 5 alternative names in order of preference to secure one for your future registration.
+              Submit exactly 3 alternative names in order of preference to secure one for your future registration.
             </p>
           </div>
 
@@ -227,7 +223,7 @@ export default function ReserveNamePage() {
                     Naming Guidelines / የስም አሰያየም መመሪያ
                   </h4>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
-                    Names must explicitly include your church classification (e.g., <span className="font-semibold text-neutral-800 dark:text-neutral-200">ቤተክርስቲያን</span> or <span className="font-semibold text-neutral-800 dark:text-neutral-200">ኅብረት</span>). Provide exactly 5 prioritized alternatives.
+                    Names must explicitly include your church classification (e.g., <span className="font-semibold text-neutral-800 dark:text-neutral-200">ቤተክርስቲያን</span> or <span className="font-semibold text-neutral-800 dark:text-neutral-200">ኅብረት</span>). Provide exactly 3 prioritized alternatives.
                   </p>
                 </div>
               </div>
@@ -371,5 +367,19 @@ export default function ReserveNamePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReserveNamePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        </div>
+      }
+    >
+      <ReserveNameContent />
+    </Suspense>
   );
 }

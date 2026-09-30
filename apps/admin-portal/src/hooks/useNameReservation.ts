@@ -97,8 +97,25 @@ export function useNameReservation() {
   };
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status, remark }: { id: string; status: string; remark?: string }) => {
-      const response = await api.patch(`/name-reservations/${id}/status`, { status, remark });
+    mutationFn: async ({
+      id,
+      status,
+      remark,
+      finalNameAm,
+      finalNameEn,
+    }: {
+      id: string;
+      status: string;
+      remark?: string;
+      finalNameAm?: string;
+      finalNameEn?: string;
+    }) => {
+      const response = await api.patch(`/name-reservations/${id}/status`, {
+        status,
+        remark,
+        finalNameAm,
+        finalNameEn,
+      });
       return (response.data as any).data.reservation;
     },
     onSuccess: (_, { id }) => {

@@ -330,9 +330,9 @@ export default function CheckNamePage() {
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <BookOpen className="w-5 h-5" />
             </div>
-            <h4 className="text-base font-bold text-neutral-900 dark:text-white">5 Alternative Choices</h4>
+            <h4 className="text-base font-bold text-neutral-900 dark:text-white">3 Alternative Choices</h4>
             <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              When officially submitting a name reservation, you must provide 5 choices in order of preference in case of prior claim.
+              When officially submitting a name reservation, you must provide 3 choices in order of preference in case of prior claim.
             </p>
           </div>
 
@@ -352,7 +352,7 @@ export default function CheckNamePage() {
           <div className="space-y-1 text-center sm:text-left">
             <h3 className="text-xl font-bold">Have your preferred names ready?</h3>
             <p className="text-sm text-neutral-400">
-              Submit your 5 alternative choices to obtain an official reservation code.
+              Submit your 3 alternative choices to obtain an official reservation code.
             </p>
           </div>
           <Link
