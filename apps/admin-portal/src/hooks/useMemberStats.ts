@@ -72,13 +72,11 @@ export function useMemberStats(
           getCount(buildFilterQS(filters, { isInEthiopia: "all" })),
           getCount(buildFilterQS(filters, { isInEthiopia: "yes" })),
           getCount(buildFilterQS(filters, { isInEthiopia: "no" })),
-          get("/members/inactive/all?_page=1&_limit=1")
-            .then(
-              (res) =>
-                (res as any)?.data?.meta?.total ??
-                (res as any)?.data?.data?.total ??
-                0
-            )
+          // /members/inactive/all returns the full list without a total; this
+          // endpoint counts inactive members (excluding deleted) directly.
+          // Staff without the deactivate permission get 403: show 0, no toast.
+          get("/members/inactive/count", {}, { suppressErrorToast: true })
+            .then((res) => (res as any)?.data?.data?.count ?? 0)
             .catch(() => 0),
           // One count query per institution type, overriding typeId
           ...memberTypeOptions.map((t) =>

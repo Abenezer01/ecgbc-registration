@@ -15,6 +15,12 @@ export const getMembers = catchAsync(
         filters = { ...filters, [key]: value };
       }
     }
+    // A chosen status decides visibility on its own: inactive members have isActive=false,
+    // so the default isActive filter would hide them. Active-only staff are re-restricted below.
+    if (query.stateId) {
+      const { isActive, ...rest } = filters as any;
+      filters = rest;
+    }
     if (query.isInEthiopia) {
       const isInEthiopia = query.isInEthiopia === "yes";
       filters = { ...filters, isInEthiopia };

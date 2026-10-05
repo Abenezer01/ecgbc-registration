@@ -116,7 +116,7 @@ export default function MembersPage() {
 
   const memberTypeOptions = lookups?.filter((l) => l.type === "member_type") || [];
   const regionOptions = lookups?.filter((l) => l.type === "region") || [];
-  const statusOptions = lookups?.filter((l) => l.type === "object_state" && l.value !== "DELETED") || [];
+  const statusOptions = lookups?.filter((l) => l.type === "object_state") || [];
   const reportStatusOptions = lookups?.filter((l) => l.type === "report_state") || [];
 
   const { data: stats, isLoading: statsLoading } = useMemberStats(filters, memberTypeOptions);
