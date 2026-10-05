@@ -9,3 +9,5 @@ public/files/report/r*
 public/files/file/*
 !public/files/file/.gitkeep
 .git_old
+# Upload script logs
+scripts/upload-logs/
