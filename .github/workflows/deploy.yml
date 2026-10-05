@@ -15,6 +15,8 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # Default is 10m; rebuilding all images (backend downloads Chrome) can take longer
+          command_timeout: 30m
           script: |
             PROJECT_PATH="${{ secrets.VPS_PROJECT_PATH }}"
             if [ -z "$PROJECT_PATH" ]; then

@@ -7,4 +7,10 @@ docker-compose*
 .gitignore
 README.md
 dist
+# Uploaded files (tens of GB). At runtime docker-compose mounts ./public over the
+# container's public/, so only the tracked assets (fonts, logo, certificate background)
+# belong in the image.
+public/files
+public/images/avatar
+scripts/upload-logs
 # Add other files/folders to ignore, but NOT 'prisma/'
