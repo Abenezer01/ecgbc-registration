@@ -216,6 +216,7 @@ model Staff {
   lineagesCreated              MemberLineage[]       @relation("LineageStaff")
   transfersPerformed           MemberTransfer[]      @relation("TransferStaff")
   closureRequestsReviewed      MemberClosureRequest[] @relation("ClosureRequestReviewer")
+  apiKeysCreated               ApiKey[]              @relation("ApiKeyCreator")
 
   @@index([roleId], map: "Staff_roleId_fkey")
   @@index([stateId], map: "Staff_stateId_fkey")
@@ -608,5 +609,45 @@ model MemberClosureRequest {
   @@index([reviewedBy])
   @@index([effectiveDate])
 }
+
+model ApiKey {
+  id          String           @id @default(uuid())
+  name        String
+  description String?          @db.Text
+  keyPrefix   String
+  keyHash     String           @unique
+  scopes      Json
+  isActive    Boolean          @default(true)
+  rateLimit   Int              @default(60)
+  allowedIps  String?          @db.Text
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdBy   String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  creator     Staff?           @relation("ApiKeyCreator", fields: [createdBy], references: [id])
+  logs        ApiKeyAuditLog[]
+
+  @@index([keyHash])
+  @@index([isActive])
+}
+
+model ApiKeyAuditLog {
+  id         String   @id @default(uuid())
+  apiKeyId   String
+  endpoint   String
+  method     String
+  statusCode Int
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  apiKey     ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId])
+  @@index([createdAt])
+}
+
 
 

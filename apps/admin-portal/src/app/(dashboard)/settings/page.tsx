@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sun, Moon, Monitor, Palette, Users, ShieldCheck } from "lucide-react";
+import { Sun, Moon, Monitor, Palette, Users, ShieldCheck, Key } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader, Badge } from "@/components/ui";
@@ -126,6 +126,25 @@ export default function SettingsPage() {
                 <span className="text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-400 transition-colors">›</span>
               </Link>
             )}
+            <Link
+              href="/settings/api-keys"
+              className="flex items-center justify-between p-5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                  <Key className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    API Keys & External Access
+                  </p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Manage API keys for mobile apps and third-party integrations
+                  </p>
+                </div>
+              </div>
+              <span className="text-zinc-300 dark:text-zinc-600 group-hover:text-amber-400 transition-colors">›</span>
+            </Link>
           </div>
         </section>
       )}
