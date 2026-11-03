@@ -141,7 +141,21 @@ def main():
         print(f"    - Admin login FAILED: {e}")
         raise
 
-    # Test Church Login
+    # Test Reviewer Staff Login
+    reviewer_payload = json.dumps({"email": "insa-reviewer@ecgbc.org", "password": "InsaReviewer#2026!Audit"}).encode("utf-8")
+    req_reviewer = urllib.request.Request(admin_login_url, data=reviewer_payload, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req_reviewer, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            rev_token = data.get("data", {}).get("accessToken") or data.get("accessToken") or data.get("token")
+            assert resp.status == 200, f"Reviewer login status {resp.status}"
+            assert rev_token, "No access token returned for insa-reviewer"
+            print("    - Reviewer login (insa-reviewer@ecgbc.org): SUCCESS (200 OK, token issued)")
+    except Exception as e:
+        print(f"    - Reviewer login FAILED: {e}")
+        raise
+
+    # Test Church Login (Church 1)
     church_login_url = "http://127.0.0.1:8081/api/v1/church-auth/login"
     church_payload = json.dumps({"email": "insa-church1@ecgbc.org", "password": "InsaChurch1#2026!Audit"}).encode("utf-8")
     req_church = urllib.request.Request(church_login_url, data=church_payload, headers={"Content-Type": "application/json"})
@@ -151,9 +165,23 @@ def main():
             church_token = data.get("data", {}).get("accessToken") or data.get("accessToken") or data.get("token")
             assert resp.status == 200, f"Church user login status {resp.status}"
             assert church_token, "No access token returned for insa-church1"
-            print("    - Church user login (insa-church1@ecgbc.org): SUCCESS (200 OK, token issued)")
+            print("    - Church user login 1 (insa-church1@ecgbc.org): SUCCESS (200 OK, token issued)")
     except Exception as e:
-        print(f"    - Church user login FAILED: {e}")
+        print(f"    - Church user login 1 FAILED: {e}")
+        raise
+
+    # Test Church Login (Church 2)
+    church2_payload = json.dumps({"email": "insa-church2@ecgbc.org", "password": "InsaChurch2#2026!Audit"}).encode("utf-8")
+    req_church2 = urllib.request.Request(church_login_url, data=church2_payload, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req_church2, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            church2_token = data.get("data", {}).get("accessToken") or data.get("accessToken") or data.get("token")
+            assert resp.status == 200, f"Church user 2 login status {resp.status}"
+            assert church2_token, "No access token returned for insa-church2"
+            print("    - Church user login 2 (insa-church2@ecgbc.org): SUCCESS (200 OK, token issued)")
+    except Exception as e:
+        print(f"    - Church user login 2 FAILED: {e}")
         raise
 
     # Test Church Portal Profile retrieval
