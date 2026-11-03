@@ -174,6 +174,7 @@ def main():
             lastName = 'SuperAdmin',
             fullName = 'INSA Super Admin',
             phoneNumber = '+251911000001',
+            avatar = NULL,
             password = {escape_sql(pass_admin)},
             stateId = {escape_sql(active_state_id)},
             roleId = {escape_sql(owner_role_id)}
@@ -183,8 +184,8 @@ def main():
         import uuid
         insa_admin_id = str(uuid.uuid4())
         sql_lines.append(f"""
-        INSERT INTO staff (id, email, firstName, lastName, fullName, phoneNumber, password, roleId, stateId, created_at, updated_at)
-        VALUES ({escape_sql(insa_admin_id)}, 'insa-admin@ecgbc.org', 'INSA', 'SuperAdmin', 'INSA Super Admin', '+251911000001', {escape_sql(pass_admin)}, {escape_sql(owner_role_id)}, {escape_sql(active_state_id)}, NOW(), NOW());
+        INSERT INTO staff (id, email, firstName, lastName, fullName, phoneNumber, avatar, password, roleId, stateId, created_at, updated_at)
+        VALUES ({escape_sql(insa_admin_id)}, 'insa-admin@ecgbc.org', 'INSA', 'SuperAdmin', 'INSA Super Admin', '+251911000001', NULL, {escape_sql(pass_admin)}, {escape_sql(owner_role_id)}, {escape_sql(active_state_id)}, NOW(), NOW());
         """)
 
     if insa_reviewer_id:
@@ -194,6 +195,7 @@ def main():
             lastName = 'Reviewer',
             fullName = 'INSA Staff Reviewer',
             phoneNumber = '+251911000002',
+            avatar = NULL,
             password = {escape_sql(pass_reviewer)},
             stateId = {escape_sql(active_state_id)},
             roleId = {escape_sql(staff_role_id)}
@@ -203,8 +205,8 @@ def main():
         import uuid
         insa_reviewer_id = str(uuid.uuid4())
         sql_lines.append(f"""
-        INSERT INTO staff (id, email, firstName, lastName, fullName, phoneNumber, password, roleId, stateId, created_at, updated_at)
-        VALUES ({escape_sql(insa_reviewer_id)}, 'insa-reviewer@ecgbc.org', 'INSA', 'Reviewer', 'INSA Staff Reviewer', '+251911000002', {escape_sql(pass_reviewer)}, {escape_sql(staff_role_id)}, {escape_sql(active_state_id)}, NOW(), NOW());
+        INSERT INTO staff (id, email, firstName, lastName, fullName, phoneNumber, avatar, password, roleId, stateId, created_at, updated_at)
+        VALUES ({escape_sql(insa_reviewer_id)}, 'insa-reviewer@ecgbc.org', 'INSA', 'Reviewer', 'INSA Staff Reviewer', '+251911000002', NULL, {escape_sql(pass_reviewer)}, {escape_sql(staff_role_id)}, {escape_sql(active_state_id)}, NOW(), NOW());
         """)
 
     # Ensure INSA church users exist and have correct passwords
@@ -261,8 +263,12 @@ def main():
     councils_raw = run_mysql_query(target_db, "SELECT id FROM councilfellowship ORDER BY id ASC;")
     councils = [c.strip() for c in councils_raw.strip().split("\n") if c.strip()]
     for idx, c_id in enumerate(councils, 1):
+        name_am = f"የኢትዮጵያ ወንጌላውያን አብያተ ክርስቲያናት ኅብረት - ዞን {idx:02d} (ሙከራ)"
+        cert_no = f"CF-STG-{idx:05d}"
         sql_lines.append(f"""
         UPDATE councilfellowship SET
+            name = {escape_sql(name_am)},
+            certificateNo = {escape_sql(cert_no)},
             phoneNumber = '+251911000000',
             email = 'fellowship{idx:02d}@staging.ecgbc.org',
             houseNumber = 'H-01',
@@ -338,6 +344,10 @@ def main():
         m.email = t.new_email,
         m.houseNumber = t.new_house,
         m.poBoxNumber = t.new_pobox,
+        m.city = 'አዲስ አበባ',
+        m.subcity = CONCAT('ክፍለ ከተማ ', LPAD((CRC32(m.id) % 10) + 1, 2, '0')),
+        m.zone = 'ዞን 01',
+        m.district = 'ወረዳ 01',
         m.reasonForInactive = CASE WHEN m.reasonForInactive IS NOT NULL THEN 'Staging test inactive record' ELSE NULL END;
     """)
     sql_lines.append("DROP TEMPORARY TABLE IF EXISTS tmp_member_anon;")
@@ -446,6 +456,16 @@ def main():
         documentUrl = 'sample-document.pdf';
     """)
 
+    # Payment Method Configs
+    print("[*] Masking payment method configs...")
+    sql_lines.append("""
+    UPDATE paymentmethodconfig SET
+        accountName = 'ECGBC Staging Audit Test Account',
+        accountNumber = CONCAT('ACC-STG-', LPAD(CRC32(id) % 1000000, 6, '0')),
+        phoneNumber = '+251911000000',
+        instructions = 'Staging simulated payment instructions for INSA security audit testing';
+    """)
+
     sql_lines.append("COMMIT;")
     sql_lines.append("SET FOREIGN_KEY_CHECKS = 1;")
 
@@ -457,6 +477,20 @@ def main():
     print("[*] Executing batch sanitization in ecgbc-db MySQL...")
     run_mysql_script(target_db, script_path)
     print("    Sanitization executed successfully!")
+
+    # Purge real staff avatars from staging storage
+    print("[*] Purging real user avatars from staging storage...")
+    import glob, os
+    avatar_dir = "/home/deploy/ecgbc-registration/staging-storage/images/avatar"
+    if os.path.exists(avatar_dir):
+        purged = 0
+        for item in os.listdir(avatar_dir):
+            if item != ".gitkeep":
+                p = os.path.join(avatar_dir, item)
+                if os.path.isfile(p):
+                    os.remove(p)
+                    purged += 1
+        print(f"    Purged {purged} avatar files from staging storage.")
 
     # Step 4: Verification and Summary Report
     print("\n=================================================================")

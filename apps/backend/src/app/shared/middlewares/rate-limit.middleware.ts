@@ -7,9 +7,10 @@ import { Request, Response } from "express";
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 15, // Max 15 attempts per IP per 15-minute window
+  limit: process.env.AUTH_RATE_LIMIT ? parseInt(process.env.AUTH_RATE_LIMIT, 10) : 15,
   standardHeaders: true, // Return standard `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` legacy headers
+  validate: { xForwardedForHeader: false },
   handler: (req: Request, res: Response) => {
     res.status(429).json({
       status: "fail",
@@ -24,9 +25,10 @@ export const authRateLimiter = rateLimit({
  */
 export const publicRegistrationRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 30, // Max 30 submissions/checks per hour per IP
+  limit: process.env.PUBLIC_RATE_LIMIT ? parseInt(process.env.PUBLIC_RATE_LIMIT, 10) : 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler: (req: Request, res: Response) => {
     res.status(429).json({
       status: "fail",

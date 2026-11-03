@@ -114,12 +114,50 @@ def main():
             SELECT phoneNumber FROM staff WHERE phoneNumber IS NOT NULL AND phoneNumber NOT LIKE '+251911%'
             UNION ALL
             SELECT phone FROM churchuser WHERE phone IS NOT NULL AND phone NOT LIKE '+251911%'
+            UNION ALL
+            SELECT phoneNumber FROM councilfellowship WHERE phoneNumber IS NOT NULL AND phoneNumber NOT LIKE '+251911%'
+            UNION ALL
+            SELECT phoneNumber FROM paymentmethodconfig WHERE phoneNumber IS NOT NULL AND phoneNumber != '' AND phoneNumber NOT LIKE '+251911%'
         ) t;
     """)
     assert int(non_dummy_phones) == 0, f"Found {non_dummy_phones} non-dummy phone numbers!"
     print(f"    - Confirmed 100% phone numbers anonymized to dummy +251911...: {non_dummy_phones}")
 
-    print("\n    [PASS] Staging database is 100% sanitized and anonymized!\n")
+    # Check payment method configs
+    real_bank_accounts = query_db("ecgbc_staging", """
+        SELECT count(*) FROM paymentmethodconfig
+        WHERE accountNumber IS NOT NULL 
+          AND accountNumber != '' 
+          AND accountNumber NOT LIKE 'ACC-STG-%';
+    """)
+    assert int(real_bank_accounts) == 0, f"Found {real_bank_accounts} real bank accounts in paymentmethodconfig!"
+    print(f"    - Confirmed 100% bank accounts masked in paymentmethodconfig: {real_bank_accounts}")
+
+    # Check council fellowships
+    real_cf_names = query_db("ecgbc_staging", """
+        SELECT count(*) FROM councilfellowship
+        WHERE name NOT LIKE '%(ሙከራ)%'
+           OR certificateNo NOT LIKE 'CF-STG-%';
+    """)
+    assert int(real_cf_names) == 0, f"Found {real_cf_names} real council fellowship records!"
+    print(f"    - Confirmed 100% council fellowships synthetic: {real_cf_names}")
+
+    # Check member locations
+    real_member_locations = query_db("ecgbc_staging", """
+        SELECT count(*) FROM member
+        WHERE city != 'አዲስ አበባ'
+           OR subcity NOT LIKE 'ክፍለ ከተማ %';
+    """)
+    assert int(real_member_locations) == 0, f"Found {real_member_locations} un-anonymized member locations!"
+    print(f"    - Confirmed 100% member locations anonymized: {real_member_locations}")
+
+    # Check staging avatar folder
+    import glob, os
+    avatar_files = glob.glob("/home/deploy/ecgbc-registration/staging-storage/images/avatar/avatar-*")
+    assert len(avatar_files) == 0, f"Found {len(avatar_files)} real user avatar files in staging storage!"
+    print(f"    - Confirmed 0 real staff avatar files in staging storage: {len(avatar_files)}")
+
+    print("\n    [PASS] Staging database and storage are 100% sanitized and anonymized!\n")
 
     # 3. Verify Live Staging API Endpoints & Auth
     print("[3] Verifying Live Staging API (http://127.0.0.1:8081)...")
