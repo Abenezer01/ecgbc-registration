@@ -23,16 +23,17 @@ export const FILENAME: {
   [key: string]: (originalname: string) => string;
 } = {
   AVATAR: (originalname: string) =>
-    `avatar-${uuidv4()}${path.extname(originalname)}`,
+    `avatar-${uuidv4()}${path.extname(originalname).toLowerCase()}`,
   REPORT: (originalname: string) =>
-    `report-${uuidv4()}${path.extname(originalname)}`,
+    `report-${uuidv4()}${path.extname(originalname).toLowerCase()}`,
   FILE: (originalname: string) =>
-    `file-${uuidv4()}${path.extname(originalname)}`,
+    `file-${uuidv4()}${path.extname(originalname).toLowerCase()}`,
   ORIGINAL: (originalname: string) => {
-  const ext = originalname.substring(originalname.lastIndexOf('.'));
-  const nameWithoutExt = originalname.substring(0, originalname.lastIndexOf('.'));
-  return `${nameWithoutExt}-${uuidv4()}${ext}`;
-},
+    const ext = path.extname(originalname).toLowerCase();
+    // Sanitize base name to eliminate directory traversal or harmful characters
+    const safeBaseName = path.basename(originalname, ext).replace(/[^a-zA-Z0-9_-]/g, "_");
+    return `${safeBaseName.slice(0, 50)}-${uuidv4()}${ext}`;
+  },
 };
 
 export const FILTERS = {
@@ -55,7 +56,7 @@ export const FILTERS = {
       "image/png",
       "image/jpg",
     ],
-    MESSAGE: "Only .pdf, .doc, .xls, .png, .jpg, .jpeg format allowed!",
+    MESSAGE: "Only .pdf, .doc, .docx, .xls, .xlsx, .png, .jpg, .jpeg format allowed!",
   },
 };
 
@@ -73,26 +74,43 @@ export const multerConfig = (
       cb(null, path.join(__dirname, destination));
     },
     filename: function (req, file, cb) {
-      cb(null,useOriginalname ?FILENAME['ORIGINAL'](file.originalname): FILENAME[resource](file.originalname));
+      cb(
+        null,
+        useOriginalname
+          ? FILENAME["ORIGINAL"](file.originalname)
+          : FILENAME[resource](file.originalname)
+      );
     },
   });
 
   /**
-   * Multer file upload with filters
+   * Multer file upload with filters and size limits
    */
   const upload = multer({
     storage,
     limits: {
-      fileSize: 1024 * 1024 * 20,  // 20 MB
+      fileSize: 1024 * 1024 * 20, // 20 MB
       fieldSize: 1024 * 1024 * 20, // 20 MB
     },
     fileFilter: function (req, file, cb) {
-      if (filter.CONTENT.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
+      // Validate MIME type
+      if (!filter.CONTENT.includes(file.mimetype)) {
         cb(null, false);
         return cb(new AppError(filter.MESSAGE, 400));
       }
+
+      // Validate file extension against dangerous executables
+      const ext = path.extname(file.originalname).toLowerCase();
+      const dangerousExtensions = [
+        ".exe", ".bat", ".cmd", ".sh", ".php", ".js", ".html", ".htm",
+        ".vbs", ".ps1", ".svg", ".dll", ".bin", ".phtml", ".phar"
+      ];
+      if (dangerousExtensions.includes(ext)) {
+        cb(null, false);
+        return cb(new AppError("Upload rejected: File extension not permitted for security reasons.", 400));
+      }
+
+      cb(null, true);
     },
   });
   return upload;

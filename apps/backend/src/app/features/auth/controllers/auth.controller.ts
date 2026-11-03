@@ -83,7 +83,7 @@ export const loginStaff = catchAsync(
       },
     });
     if (!staff) {
-      return next(new AppError(`Staff not found`, 400));
+      return next(new AppError("Invalid email or password", 401));
     }
 
     // Strip MEMBER_DEACTIVATE for Ephrem in response so UI hides deactivate/restore
@@ -103,9 +103,7 @@ export const loginStaff = catchAsync(
     //Check Password
     const isMatch = await bcrypt.compare(password, staff.password!);
     if (!isMatch) {
-      return res.status(400).json({
-        errors: [{ msg: "Password not correct." }],
-      });
+      return next(new AppError("Invalid email or password", 401));
     }
 
     // Build RBAC scope for frontend filtering

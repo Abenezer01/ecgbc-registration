@@ -33,7 +33,8 @@ export const verifyChurchUser = async (
     }
 
     const token = authHeader.substring(7);
-    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY || "your-secret-key";
+    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY;
+    if (!jwtSecret) { throw new AppError("Server configuration error: JWT_ACCESS_SECRET_KEY is required", 500); }
 
     const decoded = jwt.verify(token, jwtSecret) as {
       churchUserId: string;

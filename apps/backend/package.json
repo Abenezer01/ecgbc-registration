@@ -44,7 +44,8 @@
     "script:fix-missing-fellowship": "tsx ./src/seeders/council-fellowship/fix-missing-upsert.ts",
     "script:count-fellowship-members": "tsx ./src/scripts/count-fellowship-members.ts",
     "script:top-fellowship-member-counts": "tsx ./src/scripts/top-fellowship-member-counts.ts",
-    "script:rbac-smoke": "tsx ./src/scripts/rbac-smoke.ts"
+    "script:rbac-smoke": "tsx ./src/scripts/rbac-smoke.ts",
+    "seed:insa": "tsx ./src/scripts/seed-insa-test-accounts.ts"
   },
   "prisma": {
     "seed": "tsx ./src/seeders/create.runner.ts"
@@ -66,8 +67,10 @@
     "ethiopian-date": "^0.0.6",
     "ethiopic-calendar": "^2.0.0",
     "express": "^4.21.0",
+    "express-rate-limit": "^8.7.2",
     "express-validator": "^7.2.0",
     "handlebars": "^4.7.9",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^4.6.0",

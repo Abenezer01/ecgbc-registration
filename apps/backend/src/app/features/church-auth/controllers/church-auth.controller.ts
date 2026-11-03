@@ -49,9 +49,11 @@ export const loginChurchUser = catchAsync(
     });
 
     // Generate JWT token
-    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY || "your-secret-key";
+    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY;
+    if (!jwtSecret) { throw new AppError("Server configuration error: JWT_ACCESS_SECRET_KEY is required", 500); }
     const jwtExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
-    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET_KEY || "your-refresh-secret-key";
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET_KEY;
+    if (!jwtRefreshSecret) { throw new AppError("Server configuration error: JWT_REFRESH_SECRET_KEY is required", 500); }
     const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
     const payload = {
@@ -112,7 +114,8 @@ export const refreshChurchToken = catchAsync(
       throw new AppError("Refresh token is required", 400);
     }
 
-    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET_KEY || "your-refresh-secret-key";
+    const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET_KEY;
+    if (!jwtRefreshSecret) { throw new AppError("Server configuration error: JWT_REFRESH_SECRET_KEY is required", 500); }
     let decoded: any;
     try {
       decoded = jwt.verify(refreshToken, jwtRefreshSecret);
@@ -143,7 +146,8 @@ export const refreshChurchToken = catchAsync(
     }
 
     // Generate new JWT tokens
-    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY || "your-secret-key";
+    const jwtSecret = process.env.JWT_ACCESS_SECRET_KEY;
+    if (!jwtSecret) { throw new AppError("Server configuration error: JWT_ACCESS_SECRET_KEY is required", 500); }
     const jwtExpiresIn = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
     const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 

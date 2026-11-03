@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { DataLookup, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import prisma from "../../app/config/db.config";
@@ -18,6 +19,16 @@ interface NewRole {
     type:DataLookup
     state:DataLookup
 }
+
+function getInitialPassword(envVar: string, label: string): string {
+  if (process.env[envVar]) {
+    return process.env[envVar]!;
+  }
+  const generated = `Ecgbc#${crypto.randomBytes(6).toString("hex")}!`;
+  console.log(`[Seed Notice] Initial password for ${label} (${envVar}): ${generated}`);
+  return generated;
+}
+
 export const seedStaff = async (): Promise<any>=>{
     const state =( await prisma.dataLookup.findUnique({
         where:{value:CommonObjectState.ACTIVE}
@@ -92,7 +103,7 @@ export const seedStaff = async (): Promise<any>=>{
      }
 
      // Ensure scoped staff (Ephrem) exists with ADMIN role and ACTIVE state
-     const ephremPlain = process.env.EPHREM_PASSWORD || "@Ephi#Ende!391#";
+     const ephremPlain = getInitialPassword("EPHREM_PASSWORD", "Ephrem");
      const ephremHashed = await bcrypt.hash(ephremPlain, 10);
      const ephrem = await prisma.staff.upsert({
        where: { email: "ephibillioner@gmail.com" },
@@ -198,7 +209,7 @@ export const seedStaff = async (): Promise<any>=>{
 
      // 2) Upsert Abinet Abate with Staff role
      const abinetEmail = "abateabinet94@gmail.com";
-     const abinetPlain = "@Abate@AB!861#"; // provided default
+     const abinetPlain = getInitialPassword("ABINET_PASSWORD", "Abinet");
      const abinetHashed = await bcrypt.hash(abinetPlain, 10);
      const abinet = await prisma.staff.upsert({
        where: { email: abinetEmail },
@@ -308,7 +319,7 @@ export const seedStaff = async (): Promise<any>=>{
 
      // 4) Upsert Chaltu (restricted Staff) and link to the specified fellowships by name
      const chaltuEmail = "kiyagudina07@gmail.com";
-     const chaltuPlain = "chaltugudina@1234";
+     const chaltuPlain = getInitialPassword("CHALTU_PASSWORD", "Chaltu");
      const chaltuHashed = await bcrypt.hash(chaltuPlain, 10);
      const chaltu = await prisma.staff.upsert({
        where: { email: chaltuEmail },
@@ -420,7 +431,7 @@ export const seedStaff = async (): Promise<any>=>{
 
      // 5) Upsert Mercy (restricted Staff) and link to the specified council fellowship(s)
      const mercyEmail = "mehirit2067@gmail.com";
-     const mercyPlain = process.env.MERCY_PASSWORD || "Mehirit!#123@";
+     const mercyPlain = getInitialPassword("MERCY_PASSWORD", "Mercy");
      const mercyHashed = await bcrypt.hash(mercyPlain, 10);
      const mercy = await prisma.staff.upsert({
        where: { email: mercyEmail },
@@ -506,7 +517,7 @@ export const seedStaff = async (): Promise<any>=>{
 
     // 6) Upsert Gezu as restricted Staff and scope to all council fellowships
      const gezuEmail = "gezuabiy@gmail.com";
-     const gezuPlain = process.env.GEZU_PASSWORD || "@Gezu#Abi!841#";
+     const gezuPlain = getInitialPassword("GEZU_PASSWORD", "Gezu");
      const gezuHashed = await bcrypt.hash(gezuPlain, 10);
      const gezu = await prisma.staff.upsert({
        where: { email: gezuEmail },
@@ -558,7 +569,7 @@ export const seedStaff = async (): Promise<any>=>{
 
      // 7) Upsert Saron Fekadu as restricted Staff
      const saronEmail = "saronbegna@gmail.com";
-     const saronPlain = process.env.SARON_PASSWORD || "Saron!#123@";
+     const saronPlain = getInitialPassword("SARON_PASSWORD", "Saron");
      const saronHashed = await bcrypt.hash(saronPlain, 10);
      const saron = await prisma.staff.upsert({
        where: { email: saronEmail },
@@ -633,7 +644,7 @@ export const seedStaff = async (): Promise<any>=>{
 
      // 8) Upsert Bekele Bersha as restricted Staff
      const bekeleEmail = "bekelebersha@gmail.com";
-     const bekelePlain = process.env.BEKELE_PASSWORD || "Bekele@123!";
+     const bekelePlain = getInitialPassword("BEKELE_PASSWORD", "Bekele");
      const bekeleHashed = await bcrypt.hash(bekelePlain, 10);
      const bekele = await prisma.staff.upsert({
        where: { email: bekeleEmail },
