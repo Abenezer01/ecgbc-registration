@@ -4,6 +4,8 @@ export enum MemberPermission {
     MEMBER_VIEW = "view_member",
     MEMBER_DELETE = "delete_member",
     MEMBER_DEACTIVATE = "deactivate_member",
+    MEMBER_VIEW_BOARD = "view_member_board",
+    MEMBER_VIEW_REPORTS = "view_member_reports",
   }
   
   export enum StaffPermission {

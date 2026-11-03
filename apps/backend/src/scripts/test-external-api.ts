@@ -28,7 +28,7 @@ async function runTests() {
   const trimmedHash = hashApiKey("  " + testKey + "  ");
   assert("API Key Hashing trims surrounding whitespace", trimmedHash === hash1);
 
-  // 2. Test Member DTO Normalization
+  // 2. Test Member DTO Normalization & Scopes
   const mockMember = {
     id: "mem-uuid-1",
     certificateNo: "ECGBC/AA/001/2023",
@@ -71,17 +71,50 @@ async function runTests() {
         isActive: true,
       },
     ],
+    reports: [
+      {
+        id: "rep-2024",
+        year: 2024,
+        reportedAt: new Date("2024-11-20T00:00:00.000Z"),
+        status: { value: "APPROVED", description: "Approved" },
+        crv: "CRV-2024-001",
+      },
+      {
+        id: "rep-2025",
+        year: 2025,
+        reportedAt: new Date("2025-11-25T00:00:00.000Z"),
+        status: { value: "APPROVED", description: "Approved" },
+        crv: "CRV-2025-001",
+      },
+    ],
   };
 
-  const dtoWithoutLeadership = toExternalMemberDTO(mockMember);
-  assert("DTO masks internal audit details and returns correct name", dtoWithoutLeadership.name.amharic === "የኢትዮጵያ ቃለ ሕይወት ቤተክርስቲያን");
-  assert("DTO properly structures certificate object", dtoWithoutLeadership.certificate.number === "ECGBC/AA/001/2023" && dtoWithoutLeadership.certificate.isValid === true);
-  assert("DTO structures contact and contact person", dtoWithoutLeadership.contact.contactPerson?.fullName === "Abebe Kebede");
-  assert("DTO excludes board members by default", dtoWithoutLeadership.leadership === undefined);
+  const dtoBase = toExternalMemberDTO(mockMember);
+  assert("DTO masks internal audit details and returns correct name", dtoBase.name.amharic === "የኢትዮጵያ ቃለ ሕይወት ቤተክርስቲያን");
+  assert("DTO properly structures certificate object", dtoBase.certificate.number === "ECGBC/AA/001/2023" && dtoBase.certificate.isValid === true);
+  assert("DTO structures contact and contact person", dtoBase.contact.contactPerson?.fullName === "Abebe Kebede");
+  assert("DTO excludes board members by default", dtoBase.leadership === undefined);
+  assert("DTO excludes reporting status by default", dtoBase.reportingStatus === undefined);
 
-  const dtoWithLeadership = toExternalMemberDTO(mockMember, { includeLeadership: true });
-  assert("DTO includes board members when requested", Array.isArray(dtoWithLeadership.leadership) && dtoWithLeadership.leadership.length === 1);
-  assert("DTO normalizes board member title", dtoWithLeadership.leadership?.[0].title === "Senior Pastor");
+  // Test Board Member Permission
+  const dtoWithBoard = toExternalMemberDTO(mockMember, { includeLeadership: true });
+  assert("DTO includes board members when permitted/requested", Array.isArray(dtoWithBoard.leadership) && dtoWithBoard.leadership.length === 1);
+  assert("DTO normalizes board member title", dtoWithBoard.leadership?.[0].title === "Senior Pastor");
+
+  // Test Reporting Status Permission (has reported vs not reported)
+  const dtoWithReports2025 = toExternalMemberDTO(mockMember, { includeReports: true, reportYearFilter: 2025 });
+  assert("DTO indicates member has reported for 2025", dtoWithReports2025.reportingStatus?.hasReported === true);
+  assert("DTO includes report history", dtoWithReports2025.reportingStatus?.reports?.length === 2);
+  assert("DTO identifies latest report year", dtoWithReports2025.reportingStatus?.latestYear === 2025);
+
+  const dtoWithReports2026 = toExternalMemberDTO(mockMember, { includeReports: true, reportYearFilter: 2026 });
+  assert("DTO indicates member has NOT reported for 2026", dtoWithReports2026.reportingStatus?.hasReported === false);
+
+  // Test Contact Details Permission Masking
+  const dtoMaskedContact = toExternalMemberDTO(mockMember, { includeContact: false });
+  assert("DTO masks phone number when contact scope is missing", dtoMaskedContact.contact.phoneNumber === null);
+  assert("DTO masks email when contact scope is missing", dtoMaskedContact.contact.email === null);
+  assert("DTO masks contact person direct phone when contact scope is missing", dtoMaskedContact.contact.contactPerson?.phoneNumber === null);
 
   // 3. Test Scope Guard Middleware
   const scopeMiddleware = requireScope("members:read");
@@ -96,6 +129,17 @@ async function runTests() {
     else nextCalled = true;
   });
   assert("Scope middleware allows requests with matching scope", nextCalled && !errorSent);
+
+  nextCalled = false;
+  errorSent = null;
+  const mockReqWithWildcard: any = {
+    apiKey: { scopes: ["*"] },
+  };
+  scopeMiddleware(mockReqWithWildcard, {} as any, (err?: any) => {
+    if (err) errorSent = err;
+    else nextCalled = true;
+  });
+  assert("Scope middleware allows requests with wildcard '*' scope", nextCalled && !errorSent);
 
   nextCalled = false;
   errorSent = null;
@@ -144,6 +188,7 @@ async function runTests() {
   assert("OpenAPI spec defines /members endpoint", Boolean(spec.paths["/members"]));
   assert("OpenAPI spec defines /members/verify/{certificateNo} endpoint", Boolean(spec.paths["/members/verify/{certificateNo}"]));
   assert("OpenAPI spec defines ApiKeyAuth security scheme", Boolean(spec.components?.securitySchemes?.ApiKeyAuth));
+  assert("OpenAPI spec MemberDTO defines reportingStatus property", Boolean(spec.components?.schemas?.MemberDTO?.properties?.reportingStatus));
 
   console.log(`\n========================================`);
   console.log(`Tests Passed: ${passed} / ${total}`);

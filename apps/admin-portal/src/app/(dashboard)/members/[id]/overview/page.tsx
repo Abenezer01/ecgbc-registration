@@ -61,10 +61,11 @@ export default function OverviewPage() {
   const [formError, setFormError]   = useState<string | null>(null);
 
   // ── permissions ────────────────────────────────────────────────────────────
-  const canViewFiles   = hasPermission("view_file")        || hasPermission("view_member");
-  const canViewReports = hasPermission("view_report")      || hasPermission("view_member");
-  const canManageUsers = hasPermission("view_church_user") || hasPermission("view_member");
-  const canDeactivate  = hasPermission("deactivate_member")|| hasPermission("delete_member");
+  const canViewFiles   = hasPermission("view_file")          || hasPermission("view_member");
+  const canViewReports = hasPermission("view_report")        || hasPermission("view_member_reports") || hasPermission("view_member");
+  const canViewBoard   = hasPermission("view_member_board")  || hasPermission("view_member");
+  const canManageUsers = hasPermission("view_church_user")   || hasPermission("view_member");
+  const canDeactivate  = hasPermission("deactivate_member")  || hasPermission("delete_member");
   const canEdit        = hasPermission("change_member");
 
   const titleOptions = lookups.filter((l) => l.type === "board_title");
@@ -256,7 +257,8 @@ export default function OverviewPage() {
         )}
 
         {/* Board Members */}
-        <div className="p-6 space-y-4">
+        {canViewBoard && (
+          <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <Users className="h-4 w-4 text-zinc-400" />
@@ -349,6 +351,7 @@ export default function OverviewPage() {
             </div>
           )}
         </div>
+      )}
       </div>
 
       {/* ── Board Member Drawer ─────────────────────────────────────────────── */}

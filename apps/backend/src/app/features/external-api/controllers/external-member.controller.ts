@@ -7,11 +7,43 @@ import {
   ExternalCertificateVerificationDTO,
 } from "../dtos/member.dto";
 
+function getApiKeyPermissions(req: Request) {
+  const scopes: string[] = (req as any).apiKey?.scopes || [];
+  const hasWildcard =
+    scopes.includes("*") ||
+    scopes.includes("admin") ||
+    scopes.includes("members:*");
+
+  return {
+    hasWildcard,
+    canViewDirectory:
+      hasWildcard ||
+      scopes.includes("members:read") ||
+      scopes.includes("members:directory"),
+    canViewBoard:
+      hasWildcard ||
+      scopes.includes("members:board") ||
+      scopes.includes("members:leadership"),
+    canViewReports:
+      hasWildcard ||
+      scopes.includes("members:reports") ||
+      scopes.includes("members:reporting"),
+    canViewContact:
+      hasWildcard ||
+      scopes.includes("members:contact"),
+    canVerify:
+      hasWildcard ||
+      scopes.includes("members:verify"),
+  };
+}
+
 export const listMembers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
+
+    const perms = getApiKeyPermissions(req);
 
     const search = (req.query.search as string)?.trim();
     const type = (req.query.type as string)?.trim();
@@ -20,8 +52,25 @@ export const listMembers = catchAsync(
     const fellowshipId = (req.query.fellowshipId as string)?.trim();
     const status = ((req.query.status as string)?.toLowerCase() || "active").trim();
     const updatedSince = req.query.updatedSince as string;
+    
+    // Reporting status query parameters: e.g. ?reportYear=2025&isReported=true|false
+    const reportYearParam = req.query.reportYear as string;
+    const isReportedParam = req.query.isReported as string;
+
     const includeParam = (req.query.include as string)?.toLowerCase() || "";
-    const includeLeadership = includeParam.includes("leadership") || includeParam.includes("board");
+    const wantsBoard =
+      perms.canViewBoard &&
+      (includeParam.includes("board") ||
+        includeParam.includes("leadership") ||
+        includeParam.includes("all") ||
+        !includeParam);
+
+    const wantsReports =
+      perms.canViewReports &&
+      (includeParam.includes("reports") ||
+        includeParam.includes("reporting") ||
+        Boolean(reportYearParam) ||
+        includeParam.includes("all"));
 
     // Base WHERE conditions
     const where: any = {};
@@ -48,7 +97,7 @@ export const listMembers = catchAsync(
       where.councilFellowshipId = fellowshipId;
     }
 
-    // Member Type filter (supports lookup ID or lookup value code)
+    // Member Type filter
     if (type) {
       where.OR = where.OR || [];
       where.type = {
@@ -85,6 +134,29 @@ export const listMembers = catchAsync(
       }
     }
 
+    // Reporting compliance filter: filter members by whether reported or not for a specific year
+    let reportYearNum: number | undefined;
+    if (reportYearParam) {
+      if (!perms.canViewReports) {
+        return next(
+          new AppError(
+            "Insufficient permissions. Filtering by reporting status requires the 'members:reports' scope.",
+            403
+          )
+        );
+      }
+      reportYearNum = parseInt(reportYearParam);
+      if (isNaN(reportYearNum)) {
+        return next(new AppError("Invalid 'reportYear'. Expected a valid 4-digit year (e.g. 2025).", 400));
+      }
+
+      if (isReportedParam === "true") {
+        where.reports = { some: { year: reportYearNum } };
+      } else if (isReportedParam === "false") {
+        where.reports = { none: { year: reportYearNum } };
+      }
+    }
+
     const [total, members] = await Promise.all([
       prisma.member.count({ where }),
       prisma.member.findMany({
@@ -99,10 +171,16 @@ export const listMembers = catchAsync(
           region: true,
           councilFellowship: true,
           contactPerson: true,
-          boardMembers: includeLeadership
+          boardMembers: wantsBoard
             ? {
                 include: { title: true },
                 where: { isActive: true },
+              }
+            : false,
+          reports: perms.canViewReports
+            ? {
+                include: { status: true },
+                orderBy: { year: "desc" },
               }
             : false,
         },
@@ -110,7 +188,12 @@ export const listMembers = catchAsync(
     ]);
 
     const data = members.map((member) =>
-      toExternalMemberDTO(member, { includeLeadership })
+      toExternalMemberDTO(member, {
+        includeLeadership: wantsBoard,
+        includeReports: wantsReports,
+        includeContact: perms.canViewContact,
+        reportYearFilter: reportYearNum,
+      })
     );
 
     return res.status(200).json({
@@ -129,9 +212,21 @@ export const listMembers = catchAsync(
 export const getMemberById = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
+    const perms = getApiKeyPermissions(req);
+
     const includeParam = (req.query.include as string)?.toLowerCase() || "";
-    const includeLeadership =
-      includeParam.includes("leadership") || includeParam.includes("board");
+    const wantsBoard =
+      perms.canViewBoard &&
+      (includeParam.includes("board") ||
+        includeParam.includes("leadership") ||
+        includeParam.includes("all") ||
+        !includeParam);
+
+    const wantsReports =
+      perms.canViewReports &&
+      (includeParam.includes("reports") ||
+        includeParam.includes("reporting") ||
+        includeParam.includes("all"));
 
     const member = await prisma.member.findUnique({
       where: { id },
@@ -142,10 +237,16 @@ export const getMemberById = catchAsync(
         region: true,
         councilFellowship: true,
         contactPerson: true,
-        boardMembers: includeLeadership
+        boardMembers: wantsBoard
           ? {
               include: { title: true },
               where: { isActive: true },
+            }
+          : false,
+        reports: perms.canViewReports
+          ? {
+              include: { status: true },
+              orderBy: { year: "desc" },
             }
           : false,
       },
@@ -155,7 +256,12 @@ export const getMemberById = catchAsync(
       return next(new AppError(`Member with ID '${id}' not found.`, 404));
     }
 
-    const data = toExternalMemberDTO(member, { includeLeadership });
+    const data = toExternalMemberDTO(member, {
+      includeLeadership: wantsBoard,
+      includeReports: wantsReports,
+      includeContact: perms.canViewContact,
+    });
+
     return res.status(200).json({
       status: "success",
       data,
@@ -166,9 +272,21 @@ export const getMemberById = catchAsync(
 export const getMemberByCertificate = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { certificateNo } = req.params;
+    const perms = getApiKeyPermissions(req);
+
     const includeParam = (req.query.include as string)?.toLowerCase() || "";
-    const includeLeadership =
-      includeParam.includes("leadership") || includeParam.includes("board");
+    const wantsBoard =
+      perms.canViewBoard &&
+      (includeParam.includes("board") ||
+        includeParam.includes("leadership") ||
+        includeParam.includes("all") ||
+        !includeParam);
+
+    const wantsReports =
+      perms.canViewReports &&
+      (includeParam.includes("reports") ||
+        includeParam.includes("reporting") ||
+        includeParam.includes("all"));
 
     const member = await prisma.member.findUnique({
       where: { certificateNo: certificateNo.trim() },
@@ -179,10 +297,16 @@ export const getMemberByCertificate = catchAsync(
         region: true,
         councilFellowship: true,
         contactPerson: true,
-        boardMembers: includeLeadership
+        boardMembers: wantsBoard
           ? {
               include: { title: true },
               where: { isActive: true },
+            }
+          : false,
+        reports: perms.canViewReports
+          ? {
+              include: { status: true },
+              orderBy: { year: "desc" },
             }
           : false,
       },
@@ -197,7 +321,12 @@ export const getMemberByCertificate = catchAsync(
       );
     }
 
-    const data = toExternalMemberDTO(member, { includeLeadership });
+    const data = toExternalMemberDTO(member, {
+      includeLeadership: wantsBoard,
+      includeReports: wantsReports,
+      includeContact: perms.canViewContact,
+    });
+
     return res.status(200).json({
       status: "success",
       data,

@@ -1,3 +1,18 @@
+export interface ExternalMemberReportingStatus {
+  hasReported: boolean;
+  year?: number;
+  latestYear: number | null;
+  totalReports: number;
+  reports?: Array<{
+    id: string;
+    year: number;
+    reportedAt: string;
+    status: string;
+    statusDescription: string | null;
+    hasReceipt: boolean;
+  }>;
+}
+
 export interface ExternalMemberDTO {
   id: string;
   certificate: {
@@ -34,7 +49,7 @@ export interface ExternalMemberDTO {
     email: string | null;
     contactPerson: {
       fullName: string;
-      phoneNumber: string;
+      phoneNumber: string | null;
       email: string | null;
     } | null;
   };
@@ -50,6 +65,7 @@ export interface ExternalMemberDTO {
     title: string | null;
     isActive: boolean;
   }>;
+  reportingStatus?: ExternalMemberReportingStatus;
   timestamps: {
     createdAt: string;
     updatedAt: string;
@@ -68,10 +84,19 @@ export interface ExternalCertificateVerificationDTO {
   verifiedAt: string;
 }
 
+export interface DTOOptions {
+  includeLeadership?: boolean;
+  includeReports?: boolean;
+  includeContact?: boolean;
+  reportYearFilter?: number;
+}
+
 export function toExternalMemberDTO(
   member: any,
-  options?: { includeLeadership?: boolean }
+  options?: DTOOptions
 ): ExternalMemberDTO {
+  const allowContact = options?.includeContact !== false;
+
   const dto: ExternalMemberDTO = {
     id: member.id,
     certificate: {
@@ -106,13 +131,13 @@ export function toExternalMemberDTO(
       poBoxNumber: member.poBoxNumber || null,
     },
     contact: {
-      phoneNumber: member.phoneNumber || null,
-      email: member.email || null,
+      phoneNumber: allowContact ? member.phoneNumber || null : null,
+      email: allowContact ? member.email || null : null,
       contactPerson: member.contactPerson
         ? {
             fullName: member.contactPerson.fullName,
-            phoneNumber: member.contactPerson.phoneNumber,
-            email: member.contactPerson.email || null,
+            phoneNumber: allowContact ? member.contactPerson.phoneNumber || null : null,
+            email: allowContact ? member.contactPerson.email || null : null,
           }
         : null,
     },
@@ -131,6 +156,7 @@ export function toExternalMemberDTO(
     },
   };
 
+  // Include Leadership / Board Members when requested & permitted
   if (options?.includeLeadership && Array.isArray(member.boardMembers)) {
     dto.leadership = member.boardMembers.map((bm: any) => ({
       id: bm.id,
@@ -139,6 +165,40 @@ export function toExternalMemberDTO(
       title: bm.title?.description || bm.title?.value || null,
       isActive: Boolean(bm.isActive),
     }));
+  }
+
+  // Include Reporting Status when requested & permitted
+  if (options?.includeReports && Array.isArray(member.reports)) {
+    const reportsList = member.reports;
+    const filterYear = options?.reportYearFilter;
+
+    let hasReportedForYear = false;
+    if (filterYear) {
+      hasReportedForYear = reportsList.some((r: any) => r.year === filterYear);
+    } else {
+      // Check if reported for current calendar year
+      const currentYear = new Date().getFullYear();
+      hasReportedForYear = reportsList.some((r: any) => r.year === currentYear);
+    }
+
+    const latestYear = reportsList.length > 0
+      ? Math.max(...reportsList.map((r: any) => r.year))
+      : null;
+
+    dto.reportingStatus = {
+      hasReported: hasReportedForYear,
+      year: filterYear,
+      latestYear,
+      totalReports: reportsList.length,
+      reports: reportsList.map((r: any) => ({
+        id: r.id,
+        year: r.year,
+        reportedAt: r.reportedAt instanceof Date ? r.reportedAt.toISOString() : new Date(r.reportedAt).toISOString(),
+        status: r.status?.value || "SUBMITTED",
+        statusDescription: r.status?.description || null,
+        hasReceipt: Boolean(r.crv || r.bankReference),
+      })),
+    };
   }
 
   return dto;

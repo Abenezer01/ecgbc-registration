@@ -19,9 +19,13 @@ import { PageHeader, Button, Badge, Modal, Input, Label, Textarea, Spinner } fro
 import { useApiKeys, ApiKeyItem } from "@/hooks/useApiKeys";
 
 const AVAILABLE_SCOPES = [
-  { id: "members:read", label: "Read Members Directory", description: "Search, filter, and view member profiles." },
-  { id: "members:verify", label: "Verify Certificates", description: "Validate standing and certificate numbers." },
-  { id: "members:leadership", label: "View Leadership & Board", description: "Include board members and titles in queries." },
+  { id: "members:read", label: "Read Members Directory", description: "Search, filter, and view base member profiles and location." },
+  { id: "members:verify", label: "Verify Certificates", description: "Validate church active standing and official certificate numbers." },
+  { id: "members:board", label: "View Board & Leadership", description: "Access church board members, executive council, and leadership titles." },
+  { id: "members:reports", label: "View Reporting Status", description: "Check whether a member has reported or not, view annual filings, and filter by report compliance." },
+  { id: "members:contact", label: "View Direct Contact Details", description: "Access church telephone, email, and contact person direct phone numbers." },
+  { id: "members:finance", label: "View Financial Standing", description: "Access fee rates, reporting dues, and payment settlement states." },
+  { id: "members:*", label: "Full Access (All Member Data)", description: "Grants all member permissions (directory, board, reports, and contact)." },
 ];
 
 export default function ApiKeysPage() {
