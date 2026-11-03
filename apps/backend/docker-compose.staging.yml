@@ -1,4 +1,4 @@
-version: '3.8'
+name: ecgbc-staging
 
 services:
   staging-api:
