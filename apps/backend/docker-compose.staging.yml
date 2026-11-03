@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  staging-api:
+    image: backend-app:latest
+    container_name: ecgbc-staging-api
+    ports:
+      - "8081:8080"
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: mysql://ecgbc_user:ecgbc_password123@ecgbc-db:3306/ecgbc_staging
+      SUPER_ADMIN_EMAIL: insa-admin@ecgbc.org
+      SUPER_ADMIN_PASSWORD: InsaAdmin#2026!Audit
+      JWT_ACCESS_SECRET_KEY: ${JWT_ACCESS_SECRET_KEY:-supersecret_access_key_dev}
+      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-supersecret_refresh_key_dev}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      PAYMENT_VERIFY_API_KEY: ${PAYMENT_VERIFY_API_KEY}
+      ALLOWED_ORIGINS: "http://212.227.41.106:3013,http://212.227.41.106:3012,http://localhost:3013,http://localhost:3012,http://127.0.0.1:3013,http://127.0.0.1:3012"
+    volumes:
+      - /home/deploy/ecgbc-registration/staging-storage:/usr/src/app/public
+    restart: unless-stopped
+
+  staging-admin:
+    build:
+      context: ../../apps/admin-portal
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://212.227.41.106:8081/api/v1
+    image: ecgbc-staging-admin
+    container_name: ecgbc-staging-admin
+    ports:
+      - "3013:3003"
+    environment:
+      PORT: 3003
+      NEXT_PUBLIC_API_URL: http://212.227.41.106:8081/api/v1
+    depends_on:
+      - staging-api
+    restart: unless-stopped
+
+  staging-church:
+    build:
+      context: ../../apps/church-portal
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://212.227.41.106:8081/api/v1
+    image: ecgbc-staging-church
+    container_name: ecgbc-staging-church
+    ports:
+      - "3012:3002"
+    environment:
+      PORT: 3002
+      NEXT_PUBLIC_API_URL: http://212.227.41.106:8081/api/v1
+    depends_on:
+      - staging-api
+    restart: unless-stopped
+
+networks:
+  default:
+    name: backend_default
+    external: true
