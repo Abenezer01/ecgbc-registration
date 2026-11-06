@@ -15,5 +15,15 @@
   },
   "dependencies": {
     "framer-motion": "^12.42.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "proxy-addr": ">=2.0.8",
+      "dompurify": ">=3.4.17",
+      "handlebars": ">=4.7.10",
+      "shell-quote": ">=1.11.0",
+      "follow-redirects": ">=1.16.2",
+      "body-parser": ">=1.20.9"
+    }
   }
 }
