@@ -57,6 +57,19 @@ export default function ApiKeysPage() {
   // Delete Confirmation State
   const [keyToDelete, setKeyToDelete] = useState<ApiKeyItem | null>(null);
 
+  const getApiBaseUrl = () => {
+    if (typeof window !== "undefined") {
+      const envApi = process.env.NEXT_PUBLIC_API_URL;
+      if (envApi) return envApi;
+      const port = window.location.port ? ":5000" : "";
+      return `${window.location.protocol}//${window.location.hostname}${port}/api/v1`;
+    }
+    return process.env.NEXT_PUBLIC_API_URL || "https://api.registration.ecgbc.org/api/v1";
+  };
+  const apiBase = getApiBaseUrl();
+  const docsUrl = `${apiBase}/external/docs`;
+  const membersApiUrl = `${apiBase}/external/members`;
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
@@ -129,7 +142,7 @@ export default function ApiKeysPage() {
         />
         <div className="flex items-center gap-3">
           <a
-            href="http://localhost:5000/api/v1/external/docs"
+            href={docsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
@@ -397,7 +410,7 @@ export default function ApiKeysPage() {
           <div className="bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-lg text-xs text-zinc-500 font-mono space-y-1">
             <p className="font-semibold text-zinc-700 dark:text-zinc-300 font-sans">Example cURL Request:</p>
             <p className="text-blue-600 dark:text-blue-400 break-all">
-              curl -H &quot;X-API-Key: {revealedKey}&quot; http://localhost:5000/api/v1/external/members
+              curl -H &quot;X-API-Key: {revealedKey}&quot; {membersApiUrl}
             </p>
           </div>
 

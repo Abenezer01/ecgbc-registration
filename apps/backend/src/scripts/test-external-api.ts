@@ -1,6 +1,7 @@
 import { toExternalMemberDTO } from "../app/features/external-api/dtos/member.dto";
 import { hashApiKey, requireScope } from "../app/features/external-api/middlewares/api-key.middleware";
 import { createExternalRateLimiter } from "../app/features/external-api/middlewares/rate-limiter.middleware";
+import { openapiSpec } from "../app/features/external-api/docs/openapi.spec";
 import fs from "fs";
 import path from "path";
 
@@ -181,7 +182,10 @@ async function runTests() {
   limiter(mockRateReq, mockRateRes, () => {});
   assert("Rate limiter blocks requests exceeding limit with HTTP 429", rateStatus === 429 && rateBody?.status === "error");
 
-  // 5. Test OpenAPI Spec File
+  // 5. Test OpenAPI Spec File & TS Export
+  assert("OpenAPI TypeScript module is defined", Boolean(openapiSpec && openapiSpec.info));
+  assert("OpenAPI module defines /members endpoint", Boolean(openapiSpec.paths["/members"]));
+  assert("OpenAPI module defines /members/verify/{certificateNo} endpoint", Boolean(openapiSpec.paths["/members/verify/{certificateNo}"]));
   const specPath = path.join(__dirname, "../app/features/external-api/docs/openapi.json");
   assert("OpenAPI specification file exists", fs.existsSync(specPath));
   const spec = JSON.parse(fs.readFileSync(specPath, "utf8"));

@@ -1,0 +1,240 @@
+export const openapiSpec = {
+  openapi: "3.0.3",
+  info: {
+    title: "ECGBC Members External API",
+    version: "1.1.0",
+    description: "Secure Machine-to-Machine (M2M) REST API allowing external applications to query, search, synchronize, and verify ECGBC member church data, board leadership, and annual reporting compliance.",
+    contact: {
+      name: "ECGBC Digital Systems Administration",
+      email: "support@ecgbc.org"
+    }
+  },
+  servers: [
+    {
+      url: "/api/v1/external",
+      description: "Current Environment API Gateway"
+    }
+  ],
+  security: [
+    {
+      ApiKeyAuth: []
+    }
+  ],
+  components: {
+    securitySchemes: {
+      ApiKeyAuth: {
+        type: "apiKey",
+        in: "header",
+        name: "X-API-Key",
+        description: "API Key issued by ECGBC Administration. Can also be supplied via 'Authorization: Bearer <key>'. Scopes include: members:read, members:verify, members:board, members:reports, members:contact, members:finance, members:*."
+      }
+    },
+    schemas: {
+      MemberDTO: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          certificate: {
+            type: "object",
+            properties: {
+              number: { type: "string", example: "ECGBC/AA/001/2023" },
+              issuedDate: { type: "string", format: "date-time" },
+              isValid: { type: "boolean", example: true }
+            }
+          },
+          name: {
+            type: "object",
+            properties: {
+              amharic: { type: "string", example: "የኢትዮጵያ ቃለ ሕይወት ቤተክርስቲያን" },
+              english: { type: "string", nullable: true, example: "Ethiopian Kale Heywet Church" }
+            }
+          },
+          classification: {
+            type: "object",
+            properties: {
+              typeId: { type: "string" },
+              typeName: { type: "string" },
+              categoryId: { type: "string", nullable: true },
+              categoryName: { type: "string", nullable: true },
+              fellowshipId: { type: "string" },
+              fellowshipName: { type: "string" },
+              fellowshipCertificateNo: { type: "string" }
+            }
+          },
+          location: {
+            type: "object",
+            properties: {
+              isInEthiopia: { type: "boolean" },
+              country: { type: "string", example: "Ethiopia" },
+              region: { type: "string", example: "Addis Ababa" },
+              city: { type: "string", example: "Addis Ababa" },
+              subcity: { type: "string", example: "Bole" },
+              zone: { type: "string", nullable: true },
+              district: { type: "string", nullable: true },
+              houseNumber: { type: "string", nullable: true },
+              poBoxNumber: { type: "string", nullable: true }
+            }
+          },
+          contact: {
+            type: "object",
+            description: "Contact info (masked unless 'members:contact' scope is granted)",
+            properties: {
+              phoneNumber: { type: "string", nullable: true },
+              email: { type: "string", nullable: true },
+              contactPerson: {
+                type: "object",
+                nullable: true,
+                properties: {
+                  fullName: { type: "string" },
+                  phoneNumber: { type: "string", nullable: true },
+                  email: { type: "string", nullable: true }
+                }
+              }
+            }
+          },
+          status: {
+            type: "object",
+            properties: {
+              isActive: { type: "boolean", example: true },
+              actionState: { type: "string", example: "APPROVED" },
+              stateName: { type: "string", example: "Active" }
+            }
+          },
+          leadership: {
+            type: "array",
+            description: "Board members and elder leadership (requires 'members:board' scope)",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                fullName: { type: "string" },
+                fullNameEn: { type: "string", nullable: true },
+                title: { type: "string", nullable: true },
+                isActive: { type: "boolean" }
+              }
+            }
+          },
+          reportingStatus: {
+            type: "object",
+            description: "Annual report compliance status (requires 'members:reports' scope)",
+            properties: {
+              hasReported: { type: "boolean", description: "Whether member submitted report for queried year or latest year" },
+              year: { type: "integer", nullable: true },
+              latestYear: { type: "integer", nullable: true },
+              totalReports: { type: "integer" },
+              reports: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    year: { type: "integer" },
+                    reportedAt: { type: "string", format: "date-time" },
+                    status: { type: "string" },
+                    statusDescription: { type: "string", nullable: true },
+                    hasReceipt: { type: "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          timestamps: {
+            type: "object",
+            properties: {
+              createdAt: { type: "string", format: "date-time" },
+              updatedAt: { type: "string", format: "date-time" }
+            }
+          }
+        }
+      },
+      VerificationDTO: {
+        type: "object",
+        properties: {
+          certificateNumber: { type: "string" },
+          isAuthentic: { type: "boolean" },
+          status: { type: "string", enum: ["ACTIVE", "INACTIVE", "REVOKED", "NOT_FOUND"] },
+          churchNameAmharic: { type: "string" },
+          churchNameEnglish: { type: "string", nullable: true },
+          issuedDate: { type: "string", format: "date-time" },
+          fellowshipName: { type: "string", nullable: true },
+          typeName: { type: "string", nullable: true },
+          verifiedAt: { type: "string", format: "date-time" }
+        }
+      }
+    }
+  },
+  paths: {
+    "/members": {
+      get: {
+        summary: "List & search members",
+        description: "Paginated retrieval of members with filtering by name, certificate, region, fellowship, reporting compliance (isReported), or incremental sync timestamp.",
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+          { name: "limit", in: "query", schema: { type: "integer", default: 20 } },
+          { name: "search", in: "query", schema: { type: "string" }, description: "Search by name, certificate number, or city" },
+          { name: "type", in: "query", schema: { type: "string" }, description: "Member type ID or value code" },
+          { name: "region", in: "query", schema: { type: "string" }, description: "Region ID or value code" },
+          { name: "fellowshipId", in: "query", schema: { type: "string" } },
+          { name: "status", in: "query", schema: { type: "string", enum: ["active", "inactive", "all"], default: "active" } },
+          { name: "reportYear", in: "query", schema: { type: "integer" }, description: "Target year for reporting status filter (e.g. 2025)" },
+          { name: "isReported", in: "query", schema: { type: "string", enum: ["true", "false"] }, description: "Filter by whether the member has reported or not for 'reportYear'" },
+          { name: "updatedSince", in: "query", schema: { type: "string", format: "date-time" }, description: "ISO timestamp for delta/sync" },
+          { name: "include", in: "query", schema: { type: "string" }, description: "Comma-separated extras: 'board', 'reports', 'all'" }
+        ],
+        responses: {
+          "200": { description: "Paginated list of members" },
+          "401": { description: "Missing or invalid API key" },
+          "403": { description: "Insufficient scope (e.g. attempting to filter by reportYear without 'members:reports')" },
+          "429": { description: "Rate limit exceeded" }
+        }
+      }
+    },
+    "/members/{id}": {
+      get: {
+        summary: "Get member by UUID",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "include", in: "query", schema: { type: "string" }, description: "'board', 'reports', 'all'" }
+        ],
+        responses: {
+          "200": { description: "Member details" },
+          "404": { description: "Member not found" }
+        }
+      }
+    },
+    "/members/by-certificate/{certificateNo}": {
+      get: {
+        summary: "Get member by Certificate Number",
+        parameters: [
+          { name: "certificateNo", in: "path", required: true, schema: { type: "string" } },
+          { name: "include", in: "query", schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "Member details" },
+          "404": { description: "Member not found" }
+        }
+      }
+    },
+    "/members/verify/{certificateNo}": {
+      get: {
+        summary: "Verify Certificate Standing",
+        description: "Lightweight validation badge confirming whether a certificate is authentic and in good standing.",
+        parameters: [
+          { name: "certificateNo", in: "path", required: true, schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "Verification result" }
+        }
+      }
+    },
+    "/metadata/lookups": {
+      get: {
+        summary: "Get Metadata Reference Lookups",
+        description: "Returns dictionary values for member types, member categories, regions, and fellowships.",
+        responses: {
+          "200": { description: "Lookup metadata dictionary" }
+        }
+      }
+    }
+  }
+};
